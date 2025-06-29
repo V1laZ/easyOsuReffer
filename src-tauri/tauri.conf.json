@@ -21,6 +21,13 @@
       "csp": null
     }
   },
+  "plugins": {
+    "sql": {
+      "preload": [
+        "sqlite:osu_reffer_database.db"
+      ]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
