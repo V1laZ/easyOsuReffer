@@ -82,7 +82,6 @@ async fn connect_to_bancho(
         username: Some(config.username.clone()),
         password: Some(config.password.clone()),
         use_tls: Some(false),
-        channels: vec!["#osu".to_string()],
         ..Config::default()
     };
 
@@ -104,7 +103,6 @@ async fn connect_to_bancho(
             {
                 let mut irc_state = state.lock().unwrap();
                 irc_state.connected = true;
-                irc_state.channels = vec!["#osu".to_string()];
                 irc_state.config = Some(config.clone());
                 irc_state.message_sender = Some(tx);
             }
@@ -273,7 +271,6 @@ async fn handle_irc_connection(
             message = stream.next() => {
                 match message {
                     Some(Ok(msg)) => {
-                        println!("Received IRC message: {:?}", msg);
                         handle_incoming_message(msg, &app_handle, &state);
                     }
                     Some(Err(e)) => {
@@ -379,28 +376,6 @@ fn handle_incoming_message(
 
                 println!("{} joined {}", nick, channel);
 
-                // Check if this is the current user joining
-                let is_current_user = {
-                    let irc_state = state.lock().unwrap();
-                    if let Some(config) = &irc_state.config {
-                        nick == config.username
-                    } else {
-                        false
-                    }
-                };
-
-                if is_current_user {
-                    // Emit channel-joined event for current user
-                    if let Err(e) = app_handle.emit(
-                        "channel-joined",
-                        serde_json::json!({
-                            "channel": channel,
-                        }),
-                    ) {
-                        println!("Failed to emit channel-joined event: {}", e);
-                    }
-                }
-
                 // Emit join event to frontend
                 if let Err(e) = app_handle.emit(
                     "user-joined",
@@ -454,6 +429,12 @@ fn handle_incoming_message(
                     if args.len() >= 2 {
                         let channel = &args[1];
                         println!("Channel {} does not exist", channel);
+
+                        {
+                            let mut irc_state = state.lock().unwrap();
+                            irc_state.channels.retain(|c| c != channel);
+                        }
+
                         if let Err(e) = app_handle.emit(
                             "channel-error",
                             serde_json::json!({
@@ -469,6 +450,12 @@ fn handle_incoming_message(
                     if args.len() >= 2 {
                         let channel = &args[1];
                         println!("Channel {} is invite only", channel);
+
+                        {
+                            let mut irc_state = state.lock().unwrap();
+                            irc_state.channels.retain(|c| c != channel);
+                        }
+
                         if let Err(e) = app_handle.emit(
                             "channel-error",
                             serde_json::json!({
@@ -484,6 +471,12 @@ fn handle_incoming_message(
                     if args.len() >= 2 {
                         let channel = &args[1];
                         println!("Banned from channel {}", channel);
+
+                        {
+                            let mut irc_state = state.lock().unwrap();
+                            irc_state.channels.retain(|c| c != channel);
+                        }
+
                         if let Err(e) = app_handle.emit(
                             "channel-error",
                             serde_json::json!({
@@ -499,6 +492,12 @@ fn handle_incoming_message(
                     if args.len() >= 2 {
                         let channel = &args[1];
                         println!("Channel {} is full", channel);
+
+                        {
+                            let mut irc_state = state.lock().unwrap();
+                            irc_state.channels.retain(|c| c != channel);
+                        }
+
                         if let Err(e) = app_handle.emit(
                             "channel-error",
                             serde_json::json!({
@@ -514,6 +513,13 @@ fn handle_incoming_message(
                     if args.len() >= 2 {
                         let channel = &args[1];
                         println!("Wrong key for channel {}", channel);
+
+                        // Remove the channel from our state since join failed
+                        {
+                            let mut irc_state = state.lock().unwrap();
+                            irc_state.channels.retain(|c| c != channel);
+                        }
+
                         if let Err(e) = app_handle.emit(
                             "channel-error",
                             serde_json::json!({
