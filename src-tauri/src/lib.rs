@@ -159,6 +159,11 @@ async fn join_channel(channel: String, state: State<'_, IrcState>) -> Result<Str
         if !irc_state.connected {
             return Err("Not connected to IRC".to_string());
         }
+
+        if irc_state.channels.contains(&channel) {
+            return Err("Already in this channel".to_string());
+        }
+
         irc_state.message_sender.clone()
     };
 
@@ -179,6 +184,36 @@ async fn join_channel(channel: String, state: State<'_, IrcState>) -> Result<Str
         }
 
         Ok(format!("Joining channel: {}", channel))
+    } else {
+        Err("Message sender not available".to_string())
+    }
+}
+
+#[tauri::command]
+async fn leave_channel(channel: String, state: State<'_, IrcState>) -> Result<String, String> {
+    let sender = {
+        let irc_state = state.lock().unwrap();
+        if !irc_state.connected {
+            return Err("Not connected to IRC".to_string());
+        }
+        irc_state.message_sender.clone()
+    };
+
+    if let Some(sender) = sender {
+        let command = IrcCommand::LeaveChannel {
+            channel: channel.clone(),
+        };
+        if let Err(_) = sender.send(command) {
+            return Err("Failed to queue leave command".to_string());
+        }
+
+        // Remove the channel from the channels list
+        {
+            let mut irc_state = state.lock().unwrap();
+            irc_state.channels.retain(|c| c != &channel);
+        }
+
+        Ok(format!("Left channel: {}", channel))
     } else {
         Err("Message sender not available".to_string())
     }
@@ -239,7 +274,7 @@ async fn handle_irc_connection(
                 match message {
                     Some(Ok(msg)) => {
                         println!("Received IRC message: {:?}", msg);
-                        handle_incoming_message(msg, &app_handle);
+                        handle_incoming_message(msg, &app_handle, &state);
                     }
                     Some(Err(e)) => {
                         println!("Error receiving IRC message: {}", e);
@@ -303,7 +338,11 @@ async fn handle_irc_connection(
     }
 }
 
-fn handle_incoming_message(msg: irc::proto::Message, app_handle: &tauri::AppHandle) {
+fn handle_incoming_message(
+    msg: irc::proto::Message,
+    app_handle: &tauri::AppHandle,
+    state: &IrcState,
+) {
     match msg.command {
         Command::PRIVMSG(channel, text) => {
             if let Some(prefix) = msg.prefix {
@@ -339,6 +378,28 @@ fn handle_incoming_message(msg: irc::proto::Message, app_handle: &tauri::AppHand
                 };
 
                 println!("{} joined {}", nick, channel);
+
+                // Check if this is the current user joining
+                let is_current_user = {
+                    let irc_state = state.lock().unwrap();
+                    if let Some(config) = &irc_state.config {
+                        nick == config.username
+                    } else {
+                        false
+                    }
+                };
+
+                if is_current_user {
+                    // Emit channel-joined event for current user
+                    if let Err(e) = app_handle.emit(
+                        "channel-joined",
+                        serde_json::json!({
+                            "channel": channel,
+                        }),
+                    ) {
+                        println!("Failed to emit channel-joined event: {}", e);
+                    }
+                }
 
                 // Emit join event to frontend
                 if let Err(e) = app_handle.emit(
@@ -389,12 +450,87 @@ fn handle_incoming_message(msg: irc::proto::Message, app_handle: &tauri::AppHand
                         println!("Users in {}: {}", channel, users);
                     }
                 }
+                Response::ERR_NOSUCHCHANNEL => {
+                    if args.len() >= 2 {
+                        let channel = &args[1];
+                        println!("Channel {} does not exist", channel);
+                        if let Err(e) = app_handle.emit(
+                            "channel-error",
+                            serde_json::json!({
+                                "channel": channel,
+                                "error": "Channel does not exist"
+                            }),
+                        ) {
+                            println!("Failed to emit channel error: {}", e);
+                        }
+                    }
+                }
+                Response::ERR_INVITEONLYCHAN => {
+                    if args.len() >= 2 {
+                        let channel = &args[1];
+                        println!("Channel {} is invite only", channel);
+                        if let Err(e) = app_handle.emit(
+                            "channel-error",
+                            serde_json::json!({
+                                "channel": channel,
+                                "error": "Channel is invite only"
+                            }),
+                        ) {
+                            println!("Failed to emit channel error: {}", e);
+                        }
+                    }
+                }
+                Response::ERR_BANNEDFROMCHAN => {
+                    if args.len() >= 2 {
+                        let channel = &args[1];
+                        println!("Banned from channel {}", channel);
+                        if let Err(e) = app_handle.emit(
+                            "channel-error",
+                            serde_json::json!({
+                                "channel": channel,
+                                "error": "You are banned from this channel"
+                            }),
+                        ) {
+                            println!("Failed to emit channel error: {}", e);
+                        }
+                    }
+                }
+                Response::ERR_CHANNELISFULL => {
+                    if args.len() >= 2 {
+                        let channel = &args[1];
+                        println!("Channel {} is full", channel);
+                        if let Err(e) = app_handle.emit(
+                            "channel-error",
+                            serde_json::json!({
+                                "channel": channel,
+                                "error": "Channel is full"
+                            }),
+                        ) {
+                            println!("Failed to emit channel error: {}", e);
+                        }
+                    }
+                }
+                Response::ERR_BADCHANNELKEY => {
+                    if args.len() >= 2 {
+                        let channel = &args[1];
+                        println!("Wrong key for channel {}", channel);
+                        if let Err(e) = app_handle.emit(
+                            "channel-error",
+                            serde_json::json!({
+                                "channel": channel,
+                                "error": "Wrong channel password"
+                            }),
+                        ) {
+                            println!("Failed to emit channel error: {}", e);
+                        }
+                    }
+                }
                 _ => {}
             }
         }
         _ => {
             // Handle other commands if needed
-            println!("Other IRC command: {:?}", msg.command);
+            // println!("Other IRC command: {:?}", msg.command);
         }
     }
 }
@@ -451,6 +587,7 @@ pub fn run() {
             connect_to_bancho,
             send_message_to_channel,
             join_channel,
+            leave_channel,
             disconnect_from_bancho,
             get_connection_status,
             get_joined_channels,
