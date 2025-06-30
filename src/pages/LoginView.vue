@@ -194,7 +194,7 @@ const handleLogin = async () => {
       await dbService.deleteCredentials()
     }
 
-    router.push('/')
+    router.push('/chat')
   } catch (error) {
     console.error('Connection failed:', error)
     connectionStatus.value = {
