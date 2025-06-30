@@ -1,5 +1,8 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click="$emit('close')">
+  <div 
+    class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" 
+    @click="$emit('close')"
+  >
     <div class="bg-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] border border-gray-700 shadow-2xl overflow-hidden" @click.stop>
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b border-gray-700">

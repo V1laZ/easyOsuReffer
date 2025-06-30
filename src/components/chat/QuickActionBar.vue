@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gray-750 border-b border-gray-600 p-3">
+  <div class="bg-[#374151] border-b border-gray-600 p-3">
     <div class="flex items-center justify-between">
       <!-- Match Status -->
       <div class="flex items-center space-x-3">
@@ -199,9 +199,3 @@ const handleQuickAction = (action: string) => {
   }
 }
 </script>
-
-<style scoped>
-.bg-gray-750 {
-  background-color: #374151;
-}
-</style>

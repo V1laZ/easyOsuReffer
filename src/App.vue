@@ -14,7 +14,11 @@
       </div>
     </div>
     
-    <RouterView v-else />
+    <RouterView 
+      :user="user"
+      :is-connected="isConnected"
+      v-else 
+    />
   </main>
 </template>
 
@@ -29,6 +33,8 @@ const router = useRouter()
 const loading = ref(true)
 const loadingMessage = ref('Loading...')
 const errorMessage = ref('')
+const user = ref<string | null>(null)
+const isConnected = ref(false)
 
 onMounted(async () => {
   try {
@@ -44,8 +50,18 @@ onMounted(async () => {
   const saved = await dbService.getCredentials()
   
   if (saved) {
+    user.value = saved.username
     try {
       loadingMessage.value = 'Connecting...'
+
+      const connected = await invoke('get_connection_status') as boolean
+      if (connected) {
+        isConnected.value = true
+        loading.value = false
+        router.push('/chat')
+        return
+      }
+
       const config = {
         username: saved.username,
         password: saved.password

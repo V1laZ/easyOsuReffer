@@ -16,7 +16,6 @@
       <!-- Header -->
       <ChatHeader 
         :active-channel="activeChannel"
-        :connection-status="connectionStatus"
         @toggle-left-drawer="leftDrawerOpen = !leftDrawerOpen"
         @toggle-right-drawer="rightDrawerOpen = !rightDrawerOpen"
         @open-settings="settingsOpen = true"
@@ -30,7 +29,14 @@
       />
 
       <!-- Messages Area -->
+      <div v-if="!activeChannel" class="text-center mt-2 flex-1 py-4 text-gray-500">
+        <svg class="size-12 mx-auto mb-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Select a channel to start chatting
+      </div>
       <ChatMessages 
+        v-else
         :messages="messages"
         :loading="messagesLoading"
         class="flex-1"
@@ -38,21 +44,22 @@
 
       <!-- Message Input -->
       <MessageInput 
-        :disabled="!connectionStatus.connected"
+        :disabled="!isConnected || !activeChannel"
         @send-message="sendMessage"
       />
     </div>
 
-    <!-- Right Drawer - Users -->
-    <UserDrawer 
+    <!-- Right Drawer - Users (only for multiplayer lobbies) -->
+    <UserDrawer
       :is-open="rightDrawerOpen"
-      :users="channelUsers"
       @close="rightDrawerOpen = false"
     />
 
     <!-- Settings Modal -->
     <SettingsModal 
       v-if="settingsOpen"
+      :current-user="user"
+      :is-connected="isConnected"
       @close="settingsOpen = false"
       @logout="handleLogout"
     />
@@ -64,9 +71,11 @@
     />
 
     <!-- Mobile Overlay -->
-    <div 
-      v-if="(leftDrawerOpen || rightDrawerOpen)"
-      class="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+    <div
+      class="fixed transition-colors inset-0 bg-black/80 z-30 lg:hidden"
+      :class="{
+        'pointer-events-none bg-transparent': !leftDrawerOpen && !rightDrawerOpen
+      }"
       @click="closeDrawers"
     ></div>
   </div>
@@ -95,10 +104,10 @@ interface IrcMessage {
   id: number
 }
 
-interface ConnectionStatus {
-  connected: boolean
-  username?: string
-}
+defineProps<{
+  user: string | null
+  isConnected: boolean
+}>()
 
 const router = useRouter()
 
@@ -112,12 +121,7 @@ const messagesLoading = ref(false)
 const channels = ref<string[]>([])
 const activeChannel = ref<string | null>(null)
 const messages = ref<IrcMessage[]>([])
-const channelUsers = ref<string[]>([])
 const messageIdCounter = ref(0)
-
-const connectionStatus = ref<ConnectionStatus>({
-  connected: false
-})
 
 // Event listeners
 let unlistenMessage: UnlistenFn | null = null
@@ -126,15 +130,7 @@ let unlistenUserLeft: UnlistenFn | null = null
 let unlistenChannelError: UnlistenFn | null = null
 
 onMounted(async () => {
-  // Check connection status
   try {
-    const connected = await invoke('get_connection_status') as boolean
-    if (!connected) {
-      router.push('/login')
-      return
-    }
-
-    connectionStatus.value.connected = true
     await loadChannels()
 
     // Set up event listeners

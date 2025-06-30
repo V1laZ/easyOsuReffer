@@ -18,7 +18,10 @@
 
     <!-- Channel List -->
     <div class="flex-1 overflow-y-auto">
-      <div class="p-2 space-y-1">
+      <div 
+        v-if="channels.length > 0" 
+        class="p-2 space-y-1 mb-4"
+      >
         <div v-for="channel in channels" :key="channel" class="relative group">
           <div
             class="flex items-center rounded-lg transition-colors"
@@ -69,8 +72,12 @@
         </div>
       </div>
 
+      <div v-else class="text-gray-500 p-4 text-sm">
+        No channels available.
+      </div>
+
       <!-- Join Channel Section -->
-      <div class="p-4 border-t border-gray-700 mt-4">
+      <div class="p-4 border-t border-gray-700">
         <div class="space-y-3">
           <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">Join Channel</h3>
           <div class="flex space-x-2">
