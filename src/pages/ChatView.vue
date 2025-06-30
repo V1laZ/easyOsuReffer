@@ -38,7 +38,6 @@
       <ChatMessages 
         v-else
         :messages="messages"
-        :loading="messagesLoading"
         class="flex-1"
       />
 
@@ -82,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { dbService } from '../services/database'
@@ -111,17 +110,20 @@ defineProps<{
 
 const router = useRouter()
 
-// State
 const leftDrawerOpen = ref(false)
 const rightDrawerOpen = ref(false)
 const settingsOpen = ref(false)
 const mappoolsOpen = ref(false)
-const messagesLoading = ref(false)
 
 const channels = ref<string[]>([])
 const activeChannel = ref<string | null>(null)
-const messages = ref<IrcMessage[]>([])
+const channelMessages = ref<Record<string, IrcMessage[]>>({}) // Store messages per channel
 const messageIdCounter = ref(0)
+
+const messages = computed(() => {
+  if (!activeChannel.value) return []
+  return channelMessages.value[activeChannel.value] || []
+})
 
 // Event listeners
 let unlistenMessage: UnlistenFn | null = null
@@ -147,10 +149,13 @@ onMounted(async () => {
         id: messageIdCounter.value++
       }
       
-      // Only add message if it's for the active channel or if no active channel
-      if (!activeChannel.value || message.channel === activeChannel.value) {
-        messages.value.push(messageWithId)
+      // Initialize channel messages array if it doesn't exist
+      if (!channelMessages.value[message.channel]) {
+        channelMessages.value[message.channel] = []
       }
+      
+      // Add message to the appropriate channel
+      channelMessages.value[message.channel].push(messageWithId)
     })
 
     unlistenUserJoined = await listen('user-joined', (event) => {
@@ -172,6 +177,9 @@ onMounted(async () => {
       if (channelIndex !== -1) {
         channels.value.splice(channelIndex, 1)
         
+        // Remove messages for this channel
+        delete channelMessages.value[errorData.channel]
+        
         // If this was the active channel, switch to another
         if (activeChannel.value === errorData.channel) {
           if (channels.value.length > 0) {
@@ -179,7 +187,6 @@ onMounted(async () => {
           } else {
             activeChannel.value = null
           }
-          messages.value = []
         }
       }
       
@@ -216,8 +223,12 @@ const loadChannels = async () => {
 
 const selectChannel = (channel: string) => {
   activeChannel.value = channel
-  messages.value = [] // Clear messages when switching channels
   leftDrawerOpen.value = false
+  
+  // Initialize channel messages array if it doesn't exist
+  if (!channelMessages.value[channel]) {
+    channelMessages.value[channel] = []
+  }
   
   // TODO: Load channel-specific users
   // TODO: Load recent messages for this channel if needed
@@ -256,7 +267,11 @@ const joinChannel = async (channelName: string) => {
     
     // Switch to the newly joined channel
     activeChannel.value = channel
-    messages.value = []
+    
+    // Initialize channel messages array if it doesn't exist
+    if (!channelMessages.value[channel]) {
+      channelMessages.value[channel] = []
+    }
     
   } catch (error) {
     console.error('Failed to join channel:', error)
@@ -300,6 +315,9 @@ const leaveChannel = async (channelName: string) => {
   try {
     await invoke('leave_channel', { channel: channelName })
     
+    // Remove messages for the left channel
+    delete channelMessages.value[channelName]
+    
     // If the left channel was the active channel, switch to another one
     if (activeChannel.value === channelName) {
       const remainingChannels = channels.value.filter(c => c !== channelName)
@@ -308,8 +326,6 @@ const leaveChannel = async (channelName: string) => {
       } else {
         activeChannel.value = null
       }
-      // Clear messages when switching channels
-      messages.value = []
     }
     
     // Reload channels to update the list

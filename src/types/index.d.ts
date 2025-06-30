@@ -1,4 +1,5 @@
 type IrcMessage = {
+  id: number
   channel: string
   username: string
   message: string
