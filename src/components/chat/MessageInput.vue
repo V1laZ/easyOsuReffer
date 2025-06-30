@@ -4,15 +4,14 @@
     <div class="flex-1 relative">
       <!-- Input Field -->
       <div class="relative">
-        <textarea
+        <input
           v-model="messageText"
           @keydown.enter="sendMessage"
           :disabled="disabled"
           placeholder="Type a message..."
-          class="w-full px-4 py-3 pr-12 resize-none bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full px-4 py-3 pr-12 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           :class="{ 'border-red-500': hasError }"
-          rows="1"
-        ></textarea>
+        ></input>
 
         <!-- Character Count -->
         <div 
