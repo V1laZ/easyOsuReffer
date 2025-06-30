@@ -19,7 +19,6 @@
         :key="message.id"
         class="group hover:bg-gray-800/50 px-3 py-2 rounded-lg transition-colors"
       >
-
         <div class="flex items-start space-x-3">
           <!-- Avatar -->
           <div class="flex-shrink-0 mt-1">

@@ -103,7 +103,7 @@ interface IrcMessage {
   id: number
 }
 
-defineProps<{
+const props = defineProps<{
   user: string | null
   isConnected: boolean
 }>()
@@ -137,25 +137,7 @@ onMounted(async () => {
 
     // Set up event listeners
     unlistenMessage = await listen('irc-message', (event) => {
-      const message = event.payload as Omit<IrcMessage, 'id'>
-      
-      // Only process messages from channels we're still in
-      if (!channels.value.includes(message.channel)) {
-        return
-      }
-      
-      const messageWithId = {
-        ...message,
-        id: messageIdCounter.value++
-      }
-      
-      // Initialize channel messages array if it doesn't exist
-      if (!channelMessages.value[message.channel]) {
-        channelMessages.value[message.channel] = []
-      }
-      
-      // Add message to the appropriate channel
-      channelMessages.value[message.channel].push(messageWithId)
+      processMessage(event.payload as Omit<IrcMessage, 'id'>)
     })
 
     unlistenUserJoined = await listen('user-joined', (event) => {
@@ -209,6 +191,26 @@ onUnmounted(() => {
 })
 
 // Methods
+const processMessage = (message: Omit<IrcMessage, 'id'>) => {
+  // Only process messages from channels we're still in
+  if (!channels.value.includes(message.channel)) {
+    return
+  }
+  
+  const messageWithId = {
+    ...message,
+    id: messageIdCounter.value++
+  }
+  
+  // Initialize channel messages array if it doesn't exist
+  if (!channelMessages.value[message.channel]) {
+    channelMessages.value[message.channel] = []
+  }
+  
+  // Add message to the appropriate channel
+  channelMessages.value[message.channel].push(messageWithId)
+}
+
 const loadChannels = async () => {
   try {
     const channelList = await invoke('get_joined_channels') as string[]
@@ -291,6 +293,14 @@ const sendMessage = async (messageText: string) => {
       channel: activeChannel.value,
       message: messageText
     })
+    const message: Omit<IrcMessage, 'id'> = {
+      channel: activeChannel.value,
+      username: props.user || 'Unknown',
+      message: messageText,
+      timestamp: Math.floor(Date.now() / 1000),
+    }
+    
+    processMessage(message)
   } catch (error) {
     console.error('Failed to send message:', error)
   }
