@@ -35,14 +35,11 @@
         </button>
       </div>
     </div>
-
-    <!-- Mobile Keyboard Spacer -->
-    <div v-if="keyboardVisible" class="h-4"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 
 const { disabled = false } = defineProps<{
   disabled?: boolean
@@ -53,7 +50,6 @@ const emit = defineEmits<{
 }>()
 
 const messageText = ref('')
-const keyboardVisible = ref(false)
 const hasError = ref(false)
 
 const canSend = computed(() => {
@@ -73,20 +69,4 @@ const sendMessage = () => {
   emit('sendMessage', message)
   messageText.value = ''
 }
-
-// Mobile keyboard detection
-const handleResize = () => {
-  if (window.innerWidth < 768) {
-    const heightDiff = window.innerHeight - document.documentElement.clientHeight
-    keyboardVisible.value = heightDiff > 150
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('resize', handleResize)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-})
 </script>
