@@ -16,7 +16,6 @@ type Player = {
 
 type PlayerSlot = {
   id: number
-  isLocked: boolean
   player: Player | null
 }
 
@@ -36,7 +35,6 @@ type LobbySettings = {
 }
 
 type LobbyState = {
-  isInLobby: boolean
   channel: string | null
   settings: LobbySettings | null
   currentMap: CurrentMap | null

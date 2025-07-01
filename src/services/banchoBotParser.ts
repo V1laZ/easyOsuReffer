@@ -1,4 +1,4 @@
-import { lobbyActions, lobbyState } from '../stores/lobbyStore'
+import { lobbyActions, getLobbyState } from '../stores/lobbyStore'
 
 const BANCHOBOT_PATTERNS = {
   ROOM_NAME: /^Room name: (.+), History: https:\/\/osu\.ppy\.sh\/mp\/(\d+)$/,
@@ -12,9 +12,7 @@ const BANCHOBOT_PATTERNS = {
   
   PLAYER_JOINED: /^(.+) joined in slot (\d+)( for team (red|blue))?\.$/,
   PLAYER_LEFT: /^(.+) left the game\.$/,
-  PLAYER_MOVED: /^(.+) moved to slot (\d+)( for team (red|blue))?\.$/,
-  PLAYER_READY: /^(.+) is ready$/,
-  PLAYER_NOT_READY: /^(.+) is not ready$/,
+  PLAYER_MOVED: /^(.+) moved to slot (\d+)$/,
   
   ALL_PLAYERS_READY: /^All players are ready$/,
   MATCH_STARTED: /^The match has started!$/,
@@ -38,8 +36,8 @@ const WIN_CONDITIONS: Record<string, LobbySettings['winCondition']> = {
 }
 
 export class BanchoBotParser {
-  private static parseSlotInfo(slotText: string, slotId: number) {
-    const isReady = !slotText.includes('Not Ready')
+  private static parseSlotInfo(slotText: string, slotId: number, channel: string) {
+    const isReady = !slotText.includes('Not Ready') && !slotText.includes('No Map')
     
     let username = ''
     const userMatch = slotText.match(/https?:\/\/osu\.ppy\.sh\/u\/\d+\s+([^\s\[]+)/)
@@ -51,14 +49,14 @@ export class BanchoBotParser {
     
     const isHost = slotText.includes('[Host')
     
-    let team: 'red' | 'blue' | null = null
-    if (slotText.includes('[Team Blue]') || slotText.includes('/ Team Blue]')) {
+    let team: Player['team'] = null
+    if (slotText.includes('Team Blue')) {
       team = 'blue'
-    } else if (slotText.includes('[Team Red]') || slotText.includes('/ Team Red]')) {
+    } else if (slotText.includes('Team Red')) {
       team = 'red'
     }
     
-    lobbyActions.addPlayer(slotId, {
+    lobbyActions.addPlayer(channel, slotId, {
       username,
       team,
       isReady,
@@ -72,10 +70,8 @@ export class BanchoBotParser {
       const userLeftMatch = message.message.match(/^(.+) left (#mp_\d+)$/)
       if (userLeftMatch) {
         const username = userLeftMatch[1]
-        const slot = lobbyState.slots.find((s: PlayerSlot) => s.player?.username === username)
-        if (slot) {
-          lobbyActions.removePlayer(slot.id)
-        }
+        const channel = userLeftMatch[2]
+        lobbyActions.removePlayerByUsername(channel, username)
         return true
       }
       
@@ -91,10 +87,23 @@ export class BanchoBotParser {
     }
 
     const text = message.message
+    const channel = message.channel
+
+    if (!channel) {
+      return false
+    }
+
+    if (channel.startsWith('#mp_')) {
+      const lobbyState = getLobbyState(channel)
+      if (!lobbyState) {
+        lobbyActions.joinLobby(channel)
+        return false
+      }
+    }
 
     let match = text.match(BANCHOBOT_PATTERNS.ROOM_NAME)
     if (match) {
-      lobbyActions.updateSettings({
+      lobbyActions.updateSettings(channel, {
         roomName: match[1]
       })
       return true
@@ -104,7 +113,7 @@ export class BanchoBotParser {
     if (match) {
       const teamMode = TEAM_MODES[match[1]] || 'HeadToHead'
       const winCondition = WIN_CONDITIONS[match[2]] || 'Score'
-      lobbyActions.updateSettings({
+      lobbyActions.updateSettings(channel, {
         teamMode,
         winCondition
       })
@@ -114,7 +123,7 @@ export class BanchoBotParser {
     match = text.match(BANCHOBOT_PATTERNS.PLAYERS)
     if (match) {
       const playerCount = parseInt(match[1], 10)
-      lobbyActions.updateSettings({
+      lobbyActions.updateSettings(channel, {
         size: Math.max(playerCount, 16)
       })
       return true
@@ -124,7 +133,7 @@ export class BanchoBotParser {
     if (match) {
       const slotId = parseInt(match[1], 10)
       const slotInfo = match[2]
-      this.parseSlotInfo(slotInfo, slotId)
+      this.parseSlotInfo(slotInfo, slotId, channel)
       return true
     }
 
@@ -142,7 +151,7 @@ export class BanchoBotParser {
           title: titleMatch[2],
           difficulty,
         }
-        lobbyActions.updateCurrentMap(currentMap)
+        lobbyActions.updateCurrentMap(channel, currentMap)
       }
       return true
     }
@@ -161,7 +170,7 @@ export class BanchoBotParser {
           title: titleMatch[2],
           difficulty,
         }
-        lobbyActions.updateCurrentMap(currentMap)
+        lobbyActions.updateCurrentMap(channel, currentMap)
       }
       return true
     }
@@ -170,9 +179,9 @@ export class BanchoBotParser {
     if (match) {
       const username = match[1]
       const slotId = parseInt(match[2], 10)
-      const team = (match[4] as 'red' | 'blue') || (slotId <= 8 ? 'red' : 'blue')
+      const team = match[4] as Player['team']
       
-      lobbyActions.addPlayer(slotId, {
+      lobbyActions.addPlayer(channel, slotId, {
         username,
         team,
         isReady: false,
@@ -185,9 +194,12 @@ export class BanchoBotParser {
     match = text.match(BANCHOBOT_PATTERNS.PLAYER_LEFT)
     if (match) {
       const username = match[1]
+      const lobbyState = getLobbyState(channel)
+      if (!lobbyState) return false
+      
       const slot = lobbyState.slots.find((s: PlayerSlot) => s.player?.username === username)
       if (slot) {
-        lobbyActions.removePlayer(slot.id)
+        lobbyActions.removePlayer(channel, slot.id)
       }
       return true
     }
@@ -196,68 +208,64 @@ export class BanchoBotParser {
     if (match) {
       const username = match[1]
       const newSlotId = parseInt(match[2], 10)
+      const lobbyState = getLobbyState(channel)
+      if (!lobbyState) return false
       
       const oldSlot = lobbyState.slots.find((s: PlayerSlot) => s.player?.username === username)
       if (oldSlot) {
         const player = oldSlot.player!
-        lobbyActions.removePlayer(oldSlot.id)
+        lobbyActions.removePlayer(channel, oldSlot.id)
         
-        lobbyActions.addPlayer(newSlotId, player)
-      }
-      return true
-    }
-
-    match = text.match(BANCHOBOT_PATTERNS.PLAYER_READY)
-    if (match) {
-      const username = match[1]
-      const slot = lobbyState.slots.find((s: PlayerSlot) => s.player?.username === username)
-      if (slot?.player) {
-        slot.player.isReady = true
-      }
-      return true
-    }
-
-    match = text.match(BANCHOBOT_PATTERNS.PLAYER_NOT_READY)
-    if (match) {
-      const username = match[1]
-      const slot = lobbyState.slots.find((s: PlayerSlot) => s.player?.username === username)
-      if (slot?.player) {
-        slot.player.isReady = false
+        lobbyActions.addPlayer(channel, newSlotId, player)
       }
       return true
     }
 
     if (text.match(BANCHOBOT_PATTERNS.ALL_PLAYERS_READY)) {
-      lobbyActions.updateMatchStatus('ready')
+      lobbyActions.updateMatchStatus(channel, 'ready')
+      const lobbyState = getLobbyState(channel)
+      if (lobbyState) {
+        lobbyState.slots.forEach((slot: PlayerSlot) => {
+          if (slot.player) {
+            slot.player.isReady = true
+          }
+        })
+      }
       return true
     }
 
     if (text.match(BANCHOBOT_PATTERNS.MATCH_STARTED)) {
-      lobbyActions.updateMatchStatus('active')
-      lobbyState.slots.forEach((slot: PlayerSlot) => {
-        if (slot.player) {
-          slot.player.isPlaying = true
-        }
-      })
+      lobbyActions.updateMatchStatus(channel, 'active')
+      const lobbyState = getLobbyState(channel)
+      if (lobbyState) {
+        lobbyState.slots.forEach((slot: PlayerSlot) => {
+          if (slot.player) {
+            slot.player.isPlaying = true
+          }
+        })
+      }
       return true
     }
 
     match = text.match(BANCHOBOT_PATTERNS.MATCH_FINISHED)
     if (match) {
       const username = match[1]
+      const lobbyState = getLobbyState(channel)
+      if (!lobbyState) return false
+      
       const slot = lobbyState.slots.find((s: PlayerSlot) => s.player?.username === username)
       if (slot?.player) {
         slot.player.isPlaying = false
       }
       
-      lobbyActions.updateMatchStatus('idle')
+      lobbyActions.updateMatchStatus(channel, 'idle')
       return true
     }
 
     match = text.match(BANCHOBOT_PATTERNS.HOST_CHANGED)
     if (match) {
       const newHost = match[1]
-      lobbyActions.updateHost(newHost)
+      lobbyActions.updateHost(channel, newHost)
       return true
     }
 

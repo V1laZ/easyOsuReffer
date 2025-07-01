@@ -16,7 +16,7 @@
       <!-- Header -->
       <ChatHeader 
         :active-channel="activeChannel"
-        :lobby-state="lobbyState"
+        :lobby-state="currentLobbyState"
         @toggle-left-drawer="leftDrawerOpen = !leftDrawerOpen"
         @toggle-right-drawer="rightDrawerOpen = !rightDrawerOpen"
         @open-settings="settingsOpen = true"
@@ -26,9 +26,9 @@
 
       <!-- Quick Action Bar (for match controls) -->
       <QuickActionBar 
-        v-if="activeChannel && activeChannel.startsWith('#mp_')"
+        v-if="activeChannel && activeChannel.startsWith('#mp_') && currentLobbyState"
         :channel="activeChannel"
-        :lobby-state="lobbyState"
+        :lobby-state="currentLobbyState"
       />
 
       <!-- Messages Area -->
@@ -53,9 +53,9 @@
 
     <!-- Right Drawer - Users (only for multiplayer lobbies) -->
     <UserDrawer
-      v-if="activeChannel && activeChannel.startsWith('#mp_')"
+      v-if="activeChannel && activeChannel.startsWith('#mp_') && currentLobbyState"
       :is-open="rightDrawerOpen"
-      :lobby-state="lobbyState"
+      :lobby-state="currentLobbyState"
       @close="rightDrawerOpen = false"
     />
 
@@ -91,7 +91,7 @@ import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { dbService } from '../services/database'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import { lobbyActions, lobbyState } from '../stores/lobbyStore'
+import { lobbyActions, getLobbyState } from '../stores/lobbyStore'
 import { BanchoBotParser } from '../services/banchoBotParser'
 import ChannelDrawer from '../components/chat/ChannelDrawer.vue'
 import UserDrawer from '../components/chat/UserDrawer.vue'
@@ -101,14 +101,6 @@ import ChatMessages from '../components/chat/ChatMessages.vue'
 import MessageInput from '../components/chat/MessageInput.vue'
 import SettingsModal from '../components/modals/SettingsModal.vue'
 import MappoolModal from '../components/modals/MappoolModal.vue'
-
-interface IrcMessage {
-  channel: string
-  username: string
-  message: string
-  timestamp: number
-  id: number
-}
 
 const props = defineProps<{
   user: string | null
@@ -130,6 +122,14 @@ const messageIdCounter = ref(0)
 const messages = computed(() => {
   if (!activeChannel.value) return []
   return channelMessages.value[activeChannel.value] || []
+})
+
+// Get lobby state for the current active channel
+const currentLobbyState = computed(() => {
+  if (!activeChannel.value || !activeChannel.value.startsWith('#mp_')) {
+    return null
+  }
+  return getLobbyState(activeChannel.value)
 })
 
 // Event listeners
@@ -208,6 +208,7 @@ const refreshLobbyState = async () => {
       channel: activeChannel.value,
       message: '!mp settings'
     })
+    lobbyActions.clearPlayers(activeChannel.value)
   } catch (error) {
     console.error('Failed to refresh lobby state:', error)
   }
@@ -258,29 +259,6 @@ const selectChannel = async (channel: string) => {
   if (!channelMessages.value[channel]) {
     channelMessages.value[channel] = []
   }
-  
-  // Handle lobby channel selection
-  if (channel.startsWith('#mp_')) {
-    // Join the lobby in our state
-    lobbyActions.joinLobby(channel)
-    
-    // Automatically send "!mp settings" to get lobby information
-    try {
-      await invoke('send_message_to_channel', {
-        channel: channel,
-        message: '!mp settings'
-      })
-      console.log(`Auto-sent !mp settings to ${channel}`)
-    } catch (error) {
-      console.error('Failed to send !mp settings:', error)
-    }
-  } else if (lobbyState.isInLobby && lobbyState.channel !== channel) {
-    // Left a lobby channel, clean up lobby state
-    lobbyActions.leaveLobby()
-  }
-  
-  // TODO: Load channel-specific users
-  // TODO: Load recent messages for this channel if needed
 }
 
 const joinChannel = async (channelName: string) => {
@@ -389,8 +367,8 @@ const leaveChannel = async (channelName: string) => {
     await invoke('leave_channel', { channel: channelName })
     
     // Clean up lobby state if leaving a lobby
-    if (channelName.startsWith('#mp_') && lobbyState.channel === channelName) {
-      lobbyActions.leaveLobby()
+    if (channelName.startsWith('#mp_')) {
+      lobbyActions.leaveLobby(channelName)
     }
     
     // Remove messages for the left channel
@@ -408,10 +386,6 @@ const leaveChannel = async (channelName: string) => {
         }
       } else {
         activeChannel.value = null
-        // Clean up lobby state if no channels left
-        if (lobbyState.isInLobby) {
-          lobbyActions.leaveLobby()
-        }
       }
     }
     

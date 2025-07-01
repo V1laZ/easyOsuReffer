@@ -49,11 +49,11 @@ const emit = defineEmits<{
 }>()
 
 const occupiedSlots = computed(() => 
-  props.lobbyState.slots.filter(slot => slot.player !== null).length
+  props.lobbyState.slots.filter(slot => slot.player !== null).length || 0
 )
 
 const readyPlayers = computed(() => 
-  props.lobbyState.slots.filter(slot => slot.player?.isReady).length
+  props.lobbyState.slots.filter(slot => slot.player?.isReady).length || 0
 )
 
 </script>

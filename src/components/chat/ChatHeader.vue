@@ -82,7 +82,7 @@ import { computed } from 'vue';
 
 const props = defineProps<{
   activeChannel: string | null,
-  lobbyState?: LobbyState,
+  lobbyState?: LobbyState | null,
 }>()
 
 const emit = defineEmits<{

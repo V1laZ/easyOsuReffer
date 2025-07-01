@@ -10,7 +10,7 @@
               'bg-green-500': lobbyState.matchStatus === 'ready',
               'bg-yellow-500': lobbyState.matchStatus === 'active',
               'bg-yellow-500/50': lobbyState.matchStatus === 'starting',
-              'bg-gray-500': lobbyState.matchStatus === 'idle'
+              'bg-gray-500': !lobbyState || lobbyState.matchStatus === 'idle'
             }"
           ></div>
           <span class="text-sm font-medium text-white">
@@ -31,7 +31,7 @@
         <div class="flex sm:hidden items-center space-x-1">
           <button
             @click="handleQuickAction('start')"
-            :disabled="lobbyState.matchStatus === 'active'"
+            :disabled="!lobbyState || lobbyState.matchStatus === 'active'"
             class="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
           >
             Start
@@ -53,7 +53,7 @@
           <div class="flex items-center space-x-1">
             <button
               @click="handleQuickAction('start')"
-              :disabled="lobbyState.matchStatus === 'active'"
+              :disabled="!lobbyState || lobbyState.matchStatus === 'active'"
               class="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,7 +64,7 @@
 
             <button
               @click="handleQuickAction('abort')"
-              :disabled="lobbyState.matchStatus !== 'active'"
+              :disabled="!lobbyState || lobbyState.matchStatus !== 'active'"
               class="flex items-center space-x-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,9 +134,11 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const currentMap = computed(() => props.lobbyState.currentMap)
+const currentMap = computed(() => props.lobbyState.currentMap || null)
 
 const matchStatusText = computed(() => {
+  if (!props.lobbyState) return 'Idle'
+  
   switch (props.lobbyState.matchStatus) {
     case 'active':
       return 'In progress'

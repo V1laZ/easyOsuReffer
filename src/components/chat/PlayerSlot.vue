@@ -1,18 +1,8 @@
 <template>
   <div
-    class="flex items-center p-2 rounded-lg border transition-colors"
+    class="flex items-center p-2 px-3 rounded-lg border transition-colors"
     :class="slotClasses"
   >
-    <!-- Slot Lock Status Icon -->
-    <div class="flex-shrink-0 mr-3">
-      <svg v-if="slotInfo.isLocked" class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10A2,2 0 0,1 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/>
-      </svg>
-      <svg v-else class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3M6,10V20H18V10H6Z"/>
-      </svg>
-    </div>
-
     <!-- Slot Content -->
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between">
@@ -49,9 +39,7 @@ const props = defineProps<{
 const slotClasses = computed(() => {
     const baseClasses = []
   
-  if (props.slotInfo.isLocked) {
-    baseClasses.push('bg-gray-700 border-gray-600')
-  } else if (props.slotInfo.player) {
+  if (props.slotInfo.player) {
     // Player is in slot
     if (props.slotInfo.player.isReady) {
       baseClasses.push('bg-green-900/30 border-green-600')
