@@ -41,4 +41,6 @@ type LobbyState = {
   slots: PlayerSlot[]
   matchStatus: 'idle' | 'ready' | 'starting' | 'active'
   host: string | null
+  freemod: boolean
+  selectedMods: string[]
 }

@@ -52,6 +52,9 @@ pub struct LobbyState {
     #[serde(rename = "matchStatus")]
     pub match_status: String, // "idle", "ready", "starting", "active"
     pub host: Option<String>,
+    pub freemod: bool,
+    #[serde(rename = "selectedMods")]
+    pub selected_mods: Vec<String>,
 }
 
 impl LobbyState {
@@ -65,6 +68,8 @@ impl LobbyState {
             slots,
             match_status: "idle".to_string(),
             host: None,
+            freemod: false,
+            selected_mods: Vec::new(),
         }
     }
 }

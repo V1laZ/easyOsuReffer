@@ -121,6 +121,24 @@
         <span class="text-gray-400"> [{{ currentMap.difficulty }}]</span>
       </div>
     </div>
+
+    <!-- Mobile Mods Info -->
+    <div class="sm:hidden mt-2" :class="{ 'pt-2 border-t border-gray-600': !currentMap }">
+      <div class="flex items-center space-x-2">
+        <span class="text-sm text-gray-400">Mods:</span>
+        <div class="flex items-center space-x-1">
+          <span v-if="lobbyState.freemod" class="px-2 py-0.5 bg-orange-600 text-white text-xs rounded font-medium">
+            FreeMod
+          </span>
+          <span v-if="lobbyState.selectedMods.length > 0" class="px-2 py-0.5 bg-blue-600 text-white text-xs rounded font-medium">
+            {{ lobbyState.selectedMods.join('') }}
+          </span>
+          <span v-if="!lobbyState.freemod && lobbyState.selectedMods.length === 0" class="px-2 py-0.5 bg-gray-600 text-white text-xs rounded font-medium">
+            NoMod
+          </span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

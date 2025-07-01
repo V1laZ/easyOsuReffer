@@ -116,6 +116,7 @@ impl BanchoBotParser {
             }
         }
 
+        // Current beatmap
         if let Ok(regex) = Regex::new(r"^Beatmap: https://osu\.ppy\.sh/b/(\d+) (.+) \[(.+)\]$") {
             if let Some(captures) = regex.captures(text) {
                 if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
@@ -145,6 +146,31 @@ impl BanchoBotParser {
             }
         }
 
+        // Active mods
+        if let Ok(regex) = Regex::new(r"^Active mods: (.+)$") {
+            if let Some(captures) = regex.captures(text) {
+                let mods_str = captures.get(1).unwrap().as_str();
+                let mut mods: Vec<String> = mods_str
+                    .split(", ")
+                    .map(|m| Self::normalize_mod_name(m))
+                    .collect();
+
+                let mut freemod = false;
+                mods.retain(|m| {
+                    if m == "Freemod" {
+                        freemod = true;
+                        false
+                    } else {
+                        true
+                    }
+                });
+
+                Self::update_mods(channel, mods, freemod, state, app_handle);
+                return true;
+            }
+        }
+
+        // Beatmap changed
         if let Ok(regex) = Regex::new(
             r"^Beatmap changed to: (.+) - (.+) \[(.+)\] \(https://osu\.ppy\.sh/b/(\d+)\)$",
         ) {
@@ -305,6 +331,29 @@ impl BanchoBotParser {
                 );
                 return true;
             }
+        }
+
+        // Mods changed
+        if let Ok(regex) = Regex::new(r"^Enabled (.+), disabled FreeMod$") {
+            if let Some(captures) = regex.captures(text) {
+                let mods_str = captures.get(1).unwrap().as_str();
+                let mods = mods_str
+                    .split(", ")
+                    .map(|m| Self::normalize_mod_name(m))
+                    .collect();
+                Self::update_mods(channel, mods, false, state, app_handle);
+                return true;
+            }
+        }
+
+        if text == "Disabled all mods, enabled FreeMod" {
+            Self::update_mods(channel, Vec::new(), true, state, app_handle);
+            return true;
+        }
+
+        if text == "Disabled all mods, disabled FreeMod" {
+            Self::update_mods(channel, Vec::new(), false, state, app_handle);
+            return true;
         }
 
         false
@@ -519,6 +568,39 @@ impl BanchoBotParser {
                 }
             }
 
+            let _ = app_handle.emit("lobby-updated", lobby.clone());
+        }
+    }
+
+    fn normalize_mod_name(mod_name: &str) -> String {
+        match mod_name {
+            "Hidden" => "HD".to_string(),
+            "HardRock" => "HR".to_string(),
+            "DoubleTime" => "DT".to_string(),
+            "Flashlight" => "FL".to_string(),
+            "NoFail" => "NF".to_string(),
+            "Easy" => "EZ".to_string(),
+            "HalfTime" => "HT".to_string(),
+            "SuddenDeath" => "SD".to_string(),
+            "Perfect" => "PF".to_string(),
+            "Relax" => "RX".to_string(),
+            "Nightcore" => "NC".to_string(),
+            "SpunOut" => "SO".to_string(),
+            _ => mod_name.to_string(),
+        }
+    }
+
+    fn update_mods(
+        channel: &str,
+        mods: Vec<String>,
+        freemod: bool,
+        state: &IrcState,
+        app_handle: &tauri::AppHandle,
+    ) {
+        let mut irc_state = state.lock().unwrap();
+        if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
+            lobby.selected_mods = mods;
+            lobby.freemod = freemod;
             let _ = app_handle.emit("lobby-updated", lobby.clone());
         }
     }
