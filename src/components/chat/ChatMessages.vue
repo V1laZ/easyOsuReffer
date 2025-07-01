@@ -87,7 +87,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUpdated, nextTick, onUnmounted } from 'vue'
 
-const props = defineProps<{
+defineProps<{
   messages: IrcMessage[]
   activeChannel?: string | null
 }>()
