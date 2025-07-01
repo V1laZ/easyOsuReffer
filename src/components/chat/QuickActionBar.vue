@@ -6,10 +6,15 @@
         <div class="flex items-center space-x-2">
           <div 
             class="w-3 h-3 rounded-full"
-            :class="matchStatus === 'active' ? 'bg-green-500' : matchStatus === 'starting' ? 'bg-yellow-500' : 'bg-gray-500'"
+            :class="{
+              'bg-green-500': lobbyState.matchStatus === 'ready',
+              'bg-yellow-500': lobbyState.matchStatus === 'active',
+              'bg-yellow-500/50': lobbyState.matchStatus === 'starting',
+              'bg-gray-500': lobbyState.matchStatus === 'idle'
+            }"
           ></div>
           <span class="text-sm font-medium text-white">
-            {{ getMatchStatusText() }}
+            {{ matchStatusText }}
           </span>
         </div>
         
@@ -26,7 +31,7 @@
         <div class="flex sm:hidden items-center space-x-1">
           <button
             @click="handleQuickAction('start')"
-            :disabled="matchStatus === 'active'"
+            :disabled="lobbyState.matchStatus === 'active'"
             class="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
           >
             Start
@@ -48,7 +53,7 @@
           <div class="flex items-center space-x-1">
             <button
               @click="handleQuickAction('start')"
-              :disabled="matchStatus === 'active'"
+              :disabled="lobbyState.matchStatus === 'active'"
               class="flex items-center space-x-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,7 +64,7 @@
 
             <button
               @click="handleQuickAction('abort')"
-              :disabled="matchStatus !== 'active'"
+              :disabled="lobbyState.matchStatus !== 'active'"
               class="flex items-center space-x-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,16 +84,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
               </svg>
               <span>Select Map</span>
-            </button>
-
-            <button
-              @click="handleQuickAction('random-map')"
-              class="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              <span>Random</span>
             </button>
           </div>
 
@@ -124,71 +119,50 @@
       <div class="text-sm text-gray-300">
         <span class="font-medium">{{ currentMap.title }}</span>
         <span class="text-gray-400"> [{{ currentMap.difficulty }}]</span>
-        <span class="text-gray-400 ml-2">by {{ currentMap.mapper }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 
 interface Props {
   channel: string
+  lobbyState: LobbyState
 }
 
-interface CurrentMap {
-  title: string
-  difficulty: string
-  mapper: string
-  artist: string
-}
+const props = defineProps<Props>()
 
-defineProps<Props>()
+const currentMap = computed(() => props.lobbyState.currentMap)
 
-// Mock data - in real implementation this would come from match state
-const matchStatus = ref<'idle' | 'starting' | 'active'>('idle')
-const currentMap = ref<CurrentMap | null>(null)
-
-// Example current map
-// currentMap.value = {
-//   title: 'Blue Zenith',
-//   difficulty: 'FOUR DIMENSIONS',
-//   mapper: 'Asphyxia',
-//   artist: 'xi'
-// }
-
-const getMatchStatusText = (): string => {
-  switch (matchStatus.value) {
+const matchStatusText = computed(() => {
+  switch (props.lobbyState.matchStatus) {
     case 'active':
-      return 'Match in progress'
+      return 'In progress'
     case 'starting':
-      return 'Starting match...'
+      return 'Starting...'
+    case 'idle':
+      return 'Idle'
+    case 'ready':
+      return 'Ready'
     default:
-      return 'Match ready'
+      return 'Idle'
   }
-}
+})
 
 const handleQuickAction = (action: string) => {
   console.log('Quick action:', action)
   
   switch (action) {
     case 'start':
-      // TODO: Implement match start
-      matchStatus.value = 'starting'
-      setTimeout(() => {
-        matchStatus.value = 'active'
-      }, 2000)
+      // TODO: Implement match start (!mp start)
       break
     case 'abort':
-      // TODO: Implement match abort
-      matchStatus.value = 'idle'
+      // TODO: Implement match abort (!mp abort)
       break
     case 'select-map':
       // TODO: Open map selection modal
-      break
-    case 'random-map':
-      // TODO: Select random map from mappool
       break
     case 'settings':
       // TODO: Open match settings modal

@@ -12,10 +12,17 @@
         </svg>
       </button>
 
-      <!-- Channel Name -->
-      <h1 class="text-lg font-semibold text-white">
-        {{ activeChannel }}
-      </h1>
+      <div>
+        <!-- Channel Name -->
+        <h1 class="text-lg font-semibold text-white">
+          {{ displayChannelName }}
+        </h1>
+        
+        <!-- Lobby Info -->
+        <div v-if="isMpLobby && lobbyState?.settings?.roomName" class="text-sm text-gray-400 max-w-md truncate">
+          {{ lobbyState.settings.roomName }}
+        </div>
+      </div>
     </div>
 
     <!-- Right Side - Action Buttons -->
@@ -34,6 +41,7 @@
         </button>
 
         <button
+          v-if="!isMpLobby"
           @click="emit('openSettings')"
           class="p-2 rounded-lg hover:bg-gray-700 transition-colors"
           title="Settings"
@@ -41,6 +49,18 @@
           <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+
+        <!-- Refresh Button -->
+        <button
+          v-if="isMpLobby"
+          @click="emit('refresh')"
+          class="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+          title="Refresh"
+        >
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
 
@@ -62,6 +82,7 @@ import { computed } from 'vue';
 
 const props = defineProps<{
   activeChannel: string | null,
+  lobbyState?: LobbyState,
 }>()
 
 const emit = defineEmits<{
@@ -69,9 +90,21 @@ const emit = defineEmits<{
   toggleRightDrawer: [],
   openSettings: [],
   openMappools: [],
+  refresh: [],
 }>()
 
 const isMpLobby = computed(() => {
   return props.activeChannel && props.activeChannel.startsWith('#mp_');
+});
+
+const displayChannelName = computed(() => {
+  if (!props.activeChannel) return '';
+  
+  // Show just the MP ID for lobby channels
+  if (props.activeChannel.startsWith('#mp_')) {
+    return props.activeChannel.replace('#mp_', 'Lobby ');
+  }
+  
+  return props.activeChannel;
 });
 </script>

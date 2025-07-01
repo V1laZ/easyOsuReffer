@@ -8,7 +8,7 @@ type IrcMessage = {
 
 type Player = {
   username: string
-  team: 'red' | 'blue'
+  team: 'red' | 'blue' | null
   isReady: boolean
   isPlaying: boolean
   isHost: boolean
@@ -18,4 +18,29 @@ type PlayerSlot = {
   id: number
   isLocked: boolean
   player: Player | null
+}
+
+type CurrentMap = {
+  beatmapId: number
+  title: string
+  difficulty: string
+  artist: string
+}
+
+type LobbySettings = {
+  roomName: string
+  teamMode: 'HeadToHead' | 'TagCoop' | 'TeamVs' | 'TagTeamVs'
+  winCondition: 'Score' | 'Accuracy' | 'Combo' | 'ScoreV2'
+  size: number
+  password?: string
+}
+
+type LobbyState = {
+  isInLobby: boolean
+  channel: string | null
+  settings: LobbySettings | null
+  currentMap: CurrentMap | null
+  slots: PlayerSlot[]
+  matchStatus: 'idle' | 'ready' | 'starting' | 'active'
+  host: string | null
 }

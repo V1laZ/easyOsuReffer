@@ -29,7 +29,7 @@
 
         <!-- Team -->
         <div 
-          v-if="slotInfo.player"
+          v-if="slotInfo.player && slotInfo.player.team"
           class="size-4 rounded border-2 flex-shrink-0 border-gray-600"
           :class="teamColor"
           :title="`Team ${slotInfo.player.team}`"

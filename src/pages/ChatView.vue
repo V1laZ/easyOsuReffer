@@ -16,16 +16,19 @@
       <!-- Header -->
       <ChatHeader 
         :active-channel="activeChannel"
+        :lobby-state="lobbyState"
         @toggle-left-drawer="leftDrawerOpen = !leftDrawerOpen"
         @toggle-right-drawer="rightDrawerOpen = !rightDrawerOpen"
         @open-settings="settingsOpen = true"
         @open-mappools="mappoolsOpen = true"
+        @refresh="refreshLobbyState"
       />
 
       <!-- Quick Action Bar (for match controls) -->
       <QuickActionBar 
         v-if="activeChannel && activeChannel.startsWith('#mp_')"
         :channel="activeChannel"
+        :lobby-state="lobbyState"
       />
 
       <!-- Messages Area -->
@@ -50,7 +53,9 @@
 
     <!-- Right Drawer - Users (only for multiplayer lobbies) -->
     <UserDrawer
+      v-if="activeChannel && activeChannel.startsWith('#mp_')"
       :is-open="rightDrawerOpen"
+      :lobby-state="lobbyState"
       @close="rightDrawerOpen = false"
     />
 
@@ -86,6 +91,8 @@ import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { dbService } from '../services/database'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+import { lobbyActions, lobbyState } from '../stores/lobbyStore'
+import { BanchoBotParser } from '../services/banchoBotParser'
 import ChannelDrawer from '../components/chat/ChannelDrawer.vue'
 import UserDrawer from '../components/chat/UserDrawer.vue'
 import ChatHeader from '../components/chat/ChatHeader.vue'
@@ -117,7 +124,7 @@ const mappoolsOpen = ref(false)
 
 const channels = ref<string[]>([])
 const activeChannel = ref<string | null>(null)
-const channelMessages = ref<Record<string, IrcMessage[]>>({}) // Store messages per channel
+const channelMessages = ref<Record<string, IrcMessage[]>>({})
 const messageIdCounter = ref(0)
 
 const messages = computed(() => {
@@ -191,6 +198,21 @@ onUnmounted(() => {
 })
 
 // Methods
+const refreshLobbyState = async () => {
+  if (!activeChannel.value || !activeChannel.value.startsWith('#mp_')) {
+    return
+  }
+  
+  try {
+    await invoke('send_message_to_channel', {
+      channel: activeChannel.value,
+      message: '!mp settings'
+    })
+  } catch (error) {
+    console.error('Failed to refresh lobby state:', error)
+  }
+}
+
 const processMessage = (message: Omit<IrcMessage, 'id'>) => {
   // Only process messages from channels we're still in
   if (!channels.value.includes(message.channel)) {
@@ -205,6 +227,11 @@ const processMessage = (message: Omit<IrcMessage, 'id'>) => {
   // Initialize channel messages array if it doesn't exist
   if (!channelMessages.value[message.channel]) {
     channelMessages.value[message.channel] = []
+  }
+  
+  // Parse BanchoBot messages for lobby state updates
+  if (message.channel.startsWith('#mp_')) {
+    BanchoBotParser.parseIrcMessage(messageWithId)
   }
   
   // Add message to the appropriate channel
@@ -223,13 +250,33 @@ const loadChannels = async () => {
   }
 }
 
-const selectChannel = (channel: string) => {
+const selectChannel = async (channel: string) => {
   activeChannel.value = channel
   leftDrawerOpen.value = false
   
   // Initialize channel messages array if it doesn't exist
   if (!channelMessages.value[channel]) {
     channelMessages.value[channel] = []
+  }
+  
+  // Handle lobby channel selection
+  if (channel.startsWith('#mp_')) {
+    // Join the lobby in our state
+    lobbyActions.joinLobby(channel)
+    
+    // Automatically send "!mp settings" to get lobby information
+    try {
+      await invoke('send_message_to_channel', {
+        channel: channel,
+        message: '!mp settings'
+      })
+      console.log(`Auto-sent !mp settings to ${channel}`)
+    } catch (error) {
+      console.error('Failed to send !mp settings:', error)
+    }
+  } else if (lobbyState.isInLobby && lobbyState.channel !== channel) {
+    // Left a lobby channel, clean up lobby state
+    lobbyActions.leaveLobby()
   }
   
   // TODO: Load channel-specific users
@@ -273,6 +320,22 @@ const joinChannel = async (channelName: string) => {
     // Initialize channel messages array if it doesn't exist
     if (!channelMessages.value[channel]) {
       channelMessages.value[channel] = []
+    }
+    
+    // If it's a multiplayer lobby, join the lobby in our state and send !mp settings
+    if (channel.startsWith('#mp_')) {
+      lobbyActions.joinLobby(channel)
+      
+      // Auto-send !mp settings to get lobby information
+      try {
+        await invoke('send_message_to_channel', {
+          channel: channel,
+          message: '!mp settings'
+        })
+        console.log(`Auto-sent !mp settings to ${channel}`)
+      } catch (error) {
+        console.error('Failed to send !mp settings:', error)
+      }
     }
     
   } catch (error) {
@@ -325,6 +388,11 @@ const leaveChannel = async (channelName: string) => {
   try {
     await invoke('leave_channel', { channel: channelName })
     
+    // Clean up lobby state if leaving a lobby
+    if (channelName.startsWith('#mp_') && lobbyState.channel === channelName) {
+      lobbyActions.leaveLobby()
+    }
+    
     // Remove messages for the left channel
     delete channelMessages.value[channelName]
     
@@ -333,8 +401,17 @@ const leaveChannel = async (channelName: string) => {
       const remainingChannels = channels.value.filter(c => c !== channelName)
       if (remainingChannels.length > 0) {
         activeChannel.value = remainingChannels[0]
+        
+        // If switching to a lobby, join it in our state
+        if (remainingChannels[0].startsWith('#mp_')) {
+          lobbyActions.joinLobby(remainingChannels[0])
+        }
       } else {
         activeChannel.value = null
+        // Clean up lobby state if no channels left
+        if (lobbyState.isInLobby) {
+          lobbyActions.leaveLobby()
+        }
       }
     }
     
