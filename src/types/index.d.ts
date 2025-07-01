@@ -35,7 +35,7 @@ type LobbySettings = {
 }
 
 type LobbyState = {
-  channel: string | null
+  channel: string
   settings: LobbySettings | null
   currentMap: CurrentMap | null
   slots: PlayerSlot[]

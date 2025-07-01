@@ -67,6 +67,7 @@ onMounted(async () => {
         password: saved.password
       }
       await invoke('connect_to_bancho', { config })
+      isConnected.value = true
       loading.value = false
       router.push('/chat')
       return

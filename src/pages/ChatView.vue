@@ -86,13 +86,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { dbService } from '../services/database'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import { lobbyActions, getLobbyState } from '../stores/lobbyStore'
-import { BanchoBotParser } from '../services/banchoBotParser'
 import ChannelDrawer from '../components/chat/ChannelDrawer.vue'
 import UserDrawer from '../components/chat/UserDrawer.vue'
 import ChatHeader from '../components/chat/ChatHeader.vue'
@@ -118,43 +116,36 @@ const channels = ref<string[]>([])
 const activeChannel = ref<string | null>(null)
 const channelMessages = ref<Record<string, IrcMessage[]>>({})
 const messageIdCounter = ref(0)
+const currentLobbyState = ref<LobbyState | null>(null)
 
 const messages = computed(() => {
   if (!activeChannel.value) return []
   return channelMessages.value[activeChannel.value] || []
 })
 
-// Get lobby state for the current active channel
-const currentLobbyState = computed(() => {
-  if (!activeChannel.value || !activeChannel.value.startsWith('#mp_')) {
-    return null
+watch(activeChannel, async (newChannel) => {
+  if (!newChannel || !newChannel.startsWith('#mp_')) {
+    return
   }
-  return getLobbyState(activeChannel.value)
+
+  try {
+    currentLobbyState.value = await getLobbyState(newChannel)
+  } catch (error) {
+    console.error('Failed to get lobby state:', error)
+    currentLobbyState.value = null
+  }
 })
 
-// Event listeners
 let unlistenMessage: UnlistenFn | null = null
-let unlistenUserJoined: UnlistenFn | null = null
-let unlistenUserLeft: UnlistenFn | null = null
 let unlistenChannelError: UnlistenFn | null = null
+let unlistenLobbyUpdate: UnlistenFn | null = null
 
 onMounted(async () => {
   try {
     await loadChannels()
 
-    // Set up event listeners
     unlistenMessage = await listen('irc-message', (event) => {
       processMessage(event.payload as Omit<IrcMessage, 'id'>)
-    })
-
-    unlistenUserJoined = await listen('user-joined', (event) => {
-      console.log('User joined:', event.payload)
-      // TODO: Update user list
-    })
-
-    unlistenUserLeft = await listen('user-left', (event) => {
-      console.log('User left:', event.payload)
-      // TODO: Update user list
     })
 
     unlistenChannelError = await listen('channel-error', (event) => {
@@ -183,6 +174,13 @@ onMounted(async () => {
       alert(`Failed to join ${errorData.channel}: ${errorData.error}`)
     })
 
+    unlistenLobbyUpdate = await listen('lobby-updated', (event) => {
+      const lobby = event.payload as LobbyState
+      if (currentLobbyState.value && currentLobbyState.value.channel === lobby.channel) {
+        currentLobbyState.value = lobby
+      }
+    })
+
   } catch (error) {
     console.error('Failed to initialize chat:', error)
     router.push('/login')
@@ -190,14 +188,16 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  // Clean up event listeners
   if (unlistenMessage) unlistenMessage()
-  if (unlistenUserJoined) unlistenUserJoined()
-  if (unlistenUserLeft) unlistenUserLeft()
   if (unlistenChannelError) unlistenChannelError()
+  if (unlistenLobbyUpdate) unlistenLobbyUpdate()
 })
 
-// Methods
+
+const getLobbyState = async (channel: string): Promise<LobbyState | null> => {
+  return await invoke('get_lobby_state', { channel })
+}
+
 const refreshLobbyState = async () => {
   if (!activeChannel.value || !activeChannel.value.startsWith('#mp_')) {
     return
@@ -208,7 +208,7 @@ const refreshLobbyState = async () => {
       channel: activeChannel.value,
       message: '!mp settings'
     })
-    lobbyActions.clearPlayers(activeChannel.value)
+    // Backend now manages lobby state automatically
   } catch (error) {
     console.error('Failed to refresh lobby state:', error)
   }
@@ -225,17 +225,10 @@ const processMessage = (message: Omit<IrcMessage, 'id'>) => {
     id: messageIdCounter.value++
   }
   
-  // Initialize channel messages array if it doesn't exist
   if (!channelMessages.value[message.channel]) {
     channelMessages.value[message.channel] = []
   }
   
-  // Parse BanchoBot messages for lobby state updates
-  if (message.channel.startsWith('#mp_')) {
-    BanchoBotParser.parseIrcMessage(messageWithId)
-  }
-  
-  // Add message to the appropriate channel
   channelMessages.value[message.channel].push(messageWithId)
 }
 
@@ -265,19 +258,16 @@ const joinChannel = async (channelName: string) => {
   try {
     let channel = channelName.trim()
     
-    // Basic validation
     if (!channel) {
       alert('Please enter a channel name')
       return
     }
     
-    // Handle multiplayer room IDs
     const mpId = parseInt(channel, 10)
     if (!isNaN(mpId)) {
       channel = `#mp_${mpId}`
     }
     
-    // Ensure channel starts with #
     if (!channel.startsWith('#')) {
       channel = '#' + channel
     }
@@ -300,11 +290,8 @@ const joinChannel = async (channelName: string) => {
       channelMessages.value[channel] = []
     }
     
-    // If it's a multiplayer lobby, join the lobby in our state and send !mp settings
+    // If it's a multiplayer lobby, auto-send !mp settings to get lobby information
     if (channel.startsWith('#mp_')) {
-      lobbyActions.joinLobby(channel)
-      
-      // Auto-send !mp settings to get lobby information
       try {
         await invoke('send_message_to_channel', {
           channel: channel,
@@ -318,7 +305,6 @@ const joinChannel = async (channelName: string) => {
     
   } catch (error) {
     console.error('Failed to join channel:', error)
-    // Show error message to user
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     alert(`Failed to join channel: ${errorMessage}`)
   }
@@ -366,11 +352,6 @@ const leaveChannel = async (channelName: string) => {
   try {
     await invoke('leave_channel', { channel: channelName })
     
-    // Clean up lobby state if leaving a lobby
-    if (channelName.startsWith('#mp_')) {
-      lobbyActions.leaveLobby(channelName)
-    }
-    
     // Remove messages for the left channel
     delete channelMessages.value[channelName]
     
@@ -379,17 +360,11 @@ const leaveChannel = async (channelName: string) => {
       const remainingChannels = channels.value.filter(c => c !== channelName)
       if (remainingChannels.length > 0) {
         activeChannel.value = remainingChannels[0]
-        
-        // If switching to a lobby, join it in our state
-        if (remainingChannels[0].startsWith('#mp_')) {
-          lobbyActions.joinLobby(remainingChannels[0])
-        }
       } else {
         activeChannel.value = null
       }
     }
     
-    // Reload channels to update the list
     await loadChannels()
   } catch (error) {
     console.error('Failed to leave channel:', error)

@@ -905,6 +905,7 @@ dependencies = [
  "anyhow",
  "futures",
  "irc",
+ "regex",
  "serde",
  "serde_json",
  "tauri",
