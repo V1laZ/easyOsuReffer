@@ -89,8 +89,6 @@ const matchStatusText = computed(() => {
 })
 
 const handleQuickAction = (action: string) => {
-  console.log('Quick action:', action)
-  
   switch (action) {
     case 'start':
       invoke('send_message_to_room', {
