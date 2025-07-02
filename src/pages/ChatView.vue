@@ -262,6 +262,10 @@ const refreshLobbyState = async () => {
 }
 
 const processMessage = (message: IrcMessage) => {
+  if (!rooms.value.some(r => r.id === message.roomId)) {
+    loadRooms()
+    return
+  }
   if (activeRoom.value !== message.roomId) return
 
   currentMessages.value.push(message)
