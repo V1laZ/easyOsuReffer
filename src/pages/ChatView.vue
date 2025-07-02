@@ -110,6 +110,7 @@ const rightDrawerOpen = ref(false)
 const settingsOpen = ref(false)
 const mappoolsOpen = ref(false)
 const createLobbyOpen = ref(false)
+const settingsForNewLobby = ref<CreateLobbySettings | null>(null)
 
 const rooms = ref<Room[]>([])
 const activeRoom = ref<string | null>(null)
@@ -144,6 +145,8 @@ watch(activeRoom, async (newRoomId) => {
 let unlistenMessage: UnlistenFn | null = null
 let unlistenChannelError: UnlistenFn | null = null
 let unlistenLobbyUpdate: UnlistenFn | null = null
+let unlistenUserJoin: UnlistenFn | null = null
+let unlistenUserLeft: UnlistenFn | null = null
 
 onMounted(async () => {
   try {
@@ -182,6 +185,48 @@ onMounted(async () => {
       }
     })
 
+    unlistenUserJoin = await listen('user-joined', async (event) => {
+      const joinEvent = event.payload as UserJoinEvent
+      if (joinEvent.username === globalState.user) {
+        await loadRooms()
+        activeRoom.value = joinEvent.channel
+        leftDrawerOpen.value = false
+
+        if (joinEvent.channel.startsWith('#mp_')) {
+          if (settingsForNewLobby.value) {
+            try {
+              await invoke('send_message_to_room', {
+                roomId: joinEvent.channel,
+                message: `!mp set ${settingsForNewLobby.value.teamMode} ${settingsForNewLobby.value.scoreMode} 16`
+              })
+              settingsForNewLobby.value = null
+            } catch (error) {
+              console.error('Failed to set lobby settings:', error)
+            }
+          }
+
+          try {
+            await invoke('send_message_to_room', {
+              roomId: joinEvent.channel,
+              message: '!mp settings'
+            })
+          } catch (error) {
+            console.error('Failed to send !mp settings:', error)
+          }
+        }
+      }
+    })
+
+    unlistenUserLeft = await listen('user-left', async (event) => {
+      const joinEvent = event.payload as UserJoinEvent
+      if (joinEvent.username === globalState.user) {
+        await loadRooms()
+        if (activeRoom.value === joinEvent.channel) {
+          activeRoom.value = null
+        }
+      }
+    })
+
   } catch (error) {
     console.error('Failed to initialize chat:', error)
     router.push('/login')
@@ -192,6 +237,8 @@ onUnmounted(() => {
   if (unlistenMessage) unlistenMessage()
   if (unlistenChannelError) unlistenChannelError()
   if (unlistenLobbyUpdate) unlistenLobbyUpdate()
+  if (unlistenUserJoin) unlistenUserJoin()
+  if (unlistenUserLeft) unlistenUserLeft()
 })
 
 
@@ -261,22 +308,6 @@ const joinChannel = async (channelName: string) => {
     }
 
     await invoke('join_channel', { roomId: channel })
-    await loadRooms()
-    
-    activeRoom.value = channel
-    
-    // If it's a multiplayer lobby, auto-send !mp settings to get lobby information
-    if (channel.startsWith('#mp_')) {
-      try {
-        await invoke('send_message_to_room', {
-          roomId: channel,
-          message: '!mp settings'
-        })
-      } catch (error) {
-        console.error('Failed to send !mp settings:', error)
-      }
-    }
-    
   } catch (error) {
     console.error('Failed to join channel:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
@@ -354,12 +385,16 @@ const leaveRoom = async (roomId: string) => {
   }
 }
 
-const handleCreateLobby = async (command: string) => {
+const handleCreateLobby = async (settings: CreateLobbySettings) => {
   try {
+    await invoke('start_private_message', { username: 'BanchoBot' })
+    
     await invoke('send_message_to_room', {
-      roomId: '#multiplayer',
-      message: command
+      roomId: 'BanchoBot',
+      message: `!mp make ${settings.name}`
     })
+
+    settingsForNewLobby.value = settings
 
     createLobbyOpen.value = false
   } catch (error) {

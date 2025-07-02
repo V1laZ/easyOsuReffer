@@ -73,7 +73,7 @@
         </button>
         <button
           @click="handleCreateLobby"
-          :disabled="!lobbyName.trim()"
+          :disabled="!lobbyName.trim() || loading"
           class="px-6 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
         >
           Create Lobby
@@ -88,12 +88,13 @@ import { ref } from 'vue'
 
 const emit = defineEmits<{
   close: []
-  createLobby: [command: string]
+  createLobby: [settings: CreateLobbySettings]
 }>()
 
+const loading = ref(false)
 const lobbyName = ref('')
-const teamMode = ref('2') // Default to Team Vs
-const scoreMode = ref('3') // Default to Score V2
+const teamMode = ref<CreateLobbySettings['teamMode']>('2') // Default to Team Vs
+const scoreMode = ref<CreateLobbySettings['scoreMode']>('3') // Default to Score V2
 
 const handleCreateLobby = () => {
   const name = lobbyName.value.trim()
@@ -108,15 +109,13 @@ const handleCreateLobby = () => {
     return
   }
   
-  const command = `!mp make ${name}`
-  
-  emit('createLobby', command)
-  
-  // Reset form and close modal
-  lobbyName.value = ''
-  teamMode.value = '2'
-  scoreMode.value = '3'
-  emit('close')
+  loading.value = true
+
+  emit('createLobby', {
+    name: lobbyName.value,
+    teamMode: teamMode.value,
+    scoreMode: scoreMode.value,
+  })
 }
 </script>
 

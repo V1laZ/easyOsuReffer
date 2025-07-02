@@ -123,7 +123,7 @@
     </div>
 
     <!-- Mobile Mods Info -->
-    <div class="sm:hidden mt-2" :class="{ 'pt-2 border-t border-gray-600': !currentMap }">
+    <div v-if="currentMap" class="sm:hidden mt-2">
       <div class="flex items-center space-x-2">
         <span class="text-sm text-gray-400">Mods:</span>
         <div class="flex items-center space-x-1">

@@ -225,6 +225,18 @@ fn handle_incoming_message(
                     irc::proto::Prefix::ServerName(server) => server,
                 };
 
+                {
+                    let mut irc_state = state.lock().unwrap();
+                    let current_username = irc_state.current_username.clone().unwrap_or_default();
+                    if nick == current_username {
+                        if !irc_state.rooms.contains_key(&channel) {
+                            let new_room = Room::new_channel(channel.clone());
+                            irc_state.rooms.insert(channel.clone(), new_room);
+                        }
+                        irc_state.active_room = Some(channel.clone());
+                    }
+                }
+
                 println!("{} joined {}", nick, channel);
 
                 if let Err(e) = app_handle.emit(
@@ -244,6 +256,14 @@ fn handle_incoming_message(
                     irc::proto::Prefix::Nickname(nick, _, _) => nick,
                     irc::proto::Prefix::ServerName(server) => server,
                 };
+
+                {
+                    let mut irc_state = state.lock().unwrap();
+                    if nick == irc_state.current_username.clone().unwrap_or_default() {
+                        irc_state.rooms.remove(&channel);
+                        irc_state.active_room = None;
+                    }
+                }
 
                 println!("{} left {}", nick, channel);
 

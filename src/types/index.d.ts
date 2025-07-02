@@ -61,6 +61,11 @@ type LobbyState = {
   selectedMods: string[]
 }
 
+type UserJoinEvent = {
+  username: string
+  channel: string
+}
+
 type CreateLobbySettings = {
   name: string
   teamMode: '0' | '1' | '2' | '3'
