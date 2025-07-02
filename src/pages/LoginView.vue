@@ -193,7 +193,7 @@ const handleLogin = async () => {
     globalState.user = config.username
     globalState.isConnected = true
 
-    router.push('/')
+    router.replace('/')
   } catch (error) {
     console.error('Connection failed:', error)
     connectionStatus.value = {
