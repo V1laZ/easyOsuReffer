@@ -16,7 +16,7 @@
     <div v-else class="space-y-1">
       <div
         v-for="(message) in messages"
-        :key="message.id"
+        :key="message.timestamp"
         class="group hover:bg-gray-800/50 px-3 py-2 rounded-lg transition-colors"
       >
         <div class="flex items-start space-x-3">
