@@ -180,7 +180,7 @@ onMounted(async () => {
 
     unlistenLobbyUpdate = await listen('lobby-updated', (event) => {
       const lobby = event.payload as LobbyState
-      if (currentLobbyState.value && currentLobbyState.value.channel === lobby.channel) {
+      if (activeRoom.value === lobby.channel) {
         currentLobbyState.value = lobby
       }
     })

@@ -21,7 +21,7 @@
 
       <!-- Quick Actions -->
       <div class="flex items-center space-x-2">
-        <div class="flex sm:hidden items-center space-x-1">
+        <div class="flex items-center space-x-1">
           <button
             @click="handleQuickAction('start')"
             :disabled="!lobbyState || lobbyState.matchStatus === 'active'"
@@ -37,7 +37,7 @@
     <div v-if="currentMap" class="mt-2 pt-2 border-t border-gray-600">
       <div class="text-sm text-gray-300">
         <span class="font-medium">{{ currentMap.title }}</span>
-        <span class="text-gray-400"> [{{ currentMap.difficulty }}]</span>
+        <span v-if="currentMap.difficulty" class="text-gray-400"> [{{ currentMap.difficulty }}]</span>
       </div>
     </div>
 

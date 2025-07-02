@@ -17,7 +17,6 @@
         <h1 class="text-lg font-semibold text-white">
           {{ displayChannelName }}
         </h1>
-        
         <!-- Lobby Info -->
         <div v-if="isMpLobby && lobbyState?.settings?.roomName" class="text-sm text-gray-400 max-w-md truncate">
           {{ lobbyState.settings.roomName }}
@@ -30,7 +29,7 @@
       <!-- Quick Actions -->
       <div class="flex items-center space-x-1">
         <button
-          v-if="isMpLobby"
+          v-if="false"
           @click="emit('openMappools')"
           class="p-2 rounded-lg hover:bg-gray-700 transition-colors"
           title="Mappools"
