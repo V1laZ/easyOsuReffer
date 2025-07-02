@@ -30,12 +30,6 @@
             <div class="font-medium truncate">
               {{ room.displayName }}
             </div>
-            <div 
-              v-if="room.unreadCount > 0" 
-              class="flex-shrink-0 ml-2 bg-red-500 text-white text-xs rounded-full min-w-[1.5rem] h-6 flex items-center justify-center px-1"
-            >
-              {{ room.unreadCount > 99 ? '99+' : room.unreadCount }}
-            </div>
           </div>
         </div>
       </button>

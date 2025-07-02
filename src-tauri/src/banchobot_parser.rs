@@ -116,7 +116,7 @@ impl BanchoBotParser {
             }
         }
 
-        // Current beatmap
+        // Current beatmap (manually set by user in lobby)
         if let Ok(regex) = Regex::new(r"^Beatmap: https://osu\.ppy\.sh/b/(\d+) (.+) \[(.+)\]$") {
             if let Some(captures) = regex.captures(text) {
                 if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
@@ -146,6 +146,54 @@ impl BanchoBotParser {
             }
         }
 
+        // Changed beatmap to (from !mp map {map_id})
+        if let Ok(regex) =
+            Regex::new(r"^Changed beatmap to https://osu\.ppy\.sh/b/(\d+) (.+) - (.+)$")
+        {
+            if let Some(captures) = regex.captures(text) {
+                if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
+                    let artist = captures.get(2).unwrap().as_str();
+                    let title = captures.get(3).unwrap().as_str();
+
+                    Self::update_current_map(
+                        channel,
+                        CurrentMap {
+                            beatmap_id,
+                            artist: artist.to_string(),
+                            title: title.to_string(),
+                            difficulty: "".to_string(),
+                        },
+                        state,
+                        app_handle,
+                    );
+                    return true;
+                }
+            }
+        }
+
+        // Current beatmap (from !mp map {map_id})
+        if let Ok(regex) = Regex::new(r"^Beatmap: https://osu\.ppy\.sh/b/(\d+) (.+) - (.+)$") {
+            if let Some(captures) = regex.captures(text) {
+                if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
+                    let artist = captures.get(2).unwrap().as_str();
+                    let title = captures.get(3).unwrap().as_str();
+
+                    Self::update_current_map(
+                        channel,
+                        CurrentMap {
+                            beatmap_id,
+                            artist: artist.to_string(),
+                            title: title.to_string(),
+                            difficulty: "".to_string(),
+                        },
+                        state,
+                        app_handle,
+                    );
+                    return true;
+                }
+            }
+        }
+
         // Active mods
         if let Ok(regex) = Regex::new(r"^Active mods: (.+)$") {
             if let Some(captures) = regex.captures(text) {
@@ -170,7 +218,7 @@ impl BanchoBotParser {
             }
         }
 
-        // Beatmap changed
+        // Beatmap changed (manually by user in lobby)
         if let Ok(regex) = Regex::new(
             r"^Beatmap changed to: (.+) - (.+) \[(.+)\] \(https://osu\.ppy\.sh/b/(\d+)\)$",
         ) {
@@ -283,38 +331,6 @@ impl BanchoBotParser {
         if text.contains("finished playing") || text.contains("The match has finished!") {
             Self::update_match_status(channel, "idle", state, app_handle);
             return true;
-        }
-
-        // Beatmap changed
-        if let Ok(regex) =
-            Regex::new(r"^Beatmap changed to: https://osu\.ppy\.sh/b/(\d+) (.+) \[(.+)\]$")
-        {
-            if let Some(captures) = regex.captures(text) {
-                if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
-                    let full_title = captures.get(2).unwrap().as_str();
-                    let difficulty = captures.get(3).unwrap().as_str();
-
-                    if let Ok(title_regex) = Regex::new(r"^(.+) - (.+)$") {
-                        if let Some(title_captures) = title_regex.captures(full_title) {
-                            let artist = title_captures.get(1).unwrap().as_str();
-                            let title = title_captures.get(2).unwrap().as_str();
-
-                            Self::update_current_map(
-                                channel,
-                                CurrentMap {
-                                    beatmap_id,
-                                    artist: artist.to_string(),
-                                    title: title.to_string(),
-                                    difficulty: difficulty.to_string(),
-                                },
-                                state,
-                                app_handle,
-                            );
-                            return true;
-                        }
-                    }
-                }
-            }
         }
 
         // Match settings changed
