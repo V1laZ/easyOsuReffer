@@ -9,6 +9,7 @@
       @select-channel="selectChannel"
       @join-channel="joinChannel"
       @leave-channel="leaveChannel"
+      @open-create-lobby="openCreateLobby"
     />
 
     <!-- Main Chat Area -->
@@ -74,6 +75,13 @@
       @close="mappoolsOpen = false"
     />
 
+    <!-- Create Lobby Modal -->
+    <CreateLobbyModal 
+      v-if="createLobbyOpen"
+      @close="createLobbyOpen = false"
+      @create-lobby="handleCreateLobby"
+    />
+
     <!-- Mobile Overlay -->
     <div
       class="fixed transition-colors inset-0 bg-black/80 z-30 lg:hidden"
@@ -99,6 +107,7 @@ import ChatMessages from '../components/chat/ChatMessages.vue'
 import MessageInput from '../components/chat/MessageInput.vue'
 import SettingsModal from '../components/modals/SettingsModal.vue'
 import MappoolModal from '../components/modals/MappoolModal.vue'
+import CreateLobbyModal from '../components/modals/CreateLobbyModal.vue'
 
 const props = defineProps<{
   user: string | null
@@ -111,6 +120,7 @@ const leftDrawerOpen = ref(false)
 const rightDrawerOpen = ref(false)
 const settingsOpen = ref(false)
 const mappoolsOpen = ref(false)
+const createLobbyOpen = ref(false)
 
 const channels = ref<string[]>([])
 const activeChannel = ref<string | null>(null)
@@ -369,5 +379,16 @@ const leaveChannel = async (channelName: string) => {
   } catch (error) {
     console.error('Failed to leave channel:', error)
   }
+}
+
+const openCreateLobby = () => {
+  createLobbyOpen.value = true
+  leftDrawerOpen.value = false
+}
+
+const handleCreateLobby = async (settings: CreateLobbySettings) => {
+  console.log(settings)
+  createLobbyOpen.value = false
+  return
 }
 </script>

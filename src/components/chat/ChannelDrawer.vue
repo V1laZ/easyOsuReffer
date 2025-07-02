@@ -100,6 +100,22 @@
           </div>
         </div>
       </div>
+
+      <!-- Create Multiplayer Lobby Section -->
+      <div class="p-4 border-t border-gray-700">
+        <div class="space-y-3">
+          <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">Multiplayer</h3>
+          <button
+            @click="emit('openCreateLobby')"
+            class="w-full px-3 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span>Create Lobby</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -113,10 +129,11 @@ defineProps<{
   activeChannel: string | null
 }>()
 const emit = defineEmits<{
-  close: [],
-  selectChannel: [channel: string],
-  joinChannel: [channel: string],
+  close: []
+  selectChannel: [channel: string]
+  joinChannel: [channel: string]
   leaveChannel: [channel: string]
+  openCreateLobby: []
 }>()
 
 const newChannelName = ref('')
