@@ -1,5 +1,10 @@
 type RoomType = 'Channel' | 'PrivateMessage' | 'MultiplayerLobby'
 
+type ConnectionStatus = {
+  type: string
+  message: string
+}
+
 type Room = {
   id: string
   displayName: string

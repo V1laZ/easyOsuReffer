@@ -14,11 +14,7 @@
       </div>
     </div>
     
-    <RouterView 
-      :user="user"
-      :is-connected="isConnected"
-      v-else 
-    />
+    <RouterView v-else />
   </main>
 </template>
 
@@ -27,14 +23,13 @@ import { onMounted, ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { RouterView, useRouter } from 'vue-router'
 import { dbService } from './services/database'
+import { globalState } from './stores/global'
 
 const router = useRouter()
 
 const loading = ref(true)
 const loadingMessage = ref('Loading...')
 const errorMessage = ref('')
-const user = ref<string | null>(null)
-const isConnected = ref(false)
 
 onMounted(async () => {
   try {
@@ -50,15 +45,15 @@ onMounted(async () => {
   const saved = await dbService.getCredentials()
   
   if (saved) {
-    user.value = saved.username
+    globalState.user = saved.username
     try {
       loadingMessage.value = 'Connecting...'
 
       const connected = await invoke('get_connection_status') as boolean
       if (connected) {
-        isConnected.value = true
+        globalState.isConnected = true
         loading.value = false
-        router.push('/chat')
+        router.push('/')
         return
       }
 
@@ -67,9 +62,9 @@ onMounted(async () => {
         password: saved.password
       }
       await invoke('connect_to_bancho', { config })
-      isConnected.value = true
+      globalState.isConnected = true
       loading.value = false
-      router.push('/chat')
+      router.push('/')
       return
     } catch (error) {
       console.error('Failed to connect with saved credentials:', error)

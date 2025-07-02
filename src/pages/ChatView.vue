@@ -44,7 +44,7 @@
       />
 
       <MessageInput 
-        :disabled="!isConnected || !activeRoom"
+        :disabled="!globalState.isConnected || !activeRoom"
         @send-message="sendMessage"
       />
     </div>
@@ -58,8 +58,8 @@
 
     <SettingsModal 
       v-if="settingsOpen"
-      :current-user="user"
-      :is-connected="isConnected"
+      :current-user="globalState.user"
+      :is-connected="globalState.isConnected"
       @close="settingsOpen = false"
       @logout="handleLogout"
     />
@@ -101,11 +101,7 @@ import MessageInput from '../components/chat/MessageInput.vue'
 import SettingsModal from '../components/modals/SettingsModal.vue'
 import MappoolModal from '../components/modals/MappoolModal.vue'
 import CreateLobbyModal from '../components/modals/CreateLobbyModal.vue'
-
-defineProps<{
-  user: string | null
-  isConnected: boolean
-}>()
+import { globalState } from '../stores/global'
 
 const router = useRouter()
 
@@ -323,6 +319,8 @@ const handleLogout = async () => {
   try {
     await invoke('disconnect_from_bancho')
     await dbService.deleteCredentials()
+    globalState.user = null
+    globalState.isConnected = false
     router.push('/login')
   } catch (error) {
     console.error('Failed to logout:', error)

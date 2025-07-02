@@ -10,7 +10,7 @@ import ChatView from "./pages/ChatView.vue";
 
 const routes = [
   { path: '/login', component: LoginView },
-  { path: '/chat', component: ChatView },
+  { path: '/', component: ChatView },
 ]
 
 const router = createRouter({

@@ -146,11 +146,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { dbService } from '../services/database'
-
-type ConnectionStatus = {
-  type: 'success' | 'error'
-  message: string
-}
+import { globalState } from '../stores/global'
 
 const router = useRouter()
 
@@ -194,7 +190,10 @@ const handleLogin = async () => {
       await dbService.deleteCredentials()
     }
 
-    router.push('/chat')
+    globalState.user = config.username
+    globalState.isConnected = true
+
+    router.push('/')
   } catch (error) {
     console.error('Connection failed:', error)
     connectionStatus.value = {
