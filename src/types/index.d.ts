@@ -1,9 +1,20 @@
+type RoomType = 'Channel' | 'PrivateMessage' | 'MultiplayerLobby'
+
+type Room = {
+  id: string
+  displayName: string
+  roomType: RoomType
+  messages: IrcMessage[]
+  unreadCount: number
+  isActive: boolean
+}
+
 type IrcMessage = {
-  id: number
-  channel: string
+  roomId: string
   username: string
   message: string
   timestamp: number
+  isPrivate: boolean
 }
 
 type Player = {

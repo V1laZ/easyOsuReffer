@@ -56,14 +56,17 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(IrcState::default())
         .invoke_handler(tauri::generate_handler![
-            greet,
             connect_to_bancho,
-            send_message_to_channel,
+            send_message_to_room,
             join_channel,
             leave_channel,
+            close_private_message,
             disconnect_from_bancho,
             get_connection_status,
-            get_joined_channels,
+            get_joined_rooms,
+            get_room_messages,
+            set_active_room,
+            start_private_message,
             get_lobby_state,
         ])
         .run(tauri::generate_context!())

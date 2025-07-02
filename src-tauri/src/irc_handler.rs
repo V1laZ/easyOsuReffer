@@ -16,7 +16,6 @@ pub async fn handle_irc_connection(
 
     loop {
         tokio::select! {
-            // Handle incoming IRC messages
             message = stream.next() => {
                 match message {
                     Some(Ok(msg)) => {
@@ -33,14 +32,76 @@ pub async fn handle_irc_connection(
                 }
             }
 
-            // Handle outgoing commands
             command = command_receiver.recv() => {
                 match command {
-                    Some(IrcCommand::SendMessage { channel, message }) => {
-                        if let Err(e) = client.send_privmsg(&channel, &message) {
+                    Some(IrcCommand::SendMessage { room_id, message }) => {
+                        if let Err(e) = client.send_privmsg(&room_id, &message) {
                             println!("Failed to send message: {}", e);
                         } else {
-                            println!("Sent message to {}: {}", channel, message);
+                            println!("Sent message to {}: {}", room_id, message);
+
+                            // Create our own message and add it to the room
+                            let current_username = {
+                                let irc_state = state.lock().unwrap();
+                                irc_state.current_username.clone().unwrap_or_default()
+                            };
+
+                            let our_message = IrcMessage {
+                                room_id: room_id.clone(),
+                                username: current_username,
+                                message: message.clone(),
+                                timestamp: std::time::SystemTime::now()
+                                    .duration_since(std::time::UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_secs(),
+                                is_private: false,
+                            };
+
+                            {
+                                let mut irc_state = state.lock().unwrap();
+                                if let Some(room) = irc_state.rooms.get_mut(&room_id) {
+                                    room.add_message(our_message.clone());
+                                }
+                            }
+
+                            if let Err(e) = app_handle.emit("irc-message", &our_message) {
+                                println!("Failed to emit our message to frontend: {}", e);
+                            }
+                        }
+                    }
+                    Some(IrcCommand::SendPrivateMessage { username, message }) => {
+                        if let Err(e) = client.send_privmsg(&username, &message) {
+                            println!("Failed to send private message: {}", e);
+                        } else {
+                            println!("Sent private message to {}: {}", username, message);
+
+                            // Create our own message and add it to the PM room
+                            let current_username = {
+                                let irc_state = state.lock().unwrap();
+                                irc_state.current_username.clone().unwrap_or_default()
+                            };
+
+                            let our_message = IrcMessage {
+                                room_id: username.clone(),
+                                username: current_username,
+                                message: message.clone(),
+                                timestamp: std::time::SystemTime::now()
+                                    .duration_since(std::time::UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_secs(),
+                                is_private: true,
+                            };
+
+                            {
+                                let mut irc_state = state.lock().unwrap();
+                                if let Some(room) = irc_state.rooms.get_mut(&username) {
+                                    room.add_message(our_message.clone());
+                                }
+                            }
+
+                            if let Err(e) = app_handle.emit("irc-message", &our_message) {
+                                println!("Failed to emit our PM to frontend: {}", e);
+                            }
                         }
                     }
                     Some(IrcCommand::JoinChannel { channel }) => {
@@ -77,7 +138,8 @@ pub async fn handle_irc_connection(
     {
         let mut irc_state = state.lock().unwrap();
         irc_state.connected = false;
-        irc_state.channels.clear();
+        irc_state.rooms.clear();
+        irc_state.active_room = None;
         irc_state.config = None;
         irc_state.client = None;
         irc_state.message_sender = None;
@@ -92,32 +154,65 @@ fn handle_incoming_message(
     state: &IrcState,
 ) {
     match msg.command {
-        Command::PRIVMSG(channel, text) => {
+        Command::PRIVMSG(room, text) => {
             if let Some(prefix) = msg.prefix {
-                // Extract nickname from prefix
                 let nick = match prefix {
                     irc::proto::Prefix::Nickname(nick, _, _) => nick,
                     irc::proto::Prefix::ServerName(server) => server,
                 };
 
+                let is_private = !room.starts_with("#");
+
+                let room_id = if is_private {
+                    let current_username = {
+                        let irc_state = state.lock().unwrap();
+                        irc_state.current_username.clone().unwrap_or_default()
+                    };
+
+                    if nick == current_username {
+                        // This is our outgoing message, use recipient as room ID
+                        room.clone()
+                    } else {
+                        // This is incoming PM, use sender as room ID
+                        nick.clone()
+                    }
+                } else {
+                    // For channels, use the channel name
+                    room.clone()
+                };
+
                 let irc_message = IrcMessage {
-                    channel: channel.clone(),
+                    room_id: room_id.clone(),
                     username: nick.clone(),
                     message: text.clone(),
                     timestamp: std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
                         .as_secs(),
+                    is_private,
                 };
 
-                println!("[{}] <{}> {}", channel, nick, text);
+                println!("[{}] <{}> {}", room_id, nick, text);
 
-                // Parse BanchoBot messages for lobby updates
-                if channel.starts_with("#mp_") {
+                {
+                    let mut irc_state = state.lock().unwrap();
+
+                    // Create room if it doesn't exist (for incoming PMs)
+                    if is_private && !irc_state.rooms.contains_key(&room_id) {
+                        let new_room = Room::new_private_message(room_id.clone());
+                        irc_state.rooms.insert(room_id.clone(), new_room);
+                    }
+
+                    // Add message to appropriate room
+                    if let Some(room_obj) = irc_state.rooms.get_mut(&room_id) {
+                        room_obj.add_message(irc_message.clone());
+                    }
+                }
+
+                if room_id.starts_with("#mp_") {
                     BanchoBotParser::parse_irc_message(&irc_message, state, app_handle);
                 }
 
-                // Emit the message to the frontend
                 if let Err(e) = app_handle.emit("irc-message", &irc_message) {
                     println!("Failed to emit message to frontend: {}", e);
                 }
@@ -132,7 +227,6 @@ fn handle_incoming_message(
 
                 println!("{} joined {}", nick, channel);
 
-                // Emit join event to frontend
                 if let Err(e) = app_handle.emit(
                     "user-joined",
                     serde_json::json!({
@@ -153,7 +247,6 @@ fn handle_incoming_message(
 
                 println!("{} left {}", nick, channel);
 
-                // Emit part event to frontend
                 if let Err(e) = app_handle.emit(
                     "user-left",
                     serde_json::json!({
@@ -168,13 +261,11 @@ fn handle_incoming_message(
         Command::Response(response, args) => {
             println!("Server response: {:?} - {:?}", response, args);
 
-            // Handle specific server responses
             match response {
                 Response::RPL_WELCOME => {
                     println!("Successfully connected and welcomed to the server!");
                 }
                 Response::RPL_NAMREPLY => {
-                    // Channel user list
                     if args.len() >= 4 {
                         let channel = &args[2];
                         let users = &args[3];
@@ -188,11 +279,11 @@ fn handle_incoming_message(
 
                         {
                             let mut irc_state = state.lock().unwrap();
-                            irc_state.channels.retain(|c| c != channel);
+                            irc_state.rooms.remove(channel);
                         }
 
                         if let Err(e) = app_handle.emit(
-                            "channel-error",
+                            "room-error",
                             serde_json::json!({
                                 "channel": channel,
                                 "error": "Channel does not exist"
@@ -209,11 +300,11 @@ fn handle_incoming_message(
 
                         {
                             let mut irc_state = state.lock().unwrap();
-                            irc_state.channels.retain(|c| c != channel);
+                            irc_state.rooms.remove(channel);
                         }
 
                         if let Err(e) = app_handle.emit(
-                            "channel-error",
+                            "room-error",
                             serde_json::json!({
                                 "channel": channel,
                                 "error": "Channel is invite only"
@@ -230,11 +321,11 @@ fn handle_incoming_message(
 
                         {
                             let mut irc_state = state.lock().unwrap();
-                            irc_state.channels.retain(|c| c != channel);
+                            irc_state.rooms.remove(channel);
                         }
 
                         if let Err(e) = app_handle.emit(
-                            "channel-error",
+                            "room-error",
                             serde_json::json!({
                                 "channel": channel,
                                 "error": "You are banned from this channel"
@@ -251,11 +342,11 @@ fn handle_incoming_message(
 
                         {
                             let mut irc_state = state.lock().unwrap();
-                            irc_state.channels.retain(|c| c != channel);
+                            irc_state.rooms.remove(channel);
                         }
 
                         if let Err(e) = app_handle.emit(
-                            "channel-error",
+                            "room-error",
                             serde_json::json!({
                                 "channel": channel,
                                 "error": "Channel is full"
@@ -270,14 +361,13 @@ fn handle_incoming_message(
                         let channel = &args[1];
                         println!("Wrong key for channel {}", channel);
 
-                        // Remove the channel from our state since join failed
                         {
                             let mut irc_state = state.lock().unwrap();
-                            irc_state.channels.retain(|c| c != channel);
+                            irc_state.rooms.remove(channel);
                         }
 
                         if let Err(e) = app_handle.emit(
-                            "channel-error",
+                            "room-error",
                             serde_json::json!({
                                 "channel": channel,
                                 "error": "Wrong channel password"

@@ -88,12 +88,12 @@ import { ref } from 'vue'
 
 const emit = defineEmits<{
   close: []
-  createLobby: [settings: CreateLobbySettings]
+  createLobby: [command: string]
 }>()
 
 const lobbyName = ref('')
-const teamMode = ref<CreateLobbySettings['teamMode']>('2')
-const scoreMode = ref<CreateLobbySettings['scoreMode']>('3')
+const teamMode = ref('2') // Default to Team Vs
+const scoreMode = ref('3') // Default to Score V2
 
 const handleCreateLobby = () => {
   const name = lobbyName.value.trim()
@@ -108,12 +108,11 @@ const handleCreateLobby = () => {
     return
   }
   
-  emit('createLobby', {
-    name,
-    teamMode: teamMode.value,
-    scoreMode: scoreMode.value
-  })
+  const command = `!mp make ${name}`
   
+  emit('createLobby', command)
+  
+  // Reset form and close modal
   lobbyName.value = ''
   teamMode.value = '2'
   scoreMode.value = '3'

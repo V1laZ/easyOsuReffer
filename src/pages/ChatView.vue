@@ -1,22 +1,22 @@
 <template>
   <div class="h-screen bg-gray-900 text-white flex overflow-hidden">
     <!-- Left Drawer - Channels -->
-    <ChannelDrawer 
+    <RoomsDrawer 
       :is-open="leftDrawerOpen"
-      :channels="channels"
-      :active-channel="activeChannel"
+      :rooms="rooms"
+      :active-room="activeRoom"
       @close="leftDrawerOpen = false"
-      @select-channel="selectChannel"
+      @select-room="selectRoom"
       @join-channel="joinChannel"
-      @leave-channel="leaveChannel"
-      @open-create-lobby="openCreateLobby"
+      @leave-room="leaveRoom"
+      @open-create-lobby="createLobbyOpen = true"
+      @start-private-message="startPrivateMessage"      
     />
 
     <!-- Main Chat Area -->
     <div class="flex-1 flex flex-col min-w-0 relative">
-      <!-- Header -->
       <ChatHeader 
-        :active-channel="activeChannel"
+        :active-channel="activeRoom"
         :lobby-state="currentLobbyState"
         @toggle-left-drawer="leftDrawerOpen = !leftDrawerOpen"
         @toggle-right-drawer="rightDrawerOpen = !rightDrawerOpen"
@@ -25,42 +25,37 @@
         @refresh="refreshLobbyState"
       />
 
-      <!-- Quick Action Bar (for match controls) -->
       <QuickActionBar 
-        v-if="activeChannel && activeChannel.startsWith('#mp_') && currentLobbyState"
-        :channel="activeChannel"
+        v-if="activeRoom && activeRoom.startsWith('#mp_') && currentLobbyState"
+        :channel="activeRoom"
         :lobby-state="currentLobbyState"
       />
 
-      <!-- Messages Area -->
-      <div v-if="!activeChannel" class="text-center mt-2 flex-1 py-4 text-gray-500">
+      <div v-if="!activeRoom" class="text-center mt-2 flex-1 py-4 text-gray-500">
         <svg class="size-12 mx-auto mb-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        Select a channel to start chatting
+        Select or join a channel to start chatting
       </div>
       <ChatMessages 
         v-else
-        :messages="messages"
+        :messages="currentMessages"
         class="flex-1"
       />
 
-      <!-- Message Input -->
       <MessageInput 
-        :disabled="!isConnected || !activeChannel"
+        :disabled="!isConnected || !activeRoom"
         @send-message="sendMessage"
       />
     </div>
 
-    <!-- Right Drawer - Users (only for multiplayer lobbies) -->
     <UserDrawer
-      v-if="activeChannel && activeChannel.startsWith('#mp_') && currentLobbyState"
+      v-if="activeRoom && activeRoom.startsWith('#mp_') && currentLobbyState"
       :is-open="rightDrawerOpen"
       :lobby-state="currentLobbyState"
       @close="rightDrawerOpen = false"
     />
 
-    <!-- Settings Modal -->
     <SettingsModal 
       v-if="settingsOpen"
       :current-user="user"
@@ -69,13 +64,11 @@
       @logout="handleLogout"
     />
 
-    <!-- Mappools Modal -->
     <MappoolModal 
       v-if="mappoolsOpen"
       @close="mappoolsOpen = false"
     />
 
-    <!-- Create Lobby Modal -->
     <CreateLobbyModal 
       v-if="createLobbyOpen"
       @close="createLobbyOpen = false"
@@ -94,12 +87,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { dbService } from '../services/database'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import ChannelDrawer from '../components/chat/ChannelDrawer.vue'
+import RoomsDrawer from '../components/chat/RoomsDrawer.vue'
 import UserDrawer from '../components/chat/UserDrawer.vue'
 import ChatHeader from '../components/chat/ChatHeader.vue'
 import QuickActionBar from '../components/chat/QuickActionBar.vue'
@@ -109,7 +102,7 @@ import SettingsModal from '../components/modals/SettingsModal.vue'
 import MappoolModal from '../components/modals/MappoolModal.vue'
 import CreateLobbyModal from '../components/modals/CreateLobbyModal.vue'
 
-const props = defineProps<{
+defineProps<{
   user: string | null
   isConnected: boolean
 }>()
@@ -122,26 +115,32 @@ const settingsOpen = ref(false)
 const mappoolsOpen = ref(false)
 const createLobbyOpen = ref(false)
 
-const channels = ref<string[]>([])
-const activeChannel = ref<string | null>(null)
-const channelMessages = ref<Record<string, IrcMessage[]>>({})
-const messageIdCounter = ref(0)
+const rooms = ref<Room[]>([])
+const activeRoom = ref<string | null>(null)
+const currentMessages = ref<IrcMessage[]>([])
 const currentLobbyState = ref<LobbyState | null>(null)
 
-const messages = computed(() => {
-  if (!activeChannel.value) return []
-  return channelMessages.value[activeChannel.value] || []
-})
-
-watch(activeChannel, async (newChannel) => {
-  if (!newChannel || !newChannel.startsWith('#mp_')) {
+watch(activeRoom, async (newRoomId) => {
+  if (!newRoomId) {
+    currentMessages.value = []
+    currentLobbyState.value = null
     return
   }
 
+  // Load messages for the new room
   try {
-    currentLobbyState.value = await getLobbyState(newChannel)
+    await invoke('set_active_room', { roomId: newRoomId })
+    currentMessages.value = await invoke('get_room_messages', { roomId: newRoomId })
+    
+    // If it's a multiplayer lobby, get lobby state
+    if (newRoomId.startsWith('#mp_')) {
+      currentLobbyState.value = await getLobbyState(newRoomId)
+    } else {
+      currentLobbyState.value = null
+    }
   } catch (error) {
-    console.error('Failed to get lobby state:', error)
+    console.error('Failed to switch room:', error)
+    currentMessages.value = []
     currentLobbyState.value = null
   }
 })
@@ -152,35 +151,31 @@ let unlistenLobbyUpdate: UnlistenFn | null = null
 
 onMounted(async () => {
   try {
-    await loadChannels()
+    await loadRooms()
 
     unlistenMessage = await listen('irc-message', (event) => {
       processMessage(event.payload as Omit<IrcMessage, 'id'>)
     })
 
-    unlistenChannelError = await listen('channel-error', (event) => {
+    unlistenChannelError = await listen('room-error', (event) => {
       const errorData = event.payload as { channel: string, error: string }
-      console.error('Channel error:', errorData)
+      console.error('Room error:', errorData)
       
-      // Remove the channel from our list if it was optimistically added
-      const channelIndex = channels.value.indexOf(errorData.channel)
-      if (channelIndex !== -1) {
-        channels.value.splice(channelIndex, 1)
+      // Remove the room from our list if it was optimistically added
+      const roomIndex = rooms.value.findIndex(r => r.id === errorData.channel)
+      if (roomIndex !== -1) {
+        rooms.value.splice(roomIndex, 1)
         
-        // Remove messages for this channel
-        delete channelMessages.value[errorData.channel]
-        
-        // If this was the active channel, switch to another
-        if (activeChannel.value === errorData.channel) {
-          if (channels.value.length > 0) {
-            activeChannel.value = channels.value[0]
+        // If this was the active room, switch to another
+        if (activeRoom.value === errorData.channel) {
+          if (rooms.value.length > 0) {
+            activeRoom.value = rooms.value[0].id
           } else {
-            activeChannel.value = null
+            activeRoom.value = null
           }
         }
       }
       
-      // Show error to user (you could replace this with a toast notification)
       alert(`Failed to join ${errorData.channel}: ${errorData.error}`)
     })
 
@@ -205,63 +200,45 @@ onUnmounted(() => {
 
 
 const getLobbyState = async (channel: string): Promise<LobbyState | null> => {
-  return await invoke('get_lobby_state', { channel })
+  return await invoke('get_lobby_state', { roomId: channel })
 }
 
 const refreshLobbyState = async () => {
-  if (!activeChannel.value || !activeChannel.value.startsWith('#mp_')) {
+  if (!activeRoom.value || !activeRoom.value.startsWith('#mp_')) {
     return
   }
   
   try {
-    await invoke('send_message_to_channel', {
-      channel: activeChannel.value,
+    await invoke('send_message_to_room', {
+      roomId: activeRoom.value,
       message: '!mp settings'
     })
-    // Backend now manages lobby state automatically
   } catch (error) {
     console.error('Failed to refresh lobby state:', error)
   }
 }
 
-const processMessage = (message: Omit<IrcMessage, 'id'>) => {
-  // Only process messages from channels we're still in
-  if (!channels.value.includes(message.channel)) {
-    return
-  }
-  
-  const messageWithId = {
-    ...message,
-    id: messageIdCounter.value++
-  }
-  
-  if (!channelMessages.value[message.channel]) {
-    channelMessages.value[message.channel] = []
-  }
-  
-  channelMessages.value[message.channel].push(messageWithId)
+const processMessage = (message: IrcMessage) => {
+  if (activeRoom.value !== message.roomId) return
+
+  currentMessages.value.push(message)
 }
 
-const loadChannels = async () => {
+const loadRooms = async () => {
   try {
-    const channelList = await invoke('get_joined_channels') as string[]
-    channels.value = channelList
-    if (channelList.length > 0 && !activeChannel.value) {
-      activeChannel.value = channelList[0]
+    const roomList = await invoke('get_joined_rooms') as Room[]
+    rooms.value = roomList
+    if (roomList.length > 0 && !activeRoom.value) {
+      activeRoom.value = roomList[0].id
     }
   } catch (error) {
-    console.error('Failed to load channels:', error)
+    console.error('Failed to load rooms:', error)
   }
 }
 
-const selectChannel = async (channel: string) => {
-  activeChannel.value = channel
+const selectRoom = async (roomId: string) => {
+  activeRoom.value = roomId
   leftDrawerOpen.value = false
-  
-  // Initialize channel messages array if it doesn't exist
-  if (!channelMessages.value[channel]) {
-    channelMessages.value[channel] = []
-  }
 }
 
 const joinChannel = async (channelName: string) => {
@@ -282,32 +259,23 @@ const joinChannel = async (channelName: string) => {
       channel = '#' + channel
     }
 
-    // Check if already in channel
-    if (channels.value.includes(channel)) {
+    if (rooms.value.some(r => r.id === channel)) {
       alert(`Already in channel ${channel}`)
       return
     }
 
-    console.log(`Attempting to join channel: ${channel}`)
-    await invoke('join_channel', { channel })
-    await loadChannels()
+    await invoke('join_channel', { roomId: channel })
+    await loadRooms()
     
-    // Switch to the newly joined channel
-    activeChannel.value = channel
-    
-    // Initialize channel messages array if it doesn't exist
-    if (!channelMessages.value[channel]) {
-      channelMessages.value[channel] = []
-    }
+    activeRoom.value = channel
     
     // If it's a multiplayer lobby, auto-send !mp settings to get lobby information
     if (channel.startsWith('#mp_')) {
       try {
-        await invoke('send_message_to_channel', {
-          channel: channel,
+        await invoke('send_message_to_room', {
+          roomId: channel,
           message: '!mp settings'
         })
-        console.log(`Auto-sent !mp settings to ${channel}`)
       } catch (error) {
         console.error('Failed to send !mp settings:', error)
       }
@@ -320,24 +288,27 @@ const joinChannel = async (channelName: string) => {
   }
 }
 
+const startPrivateMessage = async (username: string) => {
+  try {
+    await invoke('start_private_message', { username })
+    await loadRooms()
+    activeRoom.value = username
+  } catch (error) {
+    console.error('Failed to start private message:', error)
+    alert('Failed to start private message')
+  }
+}
+
 const sendMessage = async (messageText: string) => {
-  if (!activeChannel.value || !messageText.trim()) {
+  if (!activeRoom.value || !messageText.trim()) {
     return
   }
-
+  
   try {
-    await invoke('send_message_to_channel', {
-      channel: activeChannel.value,
+    await invoke('send_message_to_room', {
+      roomId: activeRoom.value,
       message: messageText
     })
-    const message: Omit<IrcMessage, 'id'> = {
-      channel: activeChannel.value,
-      username: props.user || 'Unknown',
-      message: messageText,
-      timestamp: Math.floor(Date.now() / 1000),
-    }
-    
-    processMessage(message)
   } catch (error) {
     console.error('Failed to send message:', error)
   }
@@ -358,37 +329,44 @@ const handleLogout = async () => {
   }
 }
 
-const leaveChannel = async (channelName: string) => {
+const leaveRoom = async (roomId: string) => {
   try {
-    await invoke('leave_channel', { channel: channelName })
+    const room = rooms.value.find(r => r.id === roomId)
+    if (!room) return
     
-    // Remove messages for the left channel
-    delete channelMessages.value[channelName]
+    if (room.roomType === 'Channel' || room.roomType === 'MultiplayerLobby') {
+      await invoke('leave_channel', { roomId: roomId })
+    } else if (room.roomType === 'PrivateMessage') {
+      await invoke('close_private_message', { username: roomId })
+    }
     
-    // If the left channel was the active channel, switch to another one
-    if (activeChannel.value === channelName) {
-      const remainingChannels = channels.value.filter(c => c !== channelName)
-      if (remainingChannels.length > 0) {
-        activeChannel.value = remainingChannels[0]
+    // If this was the active room, switch to another one
+    if (activeRoom.value === roomId) {
+      const remainingRooms = rooms.value.filter(r => r.id !== roomId)
+      if (remainingRooms.length > 0) {
+        activeRoom.value = remainingRooms[0].id
       } else {
-        activeChannel.value = null
+        activeRoom.value = null
       }
     }
     
-    await loadChannels()
+    await loadRooms()
   } catch (error) {
-    console.error('Failed to leave channel:', error)
+    console.error('Failed to leave room:', error)
   }
 }
 
-const openCreateLobby = () => {
-  createLobbyOpen.value = true
-  leftDrawerOpen.value = false
-}
+const handleCreateLobby = async (command: string) => {
+  try {
+    await invoke('send_message_to_room', {
+      roomId: '#multiplayer',
+      message: command
+    })
 
-const handleCreateLobby = async (settings: CreateLobbySettings) => {
-  console.log(settings)
-  createLobbyOpen.value = false
-  return
+    createLobbyOpen.value = false
+  } catch (error) {
+    console.error('Failed to create lobby:', error)
+    alert('Failed to create lobby. Make sure you are connected and try again.')
+  }
 }
 </script>

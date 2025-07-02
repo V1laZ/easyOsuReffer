@@ -37,7 +37,7 @@ impl BanchoBotParser {
         }
 
         let text = &message.message;
-        let channel = &message.channel;
+        let channel = &message.room_id;
 
         if !channel.starts_with("#mp_") {
             return false;
