@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gradient-to-br h-screen from-gray-900 via-purple-900 to-pink-900 flex items-center justify-center px-4 py-8">
+  <div class="bg-gradient-to-br h-[100dvh] from-gray-900 via-purple-900 to-pink-900 flex items-center justify-center px-4 py-8">
     <div class="w-full max-w-md">
       <!-- App Logo/Title -->
       <div class="text-center mb-8">

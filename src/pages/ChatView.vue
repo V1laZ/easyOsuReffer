@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen bg-gray-900 text-white flex overflow-hidden">
+  <div class="h-[100dvh] bg-gray-900 text-white flex overflow-hidden">
     <!-- Left Drawer - Channels -->
     <RoomsDrawer 
       :is-open="leftDrawerOpen"
