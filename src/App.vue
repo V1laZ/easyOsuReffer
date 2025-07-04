@@ -101,3 +101,14 @@ onMounted(async () => {
   router.push('/login')
 })
 </script>
+
+<style>
+body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+}
+</style>
