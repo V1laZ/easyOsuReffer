@@ -1,0 +1,54 @@
+<template>
+  <div class="flex-1 overflow-y-auto">
+    <div v-if="beatmaps.length === 0" class="flex flex-col items-center justify-center h-full text-gray-500 p-8">
+      <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+      </svg>
+      <p>No beatmaps in this pool</p>
+      <p class="text-sm text-gray-600 mt-1">Add some maps to get started</p>
+    </div>
+
+    <div v-else class="space-y-3 p-4">
+      <Item 
+        v-for="beatmap in groupedBeatmaps"
+        :beatmap="beatmap"
+        @remove="removeBeatmap(beatmap.beatmap_id)"
+      />
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { computed } from 'vue'
+import Item from './Item.vue';
+import { dbService } from '../../../services/database';
+
+const props = defineProps<{
+  beatmaps: BeatmapEntry[]
+}>()
+
+const emit = defineEmits<{
+  remove: []
+}>()
+
+const groupedBeatmaps = computed(() => {
+  return props.beatmaps.sort((a, b) => {
+    if (a.category && b.category) {
+      return a.category.localeCompare(b.category)
+    }
+    return 0
+  })
+})
+
+const removeBeatmap = async (beatmapId: number) => {
+  if (!confirm('Are you sure you want to remove this beatmap?')) return
+  
+  try {
+    await dbService.deleteBeatmapFromPool(beatmapId)
+    emit('remove')
+  } catch (error) {
+    console.error('Failed to remove beatmap:', error)
+    alert('Failed to remove beatmap')
+  }
+}
+</script>

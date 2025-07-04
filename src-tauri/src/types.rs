@@ -200,3 +200,37 @@ pub struct OAuthCallbackData {
     pub refresh_token: String,
     pub expires_in: i32,
 }
+
+// Beatmap data structures
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BeatmapData {
+    pub id: u64,
+    pub beatmapset_id: u64,
+    pub artist: String,
+    pub title: String,
+    pub difficulty: String,
+    pub mapper: String,
+    pub mode: u8,
+    pub total_length: u32,
+    pub bpm: f64,
+    pub difficulty_rating: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OsuApiBeatmapResponse {
+    pub id: u64,
+    pub beatmapset_id: u64,
+    pub version: String,
+    pub mode_int: u8,
+    pub total_length: u32,
+    pub bpm: f64,
+    pub difficulty_rating: f64,
+    pub beatmapset: OsuApiBeatmapset,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OsuApiBeatmapset {
+    pub artist: String,
+    pub title: String,
+    pub creator: String,
+}

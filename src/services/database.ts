@@ -1,34 +1,5 @@
 import Database from '@tauri-apps/plugin-sql'
 
-export interface UserCredentials {
-  id: number
-  username: string
-  password: string
-  created_at: string
-  updated_at: string
-}
-
-export interface Mappool {
-  id: number
-  name: string
-  description?: string
-  created_at: string
-  updated_at: string
-}
-
-export interface BeatmapEntry {
-  id: number
-  mappool_id: number
-  beatmap_id: number
-  artist: string
-  title: string
-  difficulty: string
-  mapper: string
-  mod_combination?: string
-  category?: string
-  created_at: string
-}
-
 class DatabaseService {
   private db: Database | null = null
 

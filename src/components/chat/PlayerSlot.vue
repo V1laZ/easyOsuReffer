@@ -50,7 +50,7 @@ const slotClasses = computed(() => {
     }
   } else {
     // Empty slot
-    baseClasses.push('bg-gray-800 border-gray-600 hover:bg-gray-750')
+    baseClasses.push('bg-gray-800 border-gray-600')
   }
   
   return baseClasses.join(' ')

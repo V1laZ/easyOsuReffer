@@ -297,6 +297,52 @@ pub async fn get_lobby_state(
     Ok(irc_state.lobby_states.get(&room_id).cloned())
 }
 
+#[tauri::command]
+pub async fn fetch_beatmap_data(
+    beatmap_id: String,
+    access_token: String,
+) -> Result<BeatmapData, String> {
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&format!(
+            "https://osu.ppy.sh/api/v2/beatmaps/{}",
+            beatmap_id
+        ))
+        .header("Authorization", format!("Bearer {}", access_token))
+        .header("Content-Type", "application/json")
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch beatmap data: {}", e))?;
+
+    if !response.status().is_success() {
+        if response.status().as_u16() == 404 {
+            return Err("Beatmap not found".to_string());
+        }
+        return Err(format!(
+            "Failed to fetch beatmap data: {}",
+            response.status()
+        ));
+    }
+
+    let api_response: OsuApiBeatmapResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse API response: {}", e))?;
+
+    Ok(BeatmapData {
+        id: api_response.id,
+        beatmapset_id: api_response.beatmapset_id,
+        artist: api_response.beatmapset.artist,
+        title: api_response.beatmapset.title,
+        difficulty: api_response.version,
+        mapper: api_response.beatmapset.creator,
+        mode: api_response.mode_int,
+        total_length: api_response.total_length,
+        bpm: api_response.bpm,
+        difficulty_rating: api_response.difficulty_rating,
+    })
+}
+
 pub fn remove_room(room_id: &str, state: &IrcState) {
     let mut irc_state = state.lock().unwrap();
     irc_state.rooms.remove(room_id);

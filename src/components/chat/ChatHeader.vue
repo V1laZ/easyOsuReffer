@@ -29,7 +29,6 @@
       <!-- Quick Actions -->
       <div class="flex items-center space-x-1">
         <button
-          v-if="false"
           @click="emit('openMappools')"
           class="p-2 rounded-lg hover:bg-gray-700 transition-colors"
           title="Mappools"

@@ -117,6 +117,7 @@ pub fn run() {
             set_active_room,
             start_private_message,
             get_lobby_state,
+            fetch_beatmap_data,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();
