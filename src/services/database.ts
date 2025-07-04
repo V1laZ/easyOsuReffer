@@ -18,7 +18,7 @@ export interface UserCredentials {
 }
 
 export interface Mappool {
-  id?: number
+  id: number
   name: string
   description?: string
   created_at: string
