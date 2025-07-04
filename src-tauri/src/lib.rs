@@ -4,16 +4,19 @@ mod irc_handler;
 mod types;
 
 use commands::*;
+use tauri::Manager;
+use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
 use crate::types::IrcState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let migrations = vec![Migration {
-        version: 1,
-        description: "create_initial_tables",
-        sql: "
+    let migrations = vec![
+        Migration {
+            version: 1,
+            description: "create_initial_tables",
+            sql: "
             CREATE TABLE IF NOT EXISTS user_credentials (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT NOT NULL UNIQUE,
@@ -44,10 +47,40 @@ pub fn run() {
                 FOREIGN KEY (mappool_id) REFERENCES mappools (id) ON DELETE CASCADE
             );
         ",
-        kind: MigrationKind::Up,
-    }];
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
+            description: "add_oauth_token_table",
+            sql: "
+            CREATE TABLE IF NOT EXISTS oauth_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                access_token TEXT NOT NULL,
+                refresh_token TEXT NOT NULL,
+                expires_in INTEGER NOT NULL,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+        ",
+            kind: MigrationKind::Up,
+        },
+    ];
 
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default();
+
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            let _ = app
+                .get_webview_window("main")
+                .expect("no main window")
+                .set_focus();
+        }));
+    }
+
+    builder
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(
             tauri_plugin_sql::Builder::default()
                 .add_migrations("sqlite:osu_reffer_database.db", migrations)
@@ -69,6 +102,23 @@ pub fn run() {
             start_private_message,
             get_lobby_state,
         ])
+        .setup(|app| {
+            app.deep_link().on_open_url(|event| {
+                println!("deep link URLs: {:?}", event.urls());
+            });
+
+            #[cfg(desktop)]
+            {
+                app.deep_link().register("osureffer")?;
+            }
+
+            #[cfg(any(target_os = "linux", all(debug_assertions, windows)))]
+            {
+                app.deep_link().register_all()?;
+            }
+
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
