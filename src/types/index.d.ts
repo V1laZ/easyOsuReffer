@@ -71,3 +71,13 @@ type CreateLobbySettings = {
   teamMode: '0' | '1' | '2' | '3'
   scoreMode: '0' | '1' | '2' | '3'
 }
+
+type OAuthToken = {
+  id: number
+  access_token: string
+  refresh_token: string
+  expires_in: number
+  expires_at: string
+  created_at: string
+  updated_at: string
+}

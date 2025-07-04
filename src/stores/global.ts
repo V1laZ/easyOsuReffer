@@ -2,5 +2,7 @@ import { reactive } from 'vue'
 
 export const globalState = reactive({
   user: null as string | null,
-  isConnected: false
+  userId: null as number | null,
+  isConnected: false,
+  isConnectedOsu: false,
 })

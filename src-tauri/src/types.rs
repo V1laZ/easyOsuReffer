@@ -193,3 +193,10 @@ pub struct ConnectionConfig {
 }
 
 pub type IrcState = Arc<Mutex<IrcClientState>>;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OAuthCallbackData {
+    pub access_token: String,
+    pub refresh_token: String,
+    pub expires_in: i32,
+}

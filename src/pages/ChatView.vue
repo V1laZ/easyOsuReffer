@@ -90,7 +90,6 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
-import { dbService } from '../services/database'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import RoomsDrawer from '../components/chat/RoomsDrawer.vue'
 import UserDrawer from '../components/chat/UserDrawer.vue'
@@ -353,7 +352,6 @@ const closeDrawers = () => {
 const handleLogout = async () => {
   try {
     await invoke('disconnect_from_bancho')
-    await dbService.deleteCredentials()
     globalState.user = null
     globalState.isConnected = false
     router.push('/login')

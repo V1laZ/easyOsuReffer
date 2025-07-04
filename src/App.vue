@@ -24,6 +24,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { RouterView, useRouter } from 'vue-router'
 import { dbService } from './services/database'
 import { globalState } from './stores/global'
+import { once } from '@tauri-apps/api/event'
 
 const router = useRouter()
 
@@ -32,6 +33,28 @@ const loadingMessage = ref('Loading...')
 const errorMessage = ref('')
 
 onMounted(async () => {
+  once('oauth-token-callback', async (payload) => {
+    const data = payload.payload as { access_token: string, refresh_token: string, expires_in: number }
+    if (!data) {
+      errorMessage.value = 'Failed to retrieve OAuth token'
+      loading.value = false
+      return
+    }
+
+    try {
+      await dbService.saveOAuthToken(
+        Number(globalState.userId),
+        data.access_token,
+        data.refresh_token,
+        data.expires_in
+      )
+      globalState.isConnectedOsu = true
+    } catch (error) {
+      console.error('Failed to save OAuth token:', error)
+      errorMessage.value = 'Failed to save OAuth token'
+    }
+  })
+
   try {
     loadingMessage.value = 'Initializing...'
     await dbService.init()
@@ -46,6 +69,8 @@ onMounted(async () => {
   
   if (saved) {
     globalState.user = saved.username
+    globalState.userId = saved.id
+    globalState.isConnectedOsu = await dbService.getOsuConnectedStatus(saved.id)
     try {
       loadingMessage.value = 'Connecting...'
 

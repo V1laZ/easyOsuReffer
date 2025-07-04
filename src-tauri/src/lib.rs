@@ -4,7 +4,7 @@ mod irc_handler;
 mod types;
 
 use commands::*;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
@@ -65,9 +65,25 @@ pub fn run() {
         ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "add_user_id_foreign_key_to_oauth_tokens",
+            sql: "
+            ALTER TABLE oauth_tokens ADD COLUMN user_id INTEGER REFERENCES user_credentials(id) ON DELETE CASCADE;
+        ",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 4,
+            description: "make_user_id_unique_in_oauth_tokens",
+            sql: "
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_oauth_tokens_user_id ON oauth_tokens(user_id);
+        ",
+            kind: MigrationKind::Up,
+        },
     ];
 
-    let mut builder = tauri::Builder::default();
+    let mut builder = tauri::Builder::default().plugin(tauri_plugin_shell::init());
 
     #[cfg(desktop)]
     {
@@ -103,8 +119,37 @@ pub fn run() {
             get_lobby_state,
         ])
         .setup(|app| {
-            app.deep_link().on_open_url(|event| {
-                println!("deep link URLs: {:?}", event.urls());
+            let app_handle = app.handle().clone();
+            app.deep_link().on_open_url(move |event| {
+                if let Some(url) = event.urls().first() {
+                    println!("Received deep link: {}", url);
+                    let query = url
+                        .query_pairs()
+                        .map(|(k, v)| (k.to_string(), v.to_string()))
+                        .collect::<std::collections::HashMap<_, _>>();
+
+                    let access_token = query.get("access_token").cloned().unwrap_or_default();
+                    let refresh_token = query.get("refresh_token").cloned().unwrap_or_default();
+                    let expires_in: i32 = query
+                        .get("expires_in")
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(0);
+
+                    if (access_token.is_empty() || refresh_token.is_empty()) || expires_in <= 0 {
+                        return;
+                    }
+
+                    app_handle
+                        .emit(
+                            "oauth-token-callback",
+                            serde_json::json!({
+                                "access_token": access_token,
+                                "refresh_token": refresh_token,
+                                "expires_in": expires_in,
+                            }),
+                        )
+                        .expect("Failed to emit oauth-token-callback event");
+                }
             });
 
             #[cfg(desktop)]
