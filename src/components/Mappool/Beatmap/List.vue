@@ -8,11 +8,13 @@
       <p class="text-sm text-gray-600 mt-1">Add some maps to get started</p>
     </div>
 
-    <div v-else class="space-y-3 p-4">
+    <div v-else class="space-y-3 md:space-y-1 p-2">
       <Item 
         v-for="beatmap in groupedBeatmaps"
         :beatmap="beatmap"
+        :can-remove="canRemove"
         @remove="removeBeatmap(beatmap.beatmap_id)"
+        @select="emit('select', beatmap)"
       />
     </div>
   </div>
@@ -23,16 +25,18 @@ import { computed } from 'vue'
 import Item from './Item.vue';
 import { dbService } from '../../../services/database';
 
-const props = defineProps<{
+const { beatmaps = [], canRemove = true} = defineProps<{
   beatmaps: BeatmapEntry[]
+  canRemove?: boolean
 }>()
 
 const emit = defineEmits<{
   remove: []
+  select: [beatmap: BeatmapEntry]
 }>()
 
 const groupedBeatmaps = computed(() => {
-  return props.beatmaps.sort((a, b) => {
+  return beatmaps.sort((a, b) => {
     if (a.category && b.category) {
       return a.category.localeCompare(b.category)
     }

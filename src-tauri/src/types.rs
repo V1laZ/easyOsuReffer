@@ -11,16 +11,13 @@ pub enum RoomType {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Room {
     pub id: String,
-    #[serde(rename = "displayName")]
     pub display_name: String,
-    #[serde(rename = "roomType")]
     pub room_type: RoomType,
     pub messages: Vec<IrcMessage>,
-    #[serde(rename = "unreadCount")]
     pub unread_count: u32,
-    #[serde(rename = "isActive")]
     pub is_active: bool,
 }
 
@@ -68,14 +65,12 @@ impl Room {
 
 // Lobby state structures
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Player {
     pub username: String,
     pub team: Option<String>, // "red" or "blue"
-    #[serde(rename = "isReady")]
     pub is_ready: bool,
-    #[serde(rename = "isPlaying")]
     pub is_playing: bool,
-    #[serde(rename = "isHost")]
     pub is_host: bool,
 }
 
@@ -86,8 +81,8 @@ pub struct PlayerSlot {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CurrentMap {
-    #[serde(rename = "beatmapId")]
     pub beatmap_id: u64,
     pub title: String,
     pub difficulty: String,
@@ -95,30 +90,27 @@ pub struct CurrentMap {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct LobbySettings {
-    #[serde(rename = "roomName")]
     pub room_name: String,
-    #[serde(rename = "teamMode")]
-    pub team_mode: String, // "HeadToHead", "TagCoop", "TeamVs", "TagTeamVs"
-    #[serde(rename = "winCondition")]
+    pub team_mode: String,     // "HeadToHead", "TagCoop", "TeamVs", "TagTeamVs"
     pub win_condition: String, // "Score", "Accuracy", "Combo", "ScoreV2"
     pub size: u8,
     pub password: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct LobbyState {
     pub channel: String,
     pub settings: Option<LobbySettings>,
-    #[serde(rename = "currentMap")]
     pub current_map: Option<CurrentMap>,
     pub slots: Vec<PlayerSlot>,
-    #[serde(rename = "matchStatus")]
     pub match_status: String, // "idle", "ready", "starting", "active"
     pub host: Option<String>,
     pub freemod: bool,
-    #[serde(rename = "selectedMods")]
     pub selected_mods: Vec<String>,
+    pub current_mappool_id: Option<u64>,
 }
 
 impl LobbyState {
@@ -129,6 +121,7 @@ impl LobbyState {
             channel,
             settings: None,
             current_map: None,
+            current_mappool_id: None,
             slots,
             match_status: "idle".to_string(),
             host: None,
@@ -176,13 +169,12 @@ impl Default for IrcClientState {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct IrcMessage {
-    #[serde(rename = "roomId")]
     pub room_id: String,
     pub username: String,
     pub message: String,
     pub timestamp: u64,
-    #[serde(rename = "isPrivate")]
     pub is_private: bool,
 }
 

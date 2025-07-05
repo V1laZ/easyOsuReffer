@@ -59,6 +59,7 @@ type LobbyState = {
   host: string | null
   freemod: boolean
   selectedMods: string[]
+  currentMappoolId: number | null
 }
 
 type UserJoinEvent = {

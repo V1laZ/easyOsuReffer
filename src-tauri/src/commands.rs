@@ -298,6 +298,20 @@ pub async fn get_lobby_state(
 }
 
 #[tauri::command]
+pub async fn set_mappool(
+    room_id: String,
+    mappool_id: Option<u64>,
+    state: State<'_, IrcState>,
+) -> Result<Option<u64>, String> {
+    let mut irc_state = state.lock().unwrap();
+    if let Some(lobby_state) = irc_state.lobby_states.get_mut(&room_id) {
+        lobby_state.current_mappool_id = mappool_id;
+        return Ok(mappool_id);
+    }
+    Err("Lobby state not found".to_string())
+}
+
+#[tauri::command]
 pub async fn fetch_beatmap_data(
     beatmap_id: String,
     access_token: String,

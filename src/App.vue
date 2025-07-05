@@ -111,4 +111,26 @@ body {
 body::-webkit-scrollbar {
   display: none;
 }
+
+.select-arrow {
+  pointer-events: none;
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.8em;
+  height: 0.5em;
+  background: none;
+  display: inline-block;
+}
+
+.select-arrow::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: #fff;
+  clip-path: polygon(100% 0%, 0 0%, 50% 100%);
+  opacity: 0.6;
+}
 </style>

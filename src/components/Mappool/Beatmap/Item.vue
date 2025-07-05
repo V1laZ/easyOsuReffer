@@ -1,6 +1,7 @@
 <template>
   <div
-    class="group cursor-default relative overflow-hidden bg-gray-800 rounded-xl border border-gray-700 hover:border-gray-600 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+    class="group md:m-2 cursor-default relative overflow-hidden bg-gray-800 rounded-xl border border-gray-700 hover:border-gray-600 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+    @click="emit('select', beatmap)"
   >
     <div class="relative p-4">
       <div class="flex items-start justify-between">
@@ -39,6 +40,7 @@
 
         <!-- Remove button -->
         <button 
+          v-if="canRemove"
           @click="emit('remove')"
           class="p-2 text-gray-400 hover:text-red-400 opacity-100 hover:bg-red-900/20 rounded-lg transition-all duration-200 ml-3 sm:opacity-0 group-hover:opacity-100"
           title="Remove from pool"
@@ -55,16 +57,18 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-const props = defineProps<{
+const { beatmap, canRemove = true } = defineProps<{
   beatmap: BeatmapEntry
+  canRemove?: boolean
 }>()
 
 const emit = defineEmits<{
   remove: []
+  select: [beatmap: BeatmapEntry]
 }>()
 
 const categoryColor = computed(() => {
-  const cat = props.beatmap.category?.slice(0, 2) || '';
+  const cat = beatmap.category?.slice(0, 2) || '';
   switch (cat) {
     case 'NM': return 'bg-gray-600';
     case 'HD': return 'bg-yellow-600';

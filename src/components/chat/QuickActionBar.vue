@@ -24,10 +24,17 @@
         <div class="flex items-center space-x-1">
           <button
             @click="handleQuickAction('start')"
-            :disabled="!lobbyState || lobbyState.matchStatus === 'active'"
+            :disabled="!lobbyState || lobbyState.matchStatus === 'active' || !currentMap"
             class="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
           >
             Start
+          </button>
+          <button
+            @click="emit('openSelectMap')"
+            :disabled="!lobbyState || lobbyState.matchStatus === 'active'"
+            class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
+          >
+            Change Map
           </button>
         </div>
       </div>
@@ -69,6 +76,10 @@ const props = defineProps<{
   lobbyState: LobbyState
 }>()
 
+const emit = defineEmits<{
+  openSelectMap: []
+}>()
+
 const currentMap = computed(() => props.lobbyState.currentMap || null)
 
 const matchStatusText = computed(() => {
@@ -101,15 +112,6 @@ const handleQuickAction = (action: string) => {
         roomId: props.lobbyState.channel,
         message: '!mp abort'
       })
-      break
-    case 'select-map':
-      // TODO: Open map selection modal
-      break
-    case 'settings':
-      // TODO: Open match settings modal
-      break
-    case 'invite':
-      // TODO: Open player invite modal
       break
   }
 }

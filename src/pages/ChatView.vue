@@ -14,7 +14,16 @@
     />
 
     <!-- Main Chat Area -->
-    <div class="flex-1 flex flex-col min-w-0 relative">
+    <div class="relative flex-1 flex flex-col min-w-0">
+      <SelectMap
+        v-if="currentLobbyState"
+        :is-open="isOpenSelectMap"
+        :lobby-state="currentLobbyState"
+        @close="isOpenSelectMap = false"
+        @set-mappool="currentLobbyState.currentMappoolId = $event"
+        @select-beatmap="selectMap"
+      />
+    
       <ChatHeader 
         :active-channel="activeRoom"
         :lobby-state="currentLobbyState"
@@ -29,6 +38,7 @@
         v-if="activeRoom && activeRoom.startsWith('#mp_') && currentLobbyState"
         :channel="activeRoom"
         :lobby-state="currentLobbyState"
+        @open-select-map="isOpenSelectMap = true"
       />
 
       <div v-if="!activeRoom" class="text-center mt-2 flex-1 py-4 text-gray-500">
@@ -101,9 +111,11 @@ import MessageInput from '../components/chat/MessageInput.vue'
 import SettingsModal from '../components/modals/SettingsModal.vue'
 import CreateLobbyModal from '../components/modals/CreateLobbyModal.vue'
 import { globalState } from '../stores/global'
+import SelectMap from '../components/Drawer/SelectMap.vue'
 
 const router = useRouter()
 
+const isOpenSelectMap = ref(false)
 const leftDrawerOpen = ref(false)
 const rightDrawerOpen = ref(false)
 const settingsOpen = ref(false)
@@ -257,6 +269,43 @@ const refreshLobbyState = async () => {
     })
   } catch (error) {
     console.error('Failed to refresh lobby state:', error)
+  }
+}
+
+const parseMods = (modString: string) => {
+  const mods = modString.match(/.{1,2}/g) || []
+
+  if (mods.length === 0) return 'None'
+
+  return mods.map(mod => {
+    if (mod === 'FM') return 'Freemod'
+    return mod
+  }).join(', ')
+}
+
+const selectMap = async (beatmap: BeatmapEntry) => {
+  if (!currentLobbyState.value) return
+  isOpenSelectMap.value = false
+
+  try {
+    await invoke('send_message_to_room', {
+      roomId: currentLobbyState.value.channel,
+      message: `!mp map ${beatmap.beatmap_id}`
+    })
+  } catch (error) {
+    console.error('Failed to select map:', error)
+    alert('Failed to select map. Make sure you are connected and try again.')
+  }
+
+  const mods = parseMods(beatmap.mod_combination || 'None')
+  try {
+    await invoke('send_message_to_room', {
+      roomId: currentLobbyState.value.channel,
+      message: `!mp mods ${mods}`
+    })
+  } catch (error) {
+    console.error('Failed to set mods:', error)
+    alert('Failed to set mods. Make sure you are connected and try again.')
   }
 }
 
