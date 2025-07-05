@@ -69,14 +69,14 @@
         <div class="flex gap-3">
           <button 
             @click="emit('cancel')"
-            class="flex-1 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium py-3 px-4 rounded-lg transition-colors"
+            class="bg-gray-600 w-full hover:bg-gray-700 text-white text-sm font-medium py-3 px-4 rounded-lg transition-colors"
           >
             Cancel
           </button>
           <button 
             @click="addBeatmap"
             :disabled="!beatmapMeta.category"
-            class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-600 disabled:to-gray-600 text-white text-sm font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-lg disabled:shadow-none"
+            class="w-full disabled:bg-gray-600 bg-green-500 hover:bg-green-600 text-white text-sm font-medium py-3 px-4 rounded-lg transition-colors"
           >
             Add to Pool
           </button>

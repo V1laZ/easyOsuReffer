@@ -49,7 +49,7 @@
       />
     </div>
 
-    <UserDrawer
+    <PlayersDrawer
       v-if="activeRoom && activeRoom.startsWith('#mp_') && currentLobbyState"
       :is-open="rightDrawerOpen"
       :lobby-state="currentLobbyState"
@@ -91,14 +91,14 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import RoomsDrawer from '../components/chat/RoomsDrawer.vue'
-import UserDrawer from '../components/chat/UserDrawer.vue'
+import RoomsDrawer from '../components/Drawer/Rooms/Rooms.vue'
+import PlayersDrawer from '../components/Drawer/Players/Players.vue'
+import MappoolModal from '../components/modals/Mappool.vue'
 import ChatHeader from '../components/chat/ChatHeader.vue'
 import QuickActionBar from '../components/chat/QuickActionBar.vue'
 import ChatMessages from '../components/chat/ChatMessages.vue'
 import MessageInput from '../components/chat/MessageInput.vue'
 import SettingsModal from '../components/modals/SettingsModal.vue'
-import MappoolModal from '../components/modals/MappoolModal.vue'
 import CreateLobbyModal from '../components/modals/CreateLobbyModal.vue'
 import { globalState } from '../stores/global'
 
