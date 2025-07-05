@@ -37,7 +37,7 @@
       <!-- Leave Room Button -->
       <button
         @click.stop="emit('leave', room)"
-        class="flex-shrink-0 m-1 rounded opacity-100 md:opacity-0 :group-hover:opacity-100 transition-all duration-200"
+        class="flex-shrink-0 m-1 rounded opacity-100 md:opacity-0 group-hover:opacity-100 transition-all duration-200"
         :class="isActive 
           ? 'text-white' 
           : 'text-gray-400 hover:text-white'
