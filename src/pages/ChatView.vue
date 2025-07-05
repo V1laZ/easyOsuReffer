@@ -280,7 +280,7 @@ const parseMods = (modString: string) => {
   return mods.map(mod => {
     if (mod === 'FM') return 'Freemod'
     return mod
-  }).join(', ')
+  }).join(' ')
 }
 
 const selectMap = async (beatmap: BeatmapEntry) => {

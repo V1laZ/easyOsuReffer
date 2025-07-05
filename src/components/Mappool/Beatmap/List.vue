@@ -13,7 +13,7 @@
         v-for="beatmap in groupedBeatmaps"
         :beatmap="beatmap"
         :can-remove="canRemove"
-        @remove="removeBeatmap(beatmap.beatmap_id)"
+        @remove="removeBeatmap(beatmap.id)"
         @select="emit('select', beatmap)"
       />
     </div>

@@ -168,10 +168,11 @@ const extractBeatmapId = (input: string): string | null => {
 
 const parseToValidMods = (modCombination: string): string => {
   const validMods = ['HD', 'HR', 'DT', 'EZ', 'FL', 'NC', 'NF', 'HT', 'FM']
-  const normalizedMods = modCombination.trim().toUpperCase().replace('+', '')
-  const mods = normalizedMods.match(/.{1,2}/g) || []
-  const valid = mods.filter(mod => validMods.includes(mod))
-  return valid.join()
+  const normalized = modCombination.replace(/^\+/, '').trim().toUpperCase()
+  const mods = normalized.match(/.{1,2}/g) || []
+  const seen = new Set<string>()
+  const valid = mods.filter(mod => validMods.includes(mod) && !seen.has(mod) && seen.add(mod))
+  return valid.join('')
 }
 
 const addBeatmap = async () => {
