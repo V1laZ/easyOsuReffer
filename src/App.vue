@@ -103,12 +103,7 @@ onMounted(async () => {
 </script>
 
 <style>
-body {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-body::-webkit-scrollbar {
+::-webkit-scrollbar {
   display: none;
 }
 
