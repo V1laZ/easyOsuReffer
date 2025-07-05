@@ -61,7 +61,7 @@
 
             <!-- Account Actions -->
             <div class="space-y-2">
-              <ConnectOsuBtn />
+              <ConnectOsuBtn v-if="!globalState.isConnectedOsu" />
 
               <button
                 @click="emit('logout')"
@@ -80,7 +80,7 @@
       <!-- Footer -->
       <div class="mt-8 pt-6 border-t border-gray-700">
         <div class="flex items-center justify-between text-sm text-gray-400">
-          <span>osu! Reffer v1.0.0</span>
+          <span>osu! Reffer v0.2.0</span>
         </div>
       </div>
     </div>
