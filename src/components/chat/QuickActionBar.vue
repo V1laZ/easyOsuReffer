@@ -53,25 +53,16 @@
       <div class="flex items-center space-x-2">
         <span class="text-sm text-gray-400">Mods:</span>
         <div class="flex items-center space-x-1">
-          <span 
-            v-for="mod in lobbyState.selectedMods" 
+          <Mod
+            v-for="mod in lobbyState.selectedMods"
             :key="mod"
-            class="px-2 py-0.5 text-white text-xs rounded font-medium"
-            :class="{
-              'bg-purple-600': mod === 'DT' || mod === 'NC',
-              'bg-yellow-600': mod === 'HD',
-              'bg-red-600': mod === 'HR',
-              'bg-green-600': mod === 'EZ',
-              'bg-gray-900': mod === 'FL',
-            }"
-          >
-            {{ mod }}
-          </span>
-          <span v-if="lobbyState.selectedMods.length === 0" class="px-2 py-0.5 bg-gray-600 text-white text-xs rounded font-medium">
-            NoMod
-          </span>
-          <span v-if="lobbyState.freemod" class="px-2 py-0.5 bg-orange-600 text-white text-xs rounded font-medium">
+            :mod="mod"
+          />
+          <span v-if="lobbyState.freemod" class="px-2 py-0.5 bg-orange-600 text-white text-xs rounded-md font-medium">
             Freemod
+          </span>
+          <span v-else-if="lobbyState.selectedMods.length === 0" class="px-2 py-0.5 bg-gray-600 text-white text-xs rounded-md font-medium">
+            NoMod
           </span>
         </div>
       </div>
@@ -82,6 +73,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core';
+import Mod from '../Mod.vue';
 
 const props = defineProps<{
   lobbyState: LobbyState

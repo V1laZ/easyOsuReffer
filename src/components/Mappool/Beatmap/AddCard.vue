@@ -57,12 +57,16 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-2">Mod Combination</label>
-            <input 
-              v-model="beatmapMeta.mod_combination"
-              type="text" 
-              placeholder="e.g. HDDT, HR"
-              class="w-full bg-gray-600 border border-gray-500 rounded-lg p-3 text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            />
+            <div class="flex items-center gap-2 flex-wrap">
+              <Mod 
+                v-for="mod in mods" 
+                :key="mod"
+                class="cursor-pointer"
+                :mod="mod"
+                :active="computedMods.includes(mod)"
+                @click="handleModSelect(mod)"
+              />
+            </div>
           </div>
         </div>
 
@@ -97,10 +101,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { dbService } from '../../../services/database';
 import { globalState } from '../../../stores/global';
+import Mod from '../../Mod.vue';
 
 const props = defineProps<{
   selectedMappoolId: number
@@ -111,11 +116,18 @@ const emit = defineEmits<{
   add: []
 }>()
 
+const mods = ['NF', 'HD', 'HR', 'DT', 'EZ', 'FL', 'HT', 'FM']
+const selectedMods = ref<string[]>(['NF']);
 const beatmapPreview = ref<BeatmapData | null>(null);
 const beatmapInput = ref('');
 const beatmapMeta = ref<{ category: string; mod_combination: string }>({ category: '', mod_combination: '' });
 const isLoading = ref(false);
 const fetchError = ref('');
+
+const computedMods = computed(() => {
+  if (selectedMods.value.includes('FM')) return ['FM'];
+  return selectedMods.value
+})
 
 const fetchBeatmapData = async () => {
   if (!globalState.userId) return
@@ -146,6 +158,30 @@ const fetchBeatmapData = async () => {
   }
 }
 
+const handleModSelect = (mod: string) => {
+  if (selectedMods.value.includes(mod)) {
+    selectedMods.value = selectedMods.value.filter(m => m !== mod)
+    return
+  } 
+  
+  selectedMods.value.push(mod)
+
+  switch (mod) {
+    case 'DT':
+      selectedMods.value = selectedMods.value.filter(m => m !== 'HT')
+      break
+    case 'HT':
+      selectedMods.value = selectedMods.value.filter(m => m !== 'DT')
+      break
+    case 'HR':
+      selectedMods.value = selectedMods.value.filter(m => m !== 'EZ')
+      break
+    case 'EZ':
+      selectedMods.value = selectedMods.value.filter(m => m !== 'HR')
+      break
+  }
+}
+
 const extractBeatmapId = (input: string): string | null => {
   const urlPatterns = [
     /osu\.ppy\.sh\/beatmapsets\/\d+#\w+\/(\d+)/,
@@ -166,20 +202,11 @@ const extractBeatmapId = (input: string): string | null => {
   return null
 }
 
-const parseToValidMods = (modCombination: string): string => {
-  const validMods = ['HD', 'HR', 'DT', 'EZ', 'FL', 'NC', 'NF', 'HT', 'FM']
-  const normalized = modCombination.replace(/^\+/, '').trim().toUpperCase()
-  const mods = normalized.match(/.{1,2}/g) || []
-  const seen = new Set<string>()
-  const valid = mods.filter(mod => validMods.includes(mod) && !seen.has(mod) && seen.add(mod))
-  return valid.join('')
-}
-
 const addBeatmap = async () => {
   if (!beatmapPreview.value || !beatmapMeta.value.category) return
 
   const category = beatmapMeta.value.category.trim().toUpperCase()
-  const modCombination = parseToValidMods(beatmapMeta.value.mod_combination)
+  const modCombination = computedMods.value.join('')
 
   try {
     await dbService.addBeatmapToPool(
