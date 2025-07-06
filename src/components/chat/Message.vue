@@ -26,9 +26,14 @@
       <div class="flex-1 min-w-0">
         <!-- Header -->
         <div class="flex items-baseline space-x-2">
-          <span class="font-semibold text-white hover:underline cursor-pointer">
+          <a 
+            class="font-semibold text-white hover:underline cursor-pointer"
+            :href="`https://osu.ppy.sh/users/${message.username}`"
+            target="_blank"
+            rel="noopener noreferrer"
+          > 
             {{ message.username }}
-          </span>
+          </a>
           
           <span class="text-xs text-gray-500">
             {{ formattedTime }}
