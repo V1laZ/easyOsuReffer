@@ -1,16 +1,61 @@
-# Tauri + Vue + TypeScript
+# osu!Reffer
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+A modern, cross-platform IRC client specifically designed for osu! referees and tournament organizers. Built with Tauri, Vue 3, and TypeScript, osu!Reffer provides an intuitive interface for managing osu! multiplayer lobbies and communicating through Bancho IRC.
 
-## Recommended IDE Setup
+## 🚀 Getting Started
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+### For Users
 
-## Type Support For `.vue` Imports in TS
+#### Download & Installation
+1. Visit the [Releases](https://github.com/yourusername/easyOsuReffer/releases) page
+2. Download the appropriate version for your operating system
+3. Install and run the application
 
-Since TypeScript cannot handle type information for `.vue` imports, they are shimmed to be a generic Vue component type by default. In most cases this is fine if you don't really care about component prop types outside of templates. However, if you wish to get actual prop types in `.vue` imports (for example to get props validation when using manual `h(...)` calls), you can enable Volar's Take Over mode by following these steps:
+### For Developers
 
-1. Run `Extensions: Show Built-in Extensions` from VS Code's command palette, look for `TypeScript and JavaScript Language Features`, then right click and select `Disable (Workspace)`. By default, Take Over mode will enable itself if the default TypeScript extension is disabled.
-2. Reload the VS Code window by running `Developer: Reload Window` from the command palette.
+#### Prerequisites
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- [pnpm](https://pnpm.io/) package manager
+- [Rust](https://rustup.rs/) (latest stable)
 
-You can learn more about Take Over mode [here](https://github.com/johnsoncodehk/volar/discussions/471).
+#### Installation
+```bash
+# Clone the repository
+git clone https://github.com/V1laZ/easyOsuReffer.git
+cd easyOsuReffer
+
+# Install dependencies
+pnpm install
+```
+
+#### Development
+
+##### Start Development Server
+```bash
+# Start the development server
+pnpm tauri dev
+```
+
+##### Build for Production
+```bash
+# Build the application
+pnpm tauri build
+```
+
+##### Mobile Development (Android)
+```bash
+# Add Android target
+pnpm tauri android init
+
+# Run on physical Android device
+pnpm tauri android dev
+
+# Run on Android emulator
+pnpm tauri android dev --open
+
+# Build Android APK
+pnpm tauri android build
+```
+---
+
+Made with ❤️ for the osu! community
