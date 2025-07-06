@@ -2,18 +2,21 @@
   <div
     class="flex items-center mx-1 p-2 px-3 rounded-lg border transition-colors"
     :class="[slotClasses, highlight ? 'ring-2 ring-pink-400' : '']"
-    :draggable="!!slotInfo.player"
-    @dragstart="onDragStart($event, slotInfo.player?.username || 'Unknown')"
     @dragenter="onDragEnter"
     @dragleave="onDragLeave"
     @dragend="highlight = false"
-    @dragover.prevent
+    @dragover.prevent="onDragOver"
     @drop.prevent="onDropEvent"
   >
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between">
         <!-- Player -->
-        <div v-if="slotInfo.player" class="flex items-center space-x-2 flex-1 min-w-0">
+        <div
+          v-if="slotInfo.player"
+          class="flex items-center space-x-2 flex-1 min-w-0"
+          draggable="true"
+          @dragstart="onDragStart($event, slotInfo.player?.username || 'Unknown')"
+        >
           <button 
             v-if="slotInfo.player.isHost"
             class="cursor-pointer"
@@ -79,32 +82,44 @@ const slotClasses = computed(() => {
 const onDragStart = (e: DragEvent, playerName: string) => {
   if (!e.dataTransfer) return
 
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.dropEffect = 'move'
+
   const original = e.target as HTMLElement
-  const clone = original.cloneNode(true) as HTMLElement
+  try {
+    const clone = original.cloneNode(true) as HTMLElement
+    clone.style.position = 'absolute'
+    clone.style.top = '-9999px'
+    clone.style.left = '-9999px'
+    clone.style.width = `${original.offsetWidth}px`
+    clone.style.height = `${original.offsetHeight}px`
+    clone.style.boxSizing = 'border-box'
+    clone.style.pointerEvents = 'none'
+    clone.style.opacity = '1'
 
-  clone.style.position = 'absolute'
-  clone.style.top = '-9999px'
-  clone.style.left = '-9999px'
-  clone.style.width = `${original.offsetWidth}px`
-  clone.style.height = `${original.offsetHeight}px`
-  clone.style.boxSizing = 'border-box'
-  clone.style.pointerEvents = 'none'
-  clone.style.opacity = '1'
+    document.body.appendChild(clone)
+    e.dataTransfer.setDragImage(clone, clone.offsetWidth / 2, clone.offsetHeight / 2)
 
-  document.body.appendChild(clone)
-  e.dataTransfer.setDragImage(clone, clone.offsetWidth / 2, clone.offsetHeight / 2)
+    setTimeout(() => document.body.removeChild(clone), 0)
+  } catch {}
 
-  setTimeout(() => document.body.removeChild(clone), 0)
+  e.dataTransfer.setData('text/plain', playerName);
+};
 
-  e.dataTransfer.setData('text/plain', playerName)
-}
+const onDragOver = (e: DragEvent) => {
+  if (!slotInfo.player) {
+    e.dataTransfer!.dropEffect = 'move'
+  } else {
+    e.dataTransfer!.dropEffect = 'none'
+  }
+};
 
 const onDropEvent = (e: DragEvent) => {
   highlight.value = false
   dragCounter = 0
 
   const playerName = e.dataTransfer?.getData('text/plain')
-  if (!playerName || playerName === slotInfo.player?.username) return
+  if (!playerName ||  slotInfo.player) return
   emit('playerMove', playerName)
 }
 
