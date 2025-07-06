@@ -64,6 +64,14 @@
       :is-open="rightDrawerOpen"
       :lobby-state="currentLobbyState"
       @move="sendMessage(`!mp move ${$event.playerName} ${$event.to}`)"
+      @team-change="sendMessage(`!mp team ${$event.playerName} ${$event.team}`)"
+      @host="($event) => {
+        if ($event === null) {
+          sendMessage('!mp clearhost')
+        } else {
+          sendMessage(`!mp host ${$event}`)
+        }
+      }"
       @close="rightDrawerOpen = false"
     />
 

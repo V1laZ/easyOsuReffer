@@ -9,7 +9,7 @@
       <button @click="$emit('close')" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-6">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6">
       <template v-if="!lobbyState.currentMappoolId">
         <div class="flex flex-col items-center justify-center">
           <svg class="w-16 h-16 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -35,6 +35,11 @@ type PlayerMoveEvent = {
   to: number
 }
 
+type PlayerTeamChangeEvent = {
+  playerName: string
+  team: 'red' | 'blue'
+}
+
 type PlayerSlot = {
   id: number
   player: Player | null

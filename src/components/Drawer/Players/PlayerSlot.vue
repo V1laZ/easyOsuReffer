@@ -10,27 +10,38 @@
     @dragover.prevent
     @drop.prevent="onDropEvent"
   >
-    <!-- Slot Content -->
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between">
         <!-- Player -->
-        <div class="flex-1 min-w-0">
-          <div v-if="slotInfo.player" class="flex items-center space-x-2">
-            <span class="font-medium text-white truncate">{{ slotInfo.player.username }}</span>
-            <div v-if="slotInfo.player.isHost" class="flex-shrink-0">
-              <span class="text-xs bg-yellow-600 text-yellow-100 px-2 py-1 rounded">HOST</span>
-            </div>
-          </div>
-          <div v-else class="text-gray-500 italic">Empty</div>
+        <div v-if="slotInfo.player" class="flex items-center space-x-2 flex-1 min-w-0">
+          <button 
+            v-if="slotInfo.player.isHost"
+            @click="emit('host', null)"
+          >
+            <svg class="size-6 text-yellow-400" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M5 20v-2h14v2zm0-3.5L3.725 8.475q-.05 0-.113.013T3.5 8.5q-.625 0-1.062-.438T2 7t.438-1.062T3.5 5.5t1.063.438T5 7q0 .175-.038.325t-.087.275L8 9l3.125-4.275q-.275-.2-.45-.525t-.175-.7q0-.625.438-1.063T12 2t1.063.438T13.5 3.5q0 .375-.175.7t-.45.525L16 9l3.125-1.4q-.05-.125-.088-.275T19 7q0-.625.438-1.063T20.5 5.5t1.063.438T22 7t-.437 1.063T20.5 8.5q-.05 0-.112-.012t-.113-.013L19 16.5z"/></svg>
+          </button>
+          <button 
+            v-else
+            @click="emit('host', slotInfo.player.username)"
+          >
+            <svg class="size-6 text-gray-400/80" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M5 20v-2h14v2zm0-3.5L3.725 8.475q-.05 0-.113.013T3.5 8.5q-.625 0-1.062-.438T2 7t.438-1.062T3.5 5.5t1.063.438T5 7q0 .175-.038.325t-.087.275L8 9l3.125-4.275q-.275-.2-.45-.525t-.175-.7q0-.625.438-1.063T12 2t1.063.438T13.5 3.5q0 .375-.175.7t-.45.525L16 9l3.125-1.4q-.05-.125-.088-.275T19 7q0-.625.438-1.063T20.5 5.5t1.063.438T22 7t-.437 1.063T20.5 8.5q-.05 0-.112-.012t-.113-.013L19 16.5zm1.7-2h10.6l.65-4.175l-2.625 1.15L12 6.9l-3.325 4.575l-2.625-1.15zm5.3 0"/></svg>
+          </button>
+          <span class="font-medium text-white truncate flex-1 min-w-0">{{ slotInfo.player.username }}</span>
         </div>
 
+        <div v-else class="text-gray-500 italic flex-1 min-w-0">Empty</div>
+
         <!-- Team -->
-        <div 
+        <button 
           v-if="slotInfo.player && slotInfo.player.team"
-          class="size-4 rounded border-2 flex-shrink-0 border-gray-600"
+          class="size-4 rounded border-2 flex-shrink-0 cursor-pointer border-gray-600 ml-2"
           :class="teamColor"
           :title="`Team ${slotInfo.player.team}`"
-        ></div>
+          @click.stop="emit('teamChange', {
+            playerName: slotInfo.player.username,
+            team: slotInfo.player.team === 'red' ? 'blue' : 'red'
+          })"
+        ></button>
       </div>
     </div>
   </div>
@@ -44,6 +55,8 @@ const { slotInfo } = defineProps<{
 }>()
 const emit = defineEmits<{
   playerMove: [name: string]
+  teamChange: [event: PlayerTeamChangeEvent]
+  host: [host: string | null]
 }>()
 
 const highlight = ref<boolean>(false)
