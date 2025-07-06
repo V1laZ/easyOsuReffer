@@ -83,6 +83,8 @@ type OAuthToken = {
   updated_at: string
 }
 
+type OauthTokenCallback = Pick<OAuthToken, 'access_token' | 'refresh_token' | 'expires_in'>
+
 type UserCredentials = {
   id: number
   username: string

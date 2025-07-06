@@ -240,7 +240,7 @@ onMounted(async () => {
 
   } catch (error) {
     console.error('Failed to initialize chat:', error)
-    router.push('/login')
+    router.replace('/login')
   }
 })
 
@@ -403,7 +403,7 @@ const handleLogout = async () => {
     await invoke('disconnect_from_bancho')
     globalState.user = null
     globalState.isConnected = false
-    router.push('/login')
+    router.replace('/login')
   } catch (error) {
     console.error('Failed to logout:', error)
   }

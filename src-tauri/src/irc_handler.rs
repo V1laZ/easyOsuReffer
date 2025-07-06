@@ -146,6 +146,10 @@ pub async fn handle_irc_connection(
         irc_state.current_username = None;
         irc_state.lobby_states.clear();
     }
+
+    if let Err(e) = app_handle.emit("irc-disconnected", ()) {
+        println!("Failed to emit disconnect event: {}", e);
+    }
 }
 
 fn handle_incoming_message(
