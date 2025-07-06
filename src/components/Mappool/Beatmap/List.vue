@@ -43,11 +43,14 @@ const groupedBeatmaps = computed(() => {
     const aPrefix = getPrefix(a.category);
     const bPrefix = getPrefix(b.category);
 
-    const aIndex = categoryOrder.indexOf(aPrefix) !== -1 ? categoryOrder.indexOf(aPrefix) : categoryOrder.length - 1;
-    const bIndex = categoryOrder.indexOf(bPrefix) !== -1 ? categoryOrder.indexOf(bPrefix) : categoryOrder.length - 1;
+    const aIndex = categoryOrder.indexOf(aPrefix);
+    const bIndex = categoryOrder.indexOf(bPrefix);
 
-    if (aIndex !== bIndex) {
-      return aIndex - bIndex;
+    const normAIndex = aIndex === -1 ? categoryOrder.length - 2 : aIndex;
+    const normBIndex = bIndex === -1 ? categoryOrder.length - 2 : bIndex;
+
+    if (normAIndex !== normBIndex) {
+      return normAIndex - normBIndex;
     }
     return (a.category || '').localeCompare(b.category || '');
   });
