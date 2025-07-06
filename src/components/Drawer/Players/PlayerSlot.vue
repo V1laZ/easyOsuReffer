@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex items-center p-2 px-3 rounded-lg border transition-colors"
+    class="flex items-center mx-1 p-2 px-3 rounded-lg border transition-colors"
     :class="[slotClasses, highlight ? 'ring-2 ring-pink-400' : '']"
     :draggable="!!slotInfo.player"
     @dragstart="onDragStart($event, slotInfo.player?.username || 'Unknown')"
