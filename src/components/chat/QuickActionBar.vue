@@ -58,12 +58,11 @@
             :key="mod"
             class="px-2 py-0.5 text-white text-xs rounded font-medium"
             :class="{
-              'bg-teal-600': mod === 'DT',
+              'bg-purple-600': mod === 'DT' || mod === 'NC',
               'bg-yellow-600': mod === 'HD',
               'bg-red-600': mod === 'HR',
               'bg-green-600': mod === 'EZ',
               'bg-gray-900': mod === 'FL',
-              'bg-purple-600': mod === 'NC',
             }"
           >
             {{ mod }}

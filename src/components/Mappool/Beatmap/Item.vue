@@ -73,10 +73,10 @@ const categoryColor = computed(() => {
     case 'NM': return 'bg-gray-600';
     case 'HD': return 'bg-yellow-600';
     case 'HR': return 'bg-red-600';
-    case 'DT': return 'bg-teal-600';
+    case 'DT': return 'bg-purple-600';
     case 'FL': return 'bg-gray-800';
-    case 'FM': return 'bg-purple-600';
-    case 'TB': return 'bg-blue-600';
+    case 'FM': return 'bg-teal-600';
+    case 'TB': return 'bg-fuchsia-600';
     default: return 'bg-gray-500';
   }
 })
