@@ -7,7 +7,7 @@ A modern, cross-platform IRC client specifically designed for osu! referees and 
 ### For Users
 
 #### Download & Installation
-1. Visit the [Releases](https://github.com/yourusername/easyOsuReffer/releases) page
+1. Visit the [Releases](https://github.com/V1laZ/easyOsuReffer/releases) page
 2. Download the appropriate version for your operating system
 3. Install and run the application
 
