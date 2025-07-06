@@ -36,8 +36,7 @@ onMounted(async () => {
   once('oauth-token-callback', async (payload) => {
     const data = payload.payload as { access_token: string, refresh_token: string, expires_in: number }
     if (!data) {
-      errorMessage.value = 'Failed to retrieve OAuth token'
-      loading.value = false
+      console.error('No OAuth token data received')
       return
     }
 
