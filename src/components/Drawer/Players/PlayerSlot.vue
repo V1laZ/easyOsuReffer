@@ -1,7 +1,14 @@
 <template>
   <div
     class="flex items-center p-2 px-3 rounded-lg border transition-colors"
-    :class="slotClasses"
+    :class="[slotClasses, highlight ? 'ring-2 ring-pink-400' : '']"
+    :draggable="!!slotInfo.player"
+    @dragstart="onDragStart($event, slotInfo.player?.username || 'Unknown')"
+    @dragenter="onDragEnter"
+    @dragleave="onDragLeave"
+    @dragend="highlight = false"
+    @dragover.prevent
+    @drop.prevent="onDropEvent"
   >
     <!-- Slot Content -->
     <div class="flex-1 min-w-0">
@@ -30,34 +37,78 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
-const props = defineProps<{
+const { slotInfo } = defineProps<{
   slotInfo: PlayerSlot
 }>()
+const emit = defineEmits<{
+  playerMove: [name: string]
+}>()
+
+const highlight = ref<boolean>(false)
+let dragCounter = 0
 
 const slotClasses = computed(() => {
-    const baseClasses = []
-  
-  if (props.slotInfo.player) {
-    // Player is in slot
-    if (props.slotInfo.player.isReady) {
-      baseClasses.push('bg-green-900/30 border-green-600')
-    } else if (props.slotInfo.player.isPlaying) {
-      baseClasses.push('bg-blue-900/30 border-blue-600')
-    } else {
-      baseClasses.push('bg-gray-900/30 border-gray-500')
-    }
-  } else {
-    // Empty slot
-    baseClasses.push('bg-gray-800 border-gray-600')
-  }
-  
-  return baseClasses.join(' ')
+  if (slotInfo.player) {
+    if (slotInfo.player.isReady) {
+      return 'bg-green-900/30 border-green-600'
+    } else if (slotInfo.player.isPlaying) {
+      return 'bg-blue-900/30 border-blue-600'
+    } 
+    return 'bg-gray-900/30 border-gray-500'
+  } 
+  return 'bg-gray-800 border-gray-600'
 })
 
+const onDragStart = (e: DragEvent, playerName: string) => {
+  if (!e.dataTransfer) return
+
+  const original = e.target as HTMLElement
+  const clone = original.cloneNode(true) as HTMLElement
+
+  clone.style.position = 'absolute'
+  clone.style.top = '-9999px'
+  clone.style.left = '-9999px'
+  clone.style.width = `${original.offsetWidth}px`
+  clone.style.height = `${original.offsetHeight}px`
+  clone.style.boxSizing = 'border-box'
+  clone.style.pointerEvents = 'none'
+  clone.style.opacity = '1'
+
+  document.body.appendChild(clone)
+  e.dataTransfer.setDragImage(clone, clone.offsetWidth / 2, clone.offsetHeight / 2)
+
+  setTimeout(() => document.body.removeChild(clone), 0)
+
+  e.dataTransfer.setData('text/plain', playerName)
+}
+
+const onDropEvent = (e: DragEvent) => {
+  highlight.value = false
+  dragCounter = 0
+
+  const playerName = e.dataTransfer?.getData('text/plain')
+  if (!playerName || playerName === slotInfo.player?.username) return
+  emit('playerMove', playerName)
+}
+
+const onDragEnter = () => {
+  if (slotInfo.player) return
+  dragCounter++
+  highlight.value = true
+}
+
+const onDragLeave = () => {
+  dragCounter--
+  if (dragCounter <= 0) {
+    highlight.value = false
+    dragCounter = 0
+  }
+}
+
 const teamColor = computed(() => {
-  if (!props.slotInfo.player) return 'bg-gray-600'
-  return props.slotInfo.player.team === 'red' ? 'bg-red-500' : 'bg-blue-500'
+  if (!slotInfo.player) return 'bg-gray-600'
+  return slotInfo.player.team === 'red' ? 'bg-red-500' : 'bg-blue-500'
 })
 </script>

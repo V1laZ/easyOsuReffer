@@ -63,6 +63,7 @@
       v-if="activeRoom && activeRoom.startsWith('#mp_') && currentLobbyState"
       :is-open="rightDrawerOpen"
       :lobby-state="currentLobbyState"
+      @move="sendMessage(`!mp move ${$event.playerName} ${$event.to}`)"
       @close="rightDrawerOpen = false"
     />
 
@@ -273,6 +274,7 @@ const refreshLobbyState = async () => {
 }
 
 const parseMods = (modString: string) => {
+  if (modString === 'None') return 'None'
   const mods = modString.match(/.{1,2}/g) || []
 
   if (mods.length === 0) return 'None'

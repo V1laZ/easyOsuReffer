@@ -26,9 +26,10 @@
     <div class="flex-1 overflow-y-scroll p-3">
       <div class="space-y-2">
         <PlayerSlot
-          v-for="slot in lobbyState.slots"
+          v-for="(slot, idx) in lobbyState.slots"
           :key="slot.id"
           :slot-info="slot"
+          @player-move="emit('move', { playerName: $event, to: idx + 1})"
         />
       </div>
     </div>
@@ -46,6 +47,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
+  move: [move: PlayerMoveEvent]
 }>()
 
 const occupiedSlots = computed(() => 
@@ -55,5 +57,4 @@ const occupiedSlots = computed(() =>
 const readyPlayers = computed(() => 
   props.lobbyState.slots.filter(slot => slot.player?.isReady).length || 0
 )
-
 </script>

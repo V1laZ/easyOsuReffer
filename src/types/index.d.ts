@@ -30,6 +30,11 @@ type Player = {
   isHost: boolean
 }
 
+type PlayerMoveEvent = {
+  playerName: string
+  to: number
+}
+
 type PlayerSlot = {
   id: number
   player: Player | null
