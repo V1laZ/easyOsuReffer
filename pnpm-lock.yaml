@@ -17,9 +17,6 @@ importers:
       '@tauri-apps/plugin-opener':
         specifier: 2.4.0
         version: 2.4.0
-      '@tauri-apps/plugin-shell':
-        specifier: ~2.3.0
-        version: 2.3.0
       '@tauri-apps/plugin-sql':
         specifier: ~2.3.0
         version: 2.3.0
@@ -519,9 +516,6 @@ packages:
 
   '@tauri-apps/plugin-opener@2.4.0':
     resolution: {integrity: sha512-43VyN8JJtvKWJY72WI/KNZszTpDpzHULFxQs0CJBIYUdCRowQ6Q1feWTDb979N7nldqSuDOaBupZ6wz2nvuWwQ==}
-
-  '@tauri-apps/plugin-shell@2.3.0':
-    resolution: {integrity: sha512-6GIRxO2z64uxPX4CCTuhQzefvCC0ew7HjdBhMALiGw74vFBDY95VWueAHOHgNOMV4UOUAFupyidN9YulTe5xlA==}
 
   '@tauri-apps/plugin-sql@2.3.0':
     resolution: {integrity: sha512-JYwIocfsLaDWa41LMiZWuzts7yCJR+EpZPRmgpO7Gd7XiAS9S67dKz306j/k/d9XntB0YopMRBol2OIWMschuA==}
@@ -1155,10 +1149,6 @@ snapshots:
       '@tauri-apps/api': 2.6.0
 
   '@tauri-apps/plugin-opener@2.4.0':
-    dependencies:
-      '@tauri-apps/api': 2.6.0
-
-  '@tauri-apps/plugin-shell@2.3.0':
     dependencies:
       '@tauri-apps/api': 2.6.0
 

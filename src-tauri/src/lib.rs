@@ -83,7 +83,7 @@ pub fn run() {
         },
     ];
 
-    let mut builder = tauri::Builder::default().plugin(tauri_plugin_shell::init());
+    let mut builder = tauri::Builder::default();
 
     #[cfg(desktop)]
     {

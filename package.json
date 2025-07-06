@@ -13,7 +13,6 @@
     "@tauri-apps/api": "2.6.0",
     "@tauri-apps/plugin-deep-link": "~2",
     "@tauri-apps/plugin-opener": "2.4.0",
-    "@tauri-apps/plugin-shell": "~2.3.0",
     "@tauri-apps/plugin-sql": "~2.3.0",
     "vue": "3.5.17",
     "vue-router": "^4.5.1"

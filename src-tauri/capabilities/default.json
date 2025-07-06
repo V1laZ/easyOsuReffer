@@ -10,7 +10,6 @@
     "opener:default",
     "sql:default",
     "sql:allow-execute",
-    "deep-link:default",
-    "shell:default"
+    "deep-link:default"
   ]
 }
