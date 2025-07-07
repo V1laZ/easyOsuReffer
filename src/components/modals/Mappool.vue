@@ -1,9 +1,28 @@
 <template>
   <div 
-    class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" 
+    class="fixed inset-0 z-50 sm:flex items-center justify-center sm:p-4"
+    :class="{
+      'pointer-events-none sm:hidden': !isOpen,
+      'pointer-events-auto': isOpen,
+    }"
     @click="emit('close')"
   >
-    <div class="bg-gray-900 rounded-2xl w-full max-w-lg md:max-w-4xl max-h-[90vh] border border-gray-700 shadow-2xl overflow-hidden" @click.stop>
+    <div 
+      class="fixed inset-0 transition-opacity bg-black/80"
+      :class="{
+        'sm:hidden opacity-0 pointer-events-none delay-150': !isOpen,
+        'opacity-100': isOpen,
+      }" 
+      @click="emit('close')"
+    ></div>
+    <div 
+      class="bg-gray-900 flex flex-col z-10 transition-transform duration-500 ease-in-out rounded-2xl absolute sm:relative w-full max-w-lg md:max-w-4xl max-h-[90vh] min-h-[70vh] bottom-0 border border-gray-700 shadow-2xl overflow-hidden"
+      :class="{
+        'translate-y-full sm:translate-y-0': !isOpen,
+        'translate-y-0': isOpen,
+      }"
+      @click.stop
+    >
       <!-- Header -->
       <div class="flex items-center justify-between p-4 md:p-6 border-b border-gray-700">
         <div>
@@ -21,9 +40,9 @@
       </div>
 
       <!-- Content -->
-      <div class="h-[calc(90vh-180px)] md:h-[calc(90vh-120px)]">
+      <div class="flex flex-1 flex-col overflow-hidden">
         <!-- Mappool List View -->
-        <div v-if="!selectedMappool" class="h-full flex flex-col">
+        <div v-if="!selectedMappool" class="flex-1 flex flex-col relative">
           <CreateForm
             v-if="showCreateForm"
             @create="refreshMappools(); showCreateForm = false"
@@ -39,7 +58,7 @@
           <!-- Create Button -->
           <div
             v-if="!showCreateForm" 
-            class="p-4 border-t border-gray-700"
+            class="p-4 border-t border-gray-700 absolute z-10 bottom-0 left-0 w-full"
           >
             <button 
               class="w-full bg-pink-600 hover:bg-pink-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
@@ -56,7 +75,7 @@
         <!-- Mappool Detail View -->
         <div 
           v-else-if="selectedMappool"
-          class="h-full flex flex-col"
+          class="flex flex-col flex-1 overflow-hidden"
         >
           <!-- Header with back button -->
           <div class="p-4 border-b border-gray-700 bg-gray-800">
@@ -91,7 +110,10 @@
             </div>
           </template>
 
-          <template v-else>
+          <div 
+            v-else
+            class="flex-1 flex flex-col overflow-auto"
+          >
             <!-- Add Beatmap Form -->
             <AddBeatmapCard 
               v-if="showAddBeatmap"
@@ -101,11 +123,11 @@
             />
   
             <!-- Beatmap List -->
-            <BeatmapList 
+            <BeatmapList
               @remove="refreshBeatmaps(selectedMappool.id)"
               :beatmaps="selectedMappoolBeatmaps"
             />
-          </template>
+          </div>
 
           <!-- Add Button -->
           <div class="p-4 border-t border-gray-700">
@@ -127,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { dbService } from '../../services/database'
 import { globalState } from '../../stores/global'
 import CreateForm from '../Mappool/CreateForm.vue'
@@ -140,14 +162,22 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const isOpen = defineModel<boolean>({ default: false })
+
 const mappools = ref<Mappool[]>([])
 const selectedMappool = ref<Mappool | null>(null)
 const selectedMappoolBeatmaps = ref<BeatmapEntry[]>([])
 const showCreateForm = ref(false)
 const showAddBeatmap = ref(false)
 
-onMounted(async () => {
-  await refreshMappools()
+watch(isOpen, (newVal) => {
+  if (newVal) {
+    refreshMappools()
+    selectedMappool.value = null
+    selectedMappoolBeatmaps.value = []
+    showCreateForm.value = false
+    showAddBeatmap.value = false
+  }
 })
 
 const refreshMappools = async () => {

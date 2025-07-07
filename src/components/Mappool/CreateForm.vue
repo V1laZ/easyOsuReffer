@@ -19,14 +19,14 @@
         <button 
           type="button" 
           @click="emit('cancel')" 
-          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
         >
           Cancel
         </button>
         <button 
           :disabled="loading"
           type="submit" 
-          class="flex-1 bg-pink-600 hover:bg-pink-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+          class="flex-1 bg-pink-600 hover:bg-pink-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
         >
           Create
         </button>

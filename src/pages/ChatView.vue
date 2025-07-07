@@ -84,7 +84,7 @@
     />
 
     <MappoolModal 
-      v-if="mappoolsOpen"
+      v-model="mappoolsOpen"
       @close="mappoolsOpen = false"
     />
 
