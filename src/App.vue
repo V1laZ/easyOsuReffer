@@ -21,7 +21,7 @@
         <p v-if="errorMessage" class="text-red-400 mt-2">{{ errorMessage }}</p>
       </div>
     </div>
-    
+
     <RouterView v-else />
   </main>
 </template>
@@ -46,7 +46,7 @@ let unlisteDisconnect: UnlistenFn | null = null
 async function connectWithCredentials(saved: UserCredentials) {
   globalState.user = saved.username
   globalState.userId = saved.id
-  globalState.isConnectedOsu = await dbService.getOsuConnectedStatus(saved.id)
+  globalState.isConnectedOsu = await dbService.getOsuConnectedStatus(saved.username)
   try {
     loadingMessage.value = 'Connecting...'
     errorMessage.value = ''
@@ -99,7 +99,7 @@ async function handleOAuthTokenCallback(payload: { payload: OauthTokenCallback }
   }
   try {
     await dbService.saveOAuthToken(
-      Number(globalState.userId),
+      globalState.user || '',
       data.access_token,
       data.refresh_token,
       data.expires_in

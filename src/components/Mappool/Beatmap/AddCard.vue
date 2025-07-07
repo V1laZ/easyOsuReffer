@@ -130,7 +130,7 @@ const computedMods = computed(() => {
 })
 
 const fetchBeatmapData = async () => {
-  if (!globalState.userId) return
+  if (!globalState.user) return
   
   const beatmapId = extractBeatmapId(beatmapInput.value)
   if (!beatmapId) {
@@ -143,7 +143,7 @@ const fetchBeatmapData = async () => {
 
   
   try {
-    const accessToken = await dbService.getAccessToken(globalState.userId)
+    const accessToken = await dbService.getAccessToken(globalState.user || '')
     const data = await invoke<BeatmapData>('fetch_beatmap_data', {
       beatmapId: beatmapId,
       accessToken

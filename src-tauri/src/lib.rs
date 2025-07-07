@@ -81,6 +81,25 @@ pub fn run() {
         ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 5,
+            description: "recreate_oauth_tokens_with_username",
+            sql: "
+            DROP TABLE IF EXISTS oauth_tokens;
+            
+            CREATE TABLE oauth_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                irc_username TEXT NOT NULL UNIQUE,
+                access_token TEXT NOT NULL,
+                refresh_token TEXT NOT NULL,
+                expires_in INTEGER NOT NULL,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+        ",
+            kind: MigrationKind::Up,
+        },
     ];
 
     let mut builder = tauri::Builder::default();
