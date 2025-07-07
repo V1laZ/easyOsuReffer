@@ -5,6 +5,8 @@ A modern, cross-platform IRC client specifically designed for osu! referees and 
 ## 🚀 Getting Started
 
 ### For Users
+> [!IMPORTANT]
+> Please **disable battery optimizations** on Android for this app, otherwise you'll keep disconnecting from Bancho!
 
 #### Download & Installation
 1. Visit the [Releases](https://github.com/V1laZ/easyOsuReffer/releases) page
