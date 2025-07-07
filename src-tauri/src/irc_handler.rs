@@ -134,17 +134,12 @@ pub async fn handle_irc_connection(
 
     println!("IRC connection handler ended");
 
-    // Mark as disconnected and clean up state
+    // Mark as disconnected
     {
         let mut irc_state = state.lock().unwrap();
         irc_state.connected = false;
-        irc_state.rooms.clear();
-        irc_state.active_room = None;
-        irc_state.config = None;
         irc_state.client = None;
         irc_state.message_sender = None;
-        irc_state.current_username = None;
-        irc_state.lobby_states.clear();
     }
 
     if let Err(e) = app_handle.emit("irc-disconnected", ()) {

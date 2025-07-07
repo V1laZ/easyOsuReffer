@@ -8,9 +8,17 @@
         </svg>
         
         <h2 class="text-xl text-white mb-2">osu! Reffer</h2>
+        <p v-if="errorMessage" class="text-red-400 mb-2">{{ errorMessage }}</p>
         <p class="text-gray-400">{{ loadingMessage }}</p>
-        
-        <p v-if="errorMessage" class="text-red-400 mt-4">{{ errorMessage }}</p>
+      </div>
+    </div>
+
+    <div v-else-if="disconnected" class="h-full bg-gray-900 flex items-center justify-center">
+      <div class="text-center">
+        <h2 class="text-xl text-white mb-2">Disconnected from Bancho</h2>
+        <p class="text-gray-400 mb-4">You have been disconnected from Bancho. Please check your connection and try to reconnect.</p>
+        <button @click="reconnectToBancho" class="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600">Reconnect</button>
+        <p v-if="errorMessage" class="text-red-400 mt-2">{{ errorMessage }}</p>
       </div>
     </div>
     
@@ -29,6 +37,7 @@ import { type UnlistenFn, listen, once } from '@tauri-apps/api/event'
 const router = useRouter()
 
 const loading = ref(true)
+const disconnected = ref(false)
 const loadingMessage = ref('Loading...')
 const errorMessage = ref('')
 
@@ -40,15 +49,15 @@ async function connectWithCredentials(saved: UserCredentials) {
   globalState.isConnectedOsu = await dbService.getOsuConnectedStatus(saved.id)
   try {
     loadingMessage.value = 'Connecting...'
-
+    errorMessage.value = ''
     const connected = await invoke<boolean>('get_connection_status')
     if (connected) {
       globalState.isConnected = true
       loading.value = false
+      disconnected.value = false
       router.replace('/')
       return true
     }
-
     const config = {
       username: saved.username,
       password: saved.password
@@ -56,48 +65,38 @@ async function connectWithCredentials(saved: UserCredentials) {
     await invoke('connect_to_bancho', { config })
     globalState.isConnected = true
     loading.value = false
+    disconnected.value = false
     router.replace('/')
     return true
   } catch (error) {
+    errorMessage.value = 'Failed to connect with saved credentials.' + (error instanceof Error ? ' ' + error.message : error ? ' ' + String(error) : '')
     console.error('Failed to connect with saved credentials:', error)
-    errorMessage.value = 'Connection failed'
     return false
   }
 }
 
-async function tryConnectWithSavedCredentials() {
-  loadingMessage.value = 'Checking credentials...'
-  const saved = await dbService.getCredentials()
-  if (saved) {
-    const success = await connectWithCredentials(saved)
-    if (success) return true
-  }
-  loading.value = false
-  router.replace('/login')
-  return false
-}
-
-async function handleIrcDisconnected() {
-  globalState.isConnected = false
-  loadingMessage.value = 'Connecting...'
-  loading.value = true
-
+async function reconnectToBancho() {
+  errorMessage.value = ''
   try {
-    await tryConnectWithSavedCredentials()
-  } catch (error) {
-    console.error('Failed to reconnect: ', error)
+    loading.value = true
+    loadingMessage.value = 'Reconnecting to Bancho...'
+    await invoke('reconnect_to_bancho')
+    globalState.isConnected = true
+    disconnected.value = false
     loading.value = false
-    router.replace('/login')
+    router.replace('/')
+  } catch (e) {
+    errorMessage.value = 'Failed to reconnect to Bancho. Please try to restart the app.'
   }
 }
 
 async function handleOAuthTokenCallback(payload: { payload: OauthTokenCallback }) {
   const data = payload.payload
   if (!data) {
+    errorMessage.value = 'No OAuth token data received.'
     console.error('No OAuth token data received')
     return
   }
-
   try {
     await dbService.saveOAuthToken(
       Number(globalState.userId),
@@ -107,25 +106,41 @@ async function handleOAuthTokenCallback(payload: { payload: OauthTokenCallback }
     )
     globalState.isConnectedOsu = true
   } catch (error) {
+    errorMessage.value = 'Failed to save OAuth token.' + (error instanceof Error ? ' ' + error.message : error ? ' ' + String(error) : '')
     console.error('Failed to save OAuth token:', error)
-    errorMessage.value = 'Failed to save OAuth token'
   }
 }
 
+function handleOfflineState() {
+  globalState.isConnected = false
+  loading.value = false
+  disconnected.value = true
+  loadingMessage.value = ''
+  errorMessage.value = ''
+}
+
 onMounted(async () => {
-  unlisteDisconnect = await listen('irc-disconnected', handleIrcDisconnected)
+  unlisteDisconnect = await listen('irc-disconnected', handleOfflineState)
   once('oauth-token-callback', handleOAuthTokenCallback)
 
+  loading.value = true
   try {
     loadingMessage.value = 'Initializing...'
+    errorMessage.value = ''
     await dbService.init()
+    loadingMessage.value = 'Checking credentials...'
+    const saved = await dbService.getCredentials()
+    if (saved) {
+      await connectWithCredentials(saved)
+    } else {
+      loading.value = false
+      router.replace('/login')
+    }
   } catch (error) {
+    errorMessage.value = 'Failed to initialize database.' + (error instanceof Error ? ' ' + error.message : error ? ' ' + String(error) : '')
     console.error('Failed to initialize database:', error)
-    errorMessage.value = 'Failed to initialize database'
     return
   }
-
-  await tryConnectWithSavedCredentials()
 })
 
 onUnmounted(() => {

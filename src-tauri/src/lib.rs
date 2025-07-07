@@ -106,11 +106,12 @@ pub fn run() {
         .manage(IrcState::default())
         .invoke_handler(tauri::generate_handler![
             connect_to_bancho,
+            reconnect_to_bancho,
+            disconnect_from_bancho,
             send_message_to_room,
             join_channel,
             leave_channel,
             close_private_message,
-            disconnect_from_bancho,
             get_connection_status,
             get_joined_rooms,
             get_room_messages,

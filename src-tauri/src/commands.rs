@@ -57,6 +57,24 @@ pub async fn connect_to_bancho(
                 handle_irc_connection(client, app_handle_clone, state_clone, rx).await;
             });
 
+            // Rejoin all previously joined channels and multiplayer lobbies
+            {
+                let irc_state = state.lock().unwrap();
+                let message_sender = irc_state.message_sender.clone();
+                let rooms_to_rejoin: Vec<String> = irc_state
+                    .rooms
+                    .iter()
+                    .filter_map(|(room_id, room)| match room.room_type {
+                        RoomType::Channel | RoomType::MultiplayerLobby => Some(room_id.clone()),
+                        _ => None,
+                    })
+                    .collect();
+                if let Some(sender) = message_sender {
+                    for room_id in rooms_to_rejoin {
+                        let _ = sender.send(IrcCommand::JoinChannel { channel: room_id });
+                    }
+                }
+            }
             Ok("Successfully connected to osu! Bancho".to_string())
         }
         Err(e) => {
@@ -191,6 +209,26 @@ pub async fn close_private_message(
     remove_room(&username, &state);
 
     Ok(format!("Closed private message with {}", username))
+}
+
+#[tauri::command]
+pub async fn reconnect_to_bancho(
+    state: State<'_, IrcState>,
+    app_handle: tauri::AppHandle,
+) -> Result<String, String> {
+    let config = {
+        let irc_state = state.lock().unwrap();
+        if irc_state.connected {
+            return Ok("Already connected".to_string());
+        }
+        irc_state.config.clone()
+    };
+
+    if let Some(config) = config {
+        connect_to_bancho(config, state, app_handle).await
+    } else {
+        Err("No previous config found".to_string())
+    }
 }
 
 #[tauri::command]
