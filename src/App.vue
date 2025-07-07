@@ -119,9 +119,16 @@ function handleOfflineState() {
   errorMessage.value = ''
 }
 
+function setRealVh() {
+  document.documentElement.style.setProperty('--real-vh', `${window.innerHeight * 0.01}px`);
+}
+
 onMounted(async () => {
   unlisteDisconnect = await listen('irc-disconnected', handleOfflineState)
   once('oauth-token-callback', handleOAuthTokenCallback)
+
+  window.addEventListener('resize', setRealVh);
+  setRealVh();
 
   loading.value = true
   try {
@@ -145,10 +152,15 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (unlisteDisconnect) unlisteDisconnect();
+  window.removeEventListener('resize', setRealVh);
 })
 </script>
 
 <style>
+main {
+  height: calc(var(--real-vh, 1vh) * 100);
+}
+
 ::-webkit-scrollbar {
   display: none;
 }

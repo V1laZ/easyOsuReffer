@@ -154,7 +154,7 @@ const router = useRouter()
 const loginForm = ref({
   username: '',
   password: '',
-  rememberMe: false
+  rememberMe: true
 })
 
 // UI state
