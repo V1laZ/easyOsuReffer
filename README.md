@@ -1,50 +1,49 @@
 # osu!Reffer
+A modern, cross-platform IRC client specifically designed for osu! referees and tournament organizers.
 
-A modern, cross-platform IRC client specifically designed for osu! referees and tournament organizers. Built with Tauri, Vue 3, and TypeScript, osu!Reffer provides an intuitive interface for managing osu! multiplayer lobbies and communicating through Bancho IRC.
-
-## 🚀 Getting Started
-
-### For Users
+## 🚀 Installing
 > [!IMPORTANT]
 > Please **disable battery optimizations** on Android for this app, otherwise you'll keep disconnecting from Bancho!
 
-#### Download & Installation
 1. Visit the [Releases](https://github.com/V1laZ/easyOsuReffer/releases) page
 2. Download the appropriate version for your operating system
 3. Install and run the application
 
-### For Developers
+## 🔧 Features
+- Keep track of current lobby state
+- One-click UI for frequently used commands
+- Create mappools and select maps in lobby with ease 
 
-#### Prerequisites
+## 📷 Screenshots
+<img src="https://github.com/user-attachments/assets/c5c7e83a-1f78-4582-92b6-b31b124b478e" width="300" />
+<img src="https://github.com/user-attachments/assets/7bfd8888-142f-42d1-9bc4-b8240fdd2568" width="300" />
+<img src="https://github.com/user-attachments/assets/c8d9fc2b-58bc-443f-a103-1325997ddbe9" width="300" />
+<img src="https://github.com/user-attachments/assets/68155eb7-6af0-4e28-8f27-1e54cd7ee4d3" width="300" />
+<img src="https://github.com/user-attachments/assets/58e4b0ec-0188-4f76-a039-995819fa6140" width="300" />
+
+## 🖥️ Development
+
+### Prerequisites
 - [Node.js](https://nodejs.org/) (v18 or higher)
 - [pnpm](https://pnpm.io/) package manager
 - [Rust](https://rustup.rs/) (latest stable)
 
-#### Installation
+#### Install dependencies
 ```bash
-# Clone the repository
-git clone https://github.com/V1laZ/easyOsuReffer.git
-cd easyOsuReffer
-
-# Install dependencies
 pnpm install
 ```
 
-#### Development
-
-##### Start Development Server
+#### Start Development Server
 ```bash
-# Start the development server
 pnpm tauri dev
 ```
 
-##### Build for Production
+#### Build for Production
 ```bash
-# Build the application
 pnpm tauri build
 ```
 
-##### Mobile Development (Android)
+#### Mobile Development (Android)
 ```bash
 # Add Android target
 pnpm tauri android init
