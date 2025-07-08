@@ -130,7 +130,10 @@
           </div>
 
           <!-- Add Button -->
-          <div class="p-4 border-t border-gray-700">
+          <div 
+            v-if="!showAddBeatmap" 
+            class="p-4 border-t border-gray-700"
+          >
             <button 
               @click="showAddBeatmap = true"
               :disabled="!globalState.isConnectedOsu"
