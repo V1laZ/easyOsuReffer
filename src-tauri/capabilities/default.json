@@ -10,6 +10,14 @@
     "opener:default",
     "sql:default",
     "sql:allow-execute",
-    "deep-link:default"
+    "deep-link:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://osureffer.vilaz.dev"
+        }
+      ]
+    }
   ]
 }

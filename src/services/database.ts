@@ -1,4 +1,5 @@
 import Database from '@tauri-apps/plugin-sql'
+import { fetch } from '@tauri-apps/plugin-http'
 
 class DatabaseService {
   private db: Database | null = null
