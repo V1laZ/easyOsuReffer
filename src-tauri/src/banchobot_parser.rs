@@ -362,6 +362,26 @@ impl BanchoBotParser {
             }
         }
 
+        // Player changed team
+        if let Ok(regex) = Regex::new(r#"^(.+) changed to (Red|Blue)$"#) {
+            if let Some(captures) = regex.captures(text) {
+                let username = captures.get(1).unwrap().as_str();
+                let team = captures.get(2).unwrap().as_str().to_lowercase();
+                let mut irc_state = state.lock().unwrap();
+                if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
+                    for slot in &mut lobby.slots {
+                        if let Some(ref mut player) = slot.player {
+                            if player.username == username {
+                                player.team = Some(team.clone());
+                            }
+                        }
+                    }
+                    let _ = app_handle.emit("lobby-updated", lobby.clone());
+                }
+                return true;
+            }
+        }
+
         if text == "Disabled all mods, enabled FreeMod" {
             Self::update_mods(channel, Vec::new(), true, state, app_handle);
             return true;
