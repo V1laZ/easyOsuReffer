@@ -972,6 +972,7 @@ name = "easyosureffer"
 version = "0.4.1"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "futures",
  "irc",
  "regex",

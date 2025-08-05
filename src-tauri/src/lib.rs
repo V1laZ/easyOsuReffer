@@ -3,6 +3,7 @@ mod commands;
 mod irc_handler;
 mod types;
 
+use base64::Engine;
 use commands::*;
 use tauri::{Emitter, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
@@ -151,27 +152,21 @@ pub fn run() {
                         .map(|(k, v)| (k.to_string(), v.to_string()))
                         .collect::<std::collections::HashMap<_, _>>();
 
-                    let access_token = query.get("access_token").cloned().unwrap_or_default();
-                    let refresh_token = query.get("refresh_token").cloned().unwrap_or_default();
-                    let expires_in: i32 = query
-                        .get("expires_in")
-                        .and_then(|v| v.parse().ok())
-                        .unwrap_or(0);
-
-                    if (access_token.is_empty() || refresh_token.is_empty()) || expires_in <= 0 {
-                        return;
+                    if let Some(base64_data) = query.get("data") {
+                        if let Ok(decoded_bytes) =
+                            base64::engine::general_purpose::STANDARD.decode(base64_data)
+                        {
+                            if let Ok(decoded_string) = String::from_utf8(decoded_bytes) {
+                                if let Ok(token_data) =
+                                    serde_json::from_str::<serde_json::Value>(&decoded_string)
+                                {
+                                    app_handle
+                                        .emit("oauth-token-callback", token_data)
+                                        .expect("Failed to emit oauth-token-callback event");
+                                }
+                            }
+                        }
                     }
-
-                    app_handle
-                        .emit(
-                            "oauth-token-callback",
-                            serde_json::json!({
-                                "access_token": access_token,
-                                "refresh_token": refresh_token,
-                                "expires_in": expires_in,
-                            }),
-                        )
-                        .expect("Failed to emit oauth-token-callback event");
                 }
             });
 

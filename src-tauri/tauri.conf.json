@@ -33,7 +33,7 @@
         {
           "host": "osureffer.vilaz.dev",
           "pathPrefix": [
-            "/mobile-token-callback"
+            "/callback"
           ]
         }
       ],

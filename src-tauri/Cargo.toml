@@ -31,6 +31,7 @@ regex = "1.0"
 tauri-plugin-deep-link = "2"
 reqwest = { version = "0.12.22", features = ["json"] }
 tauri-plugin-http = "2"
+base64 = "0.22.1"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = { version = "2.0.0", features = ["deep-link"] }

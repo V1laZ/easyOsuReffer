@@ -6,3 +6,7 @@ export const globalState = reactive({
   isConnected: false,
   isConnectedOsu: false,
 })
+
+export const modalsState = reactive({
+  showOAuthCallback: false,
+})

@@ -1,29 +1,33 @@
 <template>
-  <main class="h-[100dvh] overflow-hidden">
-    <div v-if="loading" class="h-full bg-gray-900 flex items-center justify-center">
-      <div class="text-center">
-        <svg class="animate-spin w-12 h-12 mx-auto text-pink-500 mb-4" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        
-        <h2 class="text-xl text-white mb-2">osu! Reffer</h2>
-        <p v-if="errorMessage" class="text-red-400 mb-2">{{ errorMessage }}</p>
-        <p class="text-gray-400">{{ loadingMessage }}</p>
+  <div>
+    <main class="h-[100dvh] overflow-hidden">
+      <div v-if="loading" class="h-full bg-gray-900 flex items-center justify-center">
+        <div class="text-center">
+          <svg class="animate-spin w-12 h-12 mx-auto text-pink-500 mb-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          
+          <h2 class="text-xl text-white mb-2">osu! Reffer</h2>
+          <p v-if="errorMessage" class="text-red-400 mb-2">{{ errorMessage }}</p>
+          <p class="text-gray-400">{{ loadingMessage }}</p>
+        </div>
       </div>
-    </div>
-
-    <div v-else-if="disconnected" class="h-full bg-gray-900 flex items-center justify-center">
-      <div class="text-center">
-        <h2 class="text-xl text-white mb-2">Disconnected from Bancho</h2>
-        <p class="text-gray-400 mb-4">You have been disconnected from Bancho. Please check your connection and try to reconnect.</p>
-        <button @click="reconnectToBancho" class="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600">Reconnect</button>
-        <p v-if="errorMessage" class="text-red-400 mt-2">{{ errorMessage }}</p>
+  
+      <div v-else-if="disconnected" class="h-full bg-gray-900 flex items-center justify-center">
+        <div class="text-center">
+          <h2 class="text-xl text-white mb-2">Disconnected from Bancho</h2>
+          <p class="text-gray-400 mb-4">You have been disconnected from Bancho. Please check your connection and try to reconnect.</p>
+          <button @click="reconnectToBancho" class="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600">Reconnect</button>
+          <p v-if="errorMessage" class="text-red-400 mt-2">{{ errorMessage }}</p>
+        </div>
       </div>
-    </div>
+  
+      <RouterView v-else />
+    </main>
 
-    <RouterView v-else />
-  </main>
+    <Modals />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -32,7 +36,8 @@ import { invoke } from '@tauri-apps/api/core'
 import { RouterView, useRouter } from 'vue-router'
 import { dbService } from './services/database'
 import { globalState } from './stores/global'
-import { type UnlistenFn, listen, once } from '@tauri-apps/api/event'
+import { type UnlistenFn, listen } from '@tauri-apps/api/event'
+import Modals from './components/modals/Modals.vue'
 
 const router = useRouter()
 
@@ -90,27 +95,6 @@ async function reconnectToBancho() {
   }
 }
 
-async function handleOAuthTokenCallback(payload: { payload: OauthTokenCallback }) {
-  const data = payload.payload
-  if (!data) {
-    errorMessage.value = 'No OAuth token data received.'
-    console.error('No OAuth token data received')
-    return
-  }
-  try {
-    await dbService.saveOAuthToken(
-      globalState.user || '',
-      data.access_token,
-      data.refresh_token,
-      data.expires_in
-    )
-    globalState.isConnectedOsu = true
-  } catch (error) {
-    errorMessage.value = 'Failed to save OAuth token.' + (error instanceof Error ? ' ' + error.message : error ? ' ' + String(error) : '')
-    console.error('Failed to save OAuth token:', error)
-  }
-}
-
 function handleOfflineState() {
   globalState.isConnected = false
   loading.value = false
@@ -125,7 +109,6 @@ function setRealVh() {
 
 onMounted(async () => {
   unlisteDisconnect = await listen('irc-disconnected', handleOfflineState)
-  once('oauth-token-callback', handleOAuthTokenCallback)
 
   window.addEventListener('resize', setRealVh);
   setRealVh();
