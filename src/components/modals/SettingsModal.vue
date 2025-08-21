@@ -53,7 +53,15 @@
                         'bg-green-500': globalState.isConnectedOsu,
                         'bg-red-500': !globalState.isConnectedOsu
                     }"></span>
-                    <div class="text-sm text-gray-400">{{ globalState.isConnectedOsu ? "osu! Account Connected" : "osu! Account Not Connected" }}</div>
+                    <div 
+                      class="text-sm text-gray-400"
+                      :class="{
+                        'cursor-pointer hover:text-red-500': globalState.isConnectedOsu
+                      }"
+                      @click="removeOsuConnect"
+                    >
+                      {{ globalState.isConnectedOsu ? "osu! Account Connected" : "osu! Account Not Connected" }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -90,9 +98,22 @@
 <script setup lang="ts">
 import { globalState } from '../../stores/global';
 import ConnectOsuBtn from '../ConnectOsuBtn.vue';
+import { dbService } from '../../services/database';
 
 const emit = defineEmits<{
   close: [],
   logout: []
 }>()
+
+const removeOsuConnect = () => {
+  if (!globalState.user || !globalState.isConnectedOsu) return;
+  try {
+    if (confirm('Are you sure you want to disconnect your osu! account?')) {
+      dbService.deleteOauthToken(globalState.user);
+      globalState.isConnectedOsu = false;
+    }
+  } catch (error) {
+    console.error('Error removing osu! connection:', error);
+  }
+}
 </script>

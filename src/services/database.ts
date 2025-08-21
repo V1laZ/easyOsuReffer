@@ -212,6 +212,12 @@ class DatabaseService {
       [username, accessToken, refreshToken, expiresIn, expiresAt, now.toISOString(), now.toISOString()]
     )
   }
+
+  async deleteOauthToken(username: string): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized')
+    
+    await this.db.execute('DELETE FROM oauth_tokens WHERE irc_username = ?', [username])
+  }
 }
 
 export const dbService = new DatabaseService()
