@@ -26,7 +26,7 @@
       <RouterView v-else />
     </main>
 
-    <Modals />
+    <OAuthCallback v-if="modalsState.showOAuthCallback" />
   </div>
 </template>
 
@@ -37,7 +37,8 @@ import { RouterView, useRouter } from 'vue-router'
 import { dbService } from './services/database'
 import { globalState } from './stores/global'
 import { type UnlistenFn, listen } from '@tauri-apps/api/event'
-import Modals from './components/modals/Modals.vue'
+import OAuthCallback from './components/modals/OAuthCallback.vue'
+import { modalsState } from './stores/global'
 
 const router = useRouter()
 
