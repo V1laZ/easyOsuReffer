@@ -209,8 +209,8 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { dbService } from '../../services/database'
-import { globalState } from '../../stores/global'
+import { dbService } from '@/services/database'
+import { globalState } from '@/stores/global'
 import CreateForm from '../Mappool/CreateForm.vue'
 import MappoolList from '../Mappool/List.vue'
 import AddBeatmapCard from '../Mappool/Beatmap/AddCard.vue'

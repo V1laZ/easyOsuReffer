@@ -126,9 +126,9 @@
 </template>
 
 <script setup lang="ts">
-import { globalState } from '../../stores/global'
+import { globalState } from '@/stores/global'
 import ConnectOsuBtn from '../ConnectOsuBtn.vue'
-import { dbService } from '../../services/database'
+import { dbService } from '@/services/database'
 
 const emit = defineEmits<{
   close: []

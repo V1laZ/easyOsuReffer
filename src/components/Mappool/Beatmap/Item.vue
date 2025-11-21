@@ -66,6 +66,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { BeatmapEntry } from '@/types'
 
 const { beatmap, canRemove = true } = defineProps<{
   beatmap: BeatmapEntry

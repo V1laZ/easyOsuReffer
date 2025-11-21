@@ -78,6 +78,8 @@
 </template>
 
 <script setup lang="ts">
+import type { Room } from '@/types'
+
 defineProps<{
   room: Room
   isActive: boolean

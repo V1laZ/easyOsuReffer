@@ -136,6 +136,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { LobbyState } from '@/types'
 
 const props = defineProps<{
   activeChannel: string | null

@@ -230,8 +230,9 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
-import { dbService } from '../services/database'
-import { globalState } from '../stores/global'
+import { dbService } from '@/services/database'
+import { globalState } from '@/stores/global'
+import type { ConnectionStatus } from '@/types'
 
 const router = useRouter()
 

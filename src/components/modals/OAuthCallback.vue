@@ -42,8 +42,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { once } from '@tauri-apps/api/event'
-import { dbService } from '../../services/database'
-import { globalState, modalsState } from '../../stores/global'
+import { dbService } from '@/services/database'
+import { globalState, modalsState } from '@/stores/global'
 import LoadingText from '../UI/LoadingText.vue'
 
 const manualConnectionString = ref('')

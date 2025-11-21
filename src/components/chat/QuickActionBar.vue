@@ -89,6 +89,7 @@
 import { computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import Mod from '../Mod.vue'
+import type { LobbyState } from '@/types'
 
 const props = defineProps<{
   lobbyState: LobbyState

@@ -72,6 +72,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUpdated, nextTick, onUnmounted } from 'vue'
 import Message from './Message.vue'
+import type { IrcMessage } from '@/types'
 
 defineProps<{
   messages: IrcMessage[]

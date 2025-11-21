@@ -53,6 +53,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import PlayerSlot from './PlayerSlot.vue'
+import type { LobbyState, PlayerMoveEvent, PlayerTeamChangeEvent } from '@/types'
 
 const props = defineProps<{
   isOpen: boolean

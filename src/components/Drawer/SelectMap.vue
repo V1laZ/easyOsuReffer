@@ -84,7 +84,8 @@
 import { ref, watch, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import List from '../Mappool/Beatmap/List.vue'
-import { dbService } from '../../services/database'
+import { dbService } from '@/services/database'
+import type { LobbyState, BeatmapEntry } from '@/types'
 
 const props = defineProps<{
   isOpen: boolean

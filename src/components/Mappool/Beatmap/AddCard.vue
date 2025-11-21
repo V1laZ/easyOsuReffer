@@ -144,8 +144,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { dbService } from '../../../services/database'
-import { globalState } from '../../../stores/global'
+import { dbService } from '@/services/database'
+import { globalState } from '@/stores/global'
 import Mod from '../../Mod.vue'
 
 const props = defineProps<{

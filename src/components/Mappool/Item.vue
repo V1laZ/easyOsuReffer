@@ -20,6 +20,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { Mappool } from '@/types'
 
 const props = defineProps<{
   mappool: Mappool

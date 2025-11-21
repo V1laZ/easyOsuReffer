@@ -140,6 +140,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import RoomItem from './RoomItem.vue'
+import type { Room } from '@/types'
 
 const props = defineProps<{
   isOpen: boolean

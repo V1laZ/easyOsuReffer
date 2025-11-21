@@ -41,7 +41,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import Item from './Item.vue'
-import { dbService } from '../../../services/database'
+import { dbService } from '@/services/database'
+import type { BeatmapEntry } from '@/types'
 
 const { beatmaps = [], canRemove = true } = defineProps<{
   beatmaps: BeatmapEntry[]
