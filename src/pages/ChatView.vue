@@ -324,7 +324,17 @@ const processMessage = (message: IrcMessage) => {
     loadRooms()
     return
   }
-  if (activeRoom.value !== message.roomId) return
+
+  if (activeRoom.value !== message.roomId) {
+    const messageRoom = rooms.value.find((r) => r.id === message.roomId)
+
+    if (!messageRoom) {
+      throw new Error(`Room ${message.roomId} not found`);
+    }
+
+    messageRoom.unreadCount += 1
+    return
+  }
 
   currentMessages.value.push(message)
 }
@@ -344,6 +354,11 @@ const loadRooms = async () => {
 const selectRoom = async (roomId: string) => {
   activeRoom.value = roomId
   leftDrawerOpen.value = false
+
+  const roomToClearUnread = rooms.value.find((r) => r.id === roomId)
+  if (!roomToClearUnread) return
+
+  roomToClearUnread.unreadCount = 0  
 }
 
 const joinChannel = async (channelName: string) => {

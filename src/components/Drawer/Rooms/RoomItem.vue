@@ -31,6 +31,16 @@
               {{ room.displayName }}
             </div>
           </div>
+          <span
+            v-if="room.unreadCount > 0"
+            class="ml-2 inline-flex items-center justify-center
+                  text-xs font-semibold
+                  bg-blue-600 text-white
+                  rounded-full
+                  min-w-5 h-5 px-1"
+          >
+            {{ room.unreadCount }}
+          </span>
         </div>
       </button>
 
