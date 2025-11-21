@@ -1,4 +1,4 @@
-export interface OAuthToken {
+export type OAuthToken = {
   id: number
   access_token: string
   refresh_token: string
@@ -10,7 +10,7 @@ export interface OAuthToken {
 
 export type OauthTokenCallback = Pick<OAuthToken, 'access_token' | 'refresh_token' | 'expires_in'>
 
-export interface UserCredentials {
+export type UserCredentials = {
   id: number
   username: string
   password: string

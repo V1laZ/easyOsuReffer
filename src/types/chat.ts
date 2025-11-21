@@ -2,12 +2,12 @@ import type { LobbyState } from './lobby'
 
 export type RoomType = 'Channel' | 'PrivateMessage' | 'MultiplayerLobby'
 
-export interface ConnectionStatus {
+export type ConnectionStatus = {
   type: string
   message: string
 }
 
-export interface Room {
+export type Room = {
   id: string
   displayName: string
   roomType: RoomType
@@ -17,7 +17,9 @@ export interface Room {
   lobbyState: LobbyState | null
 }
 
-export interface IrcMessage {
+export type RoomItem = Omit<Room, 'messages'>
+
+export type IrcMessage = {
   roomId: string
   username: string
   message: string
@@ -25,7 +27,7 @@ export interface IrcMessage {
   isPrivate: boolean
 }
 
-export interface UserJoinEvent {
+export type UserJoinEvent = {
   username: string
   channel: string
 }
