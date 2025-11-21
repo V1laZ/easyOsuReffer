@@ -1,7 +1,7 @@
 <template>
   <div class="h-[100dvh] bg-gray-900 text-white flex overflow-hidden">
     <!-- Left Drawer - Channels -->
-    <RoomsDrawer 
+    <RoomsDrawer
       :is-open="leftDrawerOpen"
       :rooms="rooms"
       :active-room="activeRoom"
@@ -10,7 +10,7 @@
       @join-channel="joinChannel"
       @leave-room="leaveRoom"
       @open-create-lobby="createLobbyOpen = true"
-      @start-private-message="startPrivateMessage"      
+      @start-private-message="startPrivateMessage"
     />
 
     <!-- Main Chat Area -->
@@ -23,8 +23,8 @@
         @set-mappool="currentLobbyState.currentMappoolId = $event"
         @select-beatmap="selectMap"
       />
-    
-      <ChatHeader 
+
+      <ChatHeader
         :active-channel="activeRoom"
         :lobby-state="currentLobbyState"
         @toggle-left-drawer="leftDrawerOpen = !leftDrawerOpen"
@@ -34,26 +34,39 @@
         @refresh="refreshLobbyState"
       />
 
-      <QuickActionBar 
+      <QuickActionBar
         v-if="activeRoom && activeRoom.startsWith('#mp_') && currentLobbyState"
         :channel="activeRoom"
         :lobby-state="currentLobbyState"
         @open-select-map="isOpenSelectMap = true"
       />
 
-      <div v-if="!activeRoom" class="text-center mt-2 flex-1 py-4 text-gray-500">
-        <svg class="size-12 mx-auto mb-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <div
+        v-if="!activeRoom"
+        class="text-center mt-2 flex-1 py-4 text-gray-500"
+      >
+        <svg
+          class="size-12 mx-auto mb-2 text-gray-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v3m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
         Select or join a channel to start chatting
       </div>
-      <ChatMessages 
+      <ChatMessages
         v-else
         :messages="currentMessages"
         class="flex-1"
       />
 
-      <MessageInput 
+      <MessageInput
         :disabled="!globalState.isConnected || !activeRoom"
         @send-message="sendMessage"
       />
@@ -75,7 +88,7 @@
       @close="rightDrawerOpen = false"
     />
 
-    <SettingsModal 
+    <SettingsModal
       v-if="settingsOpen"
       :current-user="globalState.user"
       :is-connected="globalState.isConnected"
@@ -83,12 +96,12 @@
       @logout="handleLogout"
     />
 
-    <MappoolModal 
+    <MappoolModal
       v-model="mappoolsOpen"
       @close="mappoolsOpen = false"
     />
 
-    <CreateLobbyModal 
+    <CreateLobbyModal
       v-if="createLobbyOpen"
       @close="createLobbyOpen = false"
       @create-lobby="handleCreateLobby"
@@ -101,7 +114,7 @@
         'pointer-events-none bg-transparent': !leftDrawerOpen && !rightDrawerOpen
       }"
       @click="closeDrawers"
-    ></div>
+    />
   </div>
 </template>
 
@@ -148,14 +161,16 @@ watch(activeRoom, async (newRoomId) => {
   try {
     await invoke('set_active_room', { roomId: newRoomId })
     currentMessages.value = await invoke('get_room_messages', { roomId: newRoomId })
-    
+
     // If it's a multiplayer lobby, get lobby state
     if (newRoomId.startsWith('#mp_')) {
       currentLobbyState.value = await getLobbyState(newRoomId)
-    } else {
+    }
+    else {
       currentLobbyState.value = null
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to switch room:', error)
     currentMessages.value = []
     currentLobbyState.value = null
@@ -179,22 +194,23 @@ onMounted(async () => {
     unlistenChannelError = await listen('room-error', (event) => {
       const errorData = event.payload as { channel: string, error: string }
       console.error('Room error:', errorData)
-      
+
       // Remove the room from our list if it was optimistically added
       const roomIndex = rooms.value.findIndex(r => r.id === errorData.channel)
       if (roomIndex !== -1) {
         rooms.value.splice(roomIndex, 1)
-        
+
         // If this was the active room, switch to another
         if (activeRoom.value === errorData.channel) {
           if (rooms.value.length > 0) {
             activeRoom.value = rooms.value[0].id
-          } else {
+          }
+          else {
             activeRoom.value = null
           }
         }
       }
-      
+
       alert(`Failed to join ${errorData.channel}: ${errorData.error}`)
     })
 
@@ -217,10 +233,11 @@ onMounted(async () => {
             try {
               await invoke('send_message_to_room', {
                 roomId: joinEvent.channel,
-                message: `!mp set ${settingsForNewLobby.value.teamMode} ${settingsForNewLobby.value.scoreMode} 16`
+                message: `!mp set ${settingsForNewLobby.value.teamMode} ${settingsForNewLobby.value.scoreMode} 16`,
               })
               settingsForNewLobby.value = null
-            } catch (error) {
+            }
+            catch (error) {
               console.error('Failed to set lobby settings:', error)
             }
           }
@@ -228,9 +245,10 @@ onMounted(async () => {
           try {
             await invoke('send_message_to_room', {
               roomId: joinEvent.channel,
-              message: '!mp settings'
+              message: '!mp settings',
             })
-          } catch (error) {
+          }
+          catch (error) {
             console.error('Failed to send !mp settings:', error)
           }
         }
@@ -246,8 +264,8 @@ onMounted(async () => {
         }
       }
     })
-
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to initialize chat:', error)
     router.replace('/login')
   }
@@ -261,7 +279,6 @@ onUnmounted(() => {
   if (unlistenUserLeft) unlistenUserLeft()
 })
 
-
 const getLobbyState = async (channel: string): Promise<LobbyState | null> => {
   return await invoke('get_lobby_state', { roomId: channel })
 }
@@ -270,13 +287,14 @@ const refreshLobbyState = async () => {
   if (!activeRoom.value || !activeRoom.value.startsWith('#mp_')) {
     return
   }
-  
+
   try {
     await invoke('send_message_to_room', {
       roomId: activeRoom.value,
-      message: '!mp settings'
+      message: '!mp settings',
     })
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to refresh lobby state:', error)
   }
 }
@@ -287,7 +305,7 @@ const parseMods = (modString: string) => {
 
   if (mods.length === 0) return 'None'
 
-  return mods.map(mod => {
+  return mods.map((mod) => {
     if (mod === 'FM') return 'Freemod'
     return mod
   }).join(' ')
@@ -300,9 +318,10 @@ const selectMap = async (beatmap: BeatmapEntry) => {
   try {
     await invoke('send_message_to_room', {
       roomId: currentLobbyState.value.channel,
-      message: `!mp map ${beatmap.beatmap_id}`
+      message: `!mp map ${beatmap.beatmap_id}`,
     })
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to select map:', error)
     alert('Failed to select map. Make sure you are connected and try again.')
   }
@@ -311,9 +330,10 @@ const selectMap = async (beatmap: BeatmapEntry) => {
   try {
     await invoke('send_message_to_room', {
       roomId: currentLobbyState.value.channel,
-      message: `!mp mods ${mods}`
+      message: `!mp mods ${mods}`,
     })
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to set mods:', error)
     alert('Failed to set mods. Make sure you are connected and try again.')
   }
@@ -336,7 +356,8 @@ const loadRooms = async () => {
     if (roomList.length > 0 && !activeRoom.value) {
       activeRoom.value = roomList[0].id
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to load rooms:', error)
   }
 }
@@ -349,17 +370,17 @@ const selectRoom = async (roomId: string) => {
 const joinChannel = async (channelName: string) => {
   try {
     let channel = channelName.trim()
-    
+
     if (!channel) {
       alert('Please enter a channel name')
       return
     }
-    
+
     const mpId = parseInt(channel, 10)
     if (!isNaN(mpId)) {
       channel = `#mp_${mpId}`
     }
-    
+
     if (!channel.startsWith('#')) {
       channel = '#' + channel
     }
@@ -370,7 +391,8 @@ const joinChannel = async (channelName: string) => {
     }
 
     await invoke('join_channel', { roomId: channel })
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to join channel:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     alert(`Failed to join channel: ${errorMessage}`)
@@ -382,7 +404,8 @@ const startPrivateMessage = async (username: string) => {
     await invoke('start_private_message', { username })
     await loadRooms()
     activeRoom.value = username
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to start private message:', error)
     alert('Failed to start private message')
   }
@@ -392,13 +415,14 @@ const sendMessage = async (messageText: string) => {
   if (!activeRoom.value || !messageText.trim()) {
     return
   }
-  
+
   try {
     await invoke('send_message_to_room', {
       roomId: activeRoom.value,
-      message: messageText
+      message: messageText,
     })
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to send message:', error)
   }
 }
@@ -414,7 +438,8 @@ const handleLogout = async () => {
     globalState.user = null
     globalState.isConnected = false
     router.replace('/login')
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to logout:', error)
   }
 }
@@ -423,25 +448,28 @@ const leaveRoom = async (roomId: string) => {
   try {
     const room = rooms.value.find(r => r.id === roomId)
     if (!room) return
-    
+
     if (room.roomType === 'Channel' || room.roomType === 'MultiplayerLobby') {
       await invoke('leave_channel', { roomId: roomId })
-    } else if (room.roomType === 'PrivateMessage') {
+    }
+    else if (room.roomType === 'PrivateMessage') {
       await invoke('close_private_message', { username: roomId })
     }
-    
+
     // If this was the active room, switch to another one
     if (activeRoom.value === roomId) {
       const remainingRooms = rooms.value.filter(r => r.id !== roomId)
       if (remainingRooms.length > 0) {
         activeRoom.value = remainingRooms[0].id
-      } else {
+      }
+      else {
         activeRoom.value = null
       }
     }
-    
+
     await loadRooms()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to leave room:', error)
   }
 }
@@ -449,16 +477,17 @@ const leaveRoom = async (roomId: string) => {
 const handleCreateLobby = async (settings: CreateLobbySettings) => {
   try {
     await invoke('start_private_message', { username: 'BanchoBot' })
-    
+
     await invoke('send_message_to_room', {
       roomId: 'BanchoBot',
-      message: `!mp make ${settings.name}`
+      message: `!mp make ${settings.name}`,
     })
 
     settingsForNewLobby.value = settings
 
     createLobbyOpen.value = false
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to create lobby:', error)
     alert('Failed to create lobby. Make sure you are connected and try again.')
   }

@@ -1,5 +1,5 @@
 <template>
-  <span 
+  <span
     class="px-2 py-0.5 text-white text-xs rounded-md font-medium"
     :class="{
       'opacity-50': !active,

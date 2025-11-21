@@ -6,15 +6,15 @@
       <div class="relative">
         <input
           v-model="messageText"
-          @keydown.enter="sendMessage"
           :disabled="disabled"
           placeholder="Type a message..."
           class="w-full px-4 py-3 pr-12 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           :class="{ 'border-red-500': hasError }"
-        ></input>
+          @keydown.enter="sendMessage"
+        >
 
         <!-- Character Count -->
-        <div 
+        <div
           v-if="messageText.length > 400"
           class="absolute bottom-2 right-12 text-xs"
           :class="messageText.length > 500 ? 'text-red-400' : 'text-gray-400'"
@@ -24,13 +24,23 @@
 
         <!-- Send Button -->
         <button
-          @click="sendMessage"
           :disabled="disabled || !canSend"
           class="absolute right-2 top-[0.55rem] p-2 bg-pink-500 hover:bg-pink-600 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
           title="Send message (Ctrl+Enter)"
+          @click="sendMessage"
         >
-          <svg class="size-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+          <svg
+            class="size-4 rotate-90"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+            />
           </svg>
         </button>
       </div>

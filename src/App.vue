@@ -1,28 +1,72 @@
 <template>
   <div>
     <main class="h-[100dvh] overflow-hidden">
-      <div v-if="loading" class="h-full bg-gray-900 flex items-center justify-center">
+      <div
+        v-if="loading"
+        class="h-full bg-gray-900 flex items-center justify-center"
+      >
         <div class="text-center">
-          <svg class="animate-spin w-12 h-12 mx-auto text-pink-500 mb-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <svg
+            class="animate-spin w-12 h-12 mx-auto text-pink-500 mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
           </svg>
-          
-          <h2 class="text-xl text-white mb-2">osu! Reffer</h2>
-          <p v-if="errorMessage" class="text-red-400 mb-2">{{ errorMessage }}</p>
-          <p class="text-gray-400">{{ loadingMessage }}</p>
+
+          <h2 class="text-xl text-white mb-2">
+            osu! Reffer
+          </h2>
+          <p
+            v-if="errorMessage"
+            class="text-red-400 mb-2"
+          >
+            {{ errorMessage }}
+          </p>
+          <p class="text-gray-400">
+            {{ loadingMessage }}
+          </p>
         </div>
       </div>
-  
-      <div v-else-if="disconnected" class="h-full bg-gray-900 flex items-center justify-center">
+
+      <div
+        v-else-if="disconnected"
+        class="h-full bg-gray-900 flex items-center justify-center"
+      >
         <div class="text-center">
-          <h2 class="text-xl text-white mb-2">Disconnected from Bancho</h2>
-          <p class="text-gray-400 mb-4">You have been disconnected from Bancho. Please check your connection and try to reconnect.</p>
-          <button @click="reconnectToBancho" class="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600">Reconnect</button>
-          <p v-if="errorMessage" class="text-red-400 mt-2">{{ errorMessage }}</p>
+          <h2 class="text-xl text-white mb-2">
+            Disconnected from Bancho
+          </h2>
+          <p class="text-gray-400 mb-4">
+            You have been disconnected from Bancho. Please check your connection and try to reconnect.
+          </p>
+          <button
+            class="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600"
+            @click="reconnectToBancho"
+          >
+            Reconnect
+          </button>
+          <p
+            v-if="errorMessage"
+            class="text-red-400 mt-2"
+          >
+            {{ errorMessage }}
+          </p>
         </div>
       </div>
-  
+
       <RouterView v-else />
     </main>
 
@@ -66,7 +110,7 @@ async function connectWithCredentials(saved: UserCredentials) {
     }
     const config = {
       username: saved.username,
-      password: saved.password
+      password: saved.password,
     }
     await invoke('connect_to_bancho', { config })
     globalState.isConnected = true
@@ -74,7 +118,8 @@ async function connectWithCredentials(saved: UserCredentials) {
     disconnected.value = false
     router.replace('/')
     return true
-  } catch (error) {
+  }
+  catch (error) {
     errorMessage.value = 'Failed to connect with saved credentials.' + (error instanceof Error ? ' ' + error.message : error ? ' ' + String(error) : '')
     console.error('Failed to connect with saved credentials:', error)
     return false
@@ -91,7 +136,8 @@ async function reconnectToBancho() {
     disconnected.value = false
     loading.value = false
     router.replace('/')
-  } catch (e) {
+  }
+  catch (e) {
     errorMessage.value = 'Failed to reconnect to Bancho. Please try to restart the app.'
   }
 }
@@ -105,14 +151,14 @@ function handleOfflineState() {
 }
 
 function setRealVh() {
-  document.documentElement.style.setProperty('--real-vh', `${window.innerHeight * 0.01}px`);
+  document.documentElement.style.setProperty('--real-vh', `${window.innerHeight * 0.01}px`)
 }
 
 onMounted(async () => {
   unlisteDisconnect = await listen('irc-disconnected', handleOfflineState)
 
-  window.addEventListener('resize', setRealVh);
-  setRealVh();
+  window.addEventListener('resize', setRealVh)
+  setRealVh()
 
   loading.value = true
   try {
@@ -123,11 +169,13 @@ onMounted(async () => {
     const saved = await dbService.getCredentials()
     if (saved) {
       await connectWithCredentials(saved)
-    } else {
+    }
+    else {
       loading.value = false
       router.replace('/login')
     }
-  } catch (error) {
+  }
+  catch (error) {
     errorMessage.value = 'Failed to initialize database.' + (error instanceof Error ? ' ' + error.message : error ? ' ' + String(error) : '')
     console.error('Failed to initialize database:', error)
     return
@@ -135,8 +183,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (unlisteDisconnect) unlisteDisconnect();
-  window.removeEventListener('resize', setRealVh);
+  if (unlisteDisconnect) unlisteDisconnect()
+  window.removeEventListener('resize', setRealVh)
 })
 </script>
 

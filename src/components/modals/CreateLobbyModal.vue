@@ -3,13 +3,25 @@
     <div class="bg-gray-800 rounded-lg w-full max-w-md">
       <!-- Header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-700">
-        <h2 class="text-lg font-semibold text-white">Create Multiplayer Lobby</h2>
-        <button 
-          @click="emit('close')"
+        <h2 class="text-lg font-semibold text-white">
+          Create Multiplayer Lobby
+        </h2>
+        <button
           class="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+          @click="emit('close')"
         >
-          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            class="w-5 h-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -25,7 +37,7 @@
             placeholder="Enter lobby name"
             maxlength="50"
             class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-          />
+          >
         </div>
 
         <!-- Team Mode Select -->
@@ -36,12 +48,20 @@
               v-model="teamMode"
               class="appearance-none w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
             >
-              <option value="0">Head To Head</option>
-              <option value="1">Tag Coop</option>
-              <option value="2">Team Vs</option>
-              <option value="3">Tag Team Vs</option>
+              <option value="0">
+                Head To Head
+              </option>
+              <option value="1">
+                Tag Coop
+              </option>
+              <option value="2">
+                Team Vs
+              </option>
+              <option value="3">
+                Tag Team Vs
+              </option>
             </select>
-            <span class="select-arrow"></span>
+            <span class="select-arrow" />
           </div>
         </div>
 
@@ -53,12 +73,20 @@
               v-model="scoreMode"
               class="appearance-none w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
             >
-              <option value="0">Score</option>
-              <option value="1">Accuracy</option>
-              <option value="2">Combo</option>
-              <option value="3">Score V2</option>
+              <option value="0">
+                Score
+              </option>
+              <option value="1">
+                Accuracy
+              </option>
+              <option value="2">
+                Combo
+              </option>
+              <option value="3">
+                Score V2
+              </option>
             </select>
-            <span class="select-arrow"></span>
+            <span class="select-arrow" />
           </div>
         </div>
       </div>
@@ -66,15 +94,15 @@
       <!-- Footer -->
       <div class="flex items-center justify-end space-x-3 p-4 border-t border-gray-700">
         <button
-          @click="emit('close')"
           class="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+          @click="emit('close')"
         >
           Cancel
         </button>
         <button
-          @click="handleCreateLobby"
           :disabled="!lobbyName.trim() || loading"
           class="px-6 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+          @click="handleCreateLobby"
         >
           Create Lobby
         </button>
@@ -98,17 +126,17 @@ const scoreMode = ref<CreateLobbySettings['scoreMode']>('3') // Default to Score
 
 const handleCreateLobby = () => {
   const name = lobbyName.value.trim()
-  
+
   if (!name) {
     alert('Please enter a lobby name')
     return
   }
-  
+
   if (name.length > 50) {
     alert('Lobby name is too long (max 50 characters)')
     return
   }
-  
+
   loading.value = true
 
   emit('createLobby', {
