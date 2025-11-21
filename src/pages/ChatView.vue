@@ -170,6 +170,8 @@ watch(activeRoom, async (newRoomId) => {
     else {
       currentLobbyState.value = null
     }
+
+    loadRooms()
   }
   catch (error) {
     console.error('Failed to switch room:', error)
@@ -190,6 +192,7 @@ onMounted(async () => {
 
     unlistenMessage = await listen('irc-message', (event) => {
       processMessage(event.payload as Omit<IrcMessage, 'id'>)
+      loadRooms()
     })
 
     unlistenChannelError = await listen('room-error', (event) => {
@@ -341,10 +344,6 @@ const selectMap = async (beatmap: BeatmapEntry) => {
 }
 
 const processMessage = (message: IrcMessage) => {
-  if (!rooms.value.some(r => r.id === message.roomId)) {
-    loadRooms()
-    return
-  }
   if (activeRoom.value !== message.roomId) return
 
   currentMessages.value.push(message)
