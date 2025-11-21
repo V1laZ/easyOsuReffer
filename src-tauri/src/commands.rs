@@ -248,7 +248,7 @@ pub async fn disconnect_from_bancho(state: State<'_, IrcState>) -> Result<String
             let mut irc_state = state.lock().unwrap();
             irc_state.connected = false;
             irc_state.rooms.clear();
-            irc_state.active_room = None;
+            irc_state.active_room_id = None;
             irc_state.config = None;
             irc_state.client = None;
             irc_state.message_sender = None;
@@ -288,18 +288,17 @@ pub async fn get_room_messages(
 #[tauri::command]
 pub async fn set_active_room(room_id: String, state: State<'_, IrcState>) -> Result<(), String> {
     let mut irc_state = state.lock().unwrap();
-    let prev_room_id = irc_state.active_room.clone();
 
-    if let Some(prev_id) = prev_room_id {
-        if let Some(prev_room) = irc_state.rooms.get_mut(&prev_id) {
-            prev_room.is_active = false;
-        }
+    // Mark all rooms as inactive first
+    for room in irc_state.rooms.values_mut() {
+        room.is_active = false;
     }
 
+    // Mark new room as active and set it as active_room_id
     if let Some(room) = irc_state.rooms.get_mut(&room_id) {
         room.is_active = true;
         room.mark_as_read();
-        irc_state.active_room = Some(room_id);
+        irc_state.active_room_id = Some(room_id);
         Ok(())
     } else {
         Err("Room not found".to_string())
@@ -403,8 +402,9 @@ pub fn remove_room(room_id: &str, state: &IrcState) {
         irc_state.lobby_states.remove(room_id);
     }
 
-    if irc_state.active_room.as_ref() == Some(&room_id.to_string()) {
-        irc_state.active_room = None;
+    // Clear active_room_id if the removed room was active
+    if irc_state.active_room_id.as_deref() == Some(room_id) {
+        irc_state.active_room_id = None;
     }
 }
 

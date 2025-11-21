@@ -136,7 +136,7 @@ impl LobbyState {
 pub struct IrcClientState {
     pub connected: bool,
     pub rooms: HashMap<String, Room>,
-    pub active_room: Option<String>,
+    pub active_room_id: Option<String>,
     pub config: Option<ConnectionConfig>,
     pub client: Option<Arc<Mutex<irc::client::Client>>>,
     pub message_sender: Option<tokio::sync::mpsc::UnboundedSender<IrcCommand>>,
@@ -158,7 +158,7 @@ impl Default for IrcClientState {
         Self {
             connected: false,
             rooms: HashMap::new(),
-            active_room: None,
+            active_room_id: None,
             config: None,
             client: None,
             message_sender: None,

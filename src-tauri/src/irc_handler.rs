@@ -232,7 +232,7 @@ fn handle_incoming_message(
                             let new_room = Room::new_channel(channel.clone());
                             irc_state.rooms.insert(channel.clone(), new_room);
                         }
-                        irc_state.active_room = Some(channel.clone());
+                        irc_state.active_room_id = Some(channel.clone());
                     }
                 }
 
@@ -260,7 +260,7 @@ fn handle_incoming_message(
                     let mut irc_state = state.lock().unwrap();
                     if nick == irc_state.current_username.clone().unwrap_or_default() {
                         irc_state.rooms.remove(&channel);
-                        irc_state.active_room = None;
+                        irc_state.active_room_id = None;
                     }
                 }
 
