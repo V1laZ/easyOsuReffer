@@ -344,7 +344,7 @@ const loadRooms = async () => {
     const roomList = await invoke('get_joined_rooms') as Room[]
     rooms.value = roomList
     if (roomList.length > 0 && !activeRoom.value) {
-      activeRoom.value = roomList[0].id
+      selectRoom(roomList[0].id)
     }
   } catch (error) {
     console.error('Failed to load rooms:', error)
