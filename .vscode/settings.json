@@ -24,5 +24,7 @@
     },
     "volar.format.initialIndent": false,
     "typescript.preferences.importModuleSpecifier": "non-relative",
-    "javascript.preferences.importModuleSpecifier": "non-relative"
+    "javascript.preferences.importModuleSpecifier": "non-relative",
+    "javascript.format.semicolons": "remove",
+    "typescript.format.semicolons": "remove"
 }

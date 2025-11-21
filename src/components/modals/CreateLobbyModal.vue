@@ -112,6 +112,7 @@
 </template>
 
 <script setup lang="ts">
+import { CreateLobbySettings } from '@/types'
 import { ref } from 'vue'
 
 const emit = defineEmits<{

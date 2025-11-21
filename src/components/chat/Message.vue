@@ -61,6 +61,7 @@
 </template>
 
 <script setup lang="ts">
+import { IrcMessage } from '@/types'
 import { computed } from 'vue'
 
 const props = defineProps<{

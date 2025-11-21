@@ -216,6 +216,7 @@ import MappoolList from '../Mappool/List.vue'
 import AddBeatmapCard from '../Mappool/Beatmap/AddCard.vue'
 import BeatmapList from '../Mappool/Beatmap/List.vue'
 import ConnectOsuBtn from '../ConnectOsuBtn.vue'
+import { Mappool, BeatmapEntry } from '@/types'
 
 const emit = defineEmits<{
   close: []

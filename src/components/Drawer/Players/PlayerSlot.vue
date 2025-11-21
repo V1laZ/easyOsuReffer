@@ -127,7 +127,9 @@ const onDragStart = (e: DragEvent, playerName: string) => {
 
     setTimeout(() => document.body.removeChild(clone), 0)
   }
-  catch {}
+  catch {
+    // ignore
+  }
 
   e.dataTransfer.setData('text/plain', playerName)
 }

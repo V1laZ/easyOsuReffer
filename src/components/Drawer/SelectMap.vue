@@ -85,7 +85,7 @@ import { ref, watch, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import List from '../Mappool/Beatmap/List.vue'
 import { dbService } from '@/services/database'
-import type { LobbyState, BeatmapEntry } from '@/types'
+import type { LobbyState, BeatmapEntry, Mappool } from '@/types'
 
 const props = defineProps<{
   isOpen: boolean
@@ -132,7 +132,7 @@ const setActiveMappool = async () => {
     })
     emit('setMappool', res)
   }
-  catch (e) {
+  catch {
     alert('Failed to set mappool')
   }
 }

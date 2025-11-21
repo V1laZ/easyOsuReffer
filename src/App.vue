@@ -83,6 +83,7 @@ import { globalState } from './stores/global'
 import { type UnlistenFn, listen } from '@tauri-apps/api/event'
 import OAuthCallback from './components/modals/OAuthCallback.vue'
 import { modalsState } from './stores/global'
+import { UserCredentials } from '@/types'
 
 const router = useRouter()
 
@@ -137,7 +138,7 @@ async function reconnectToBancho() {
     loading.value = false
     router.replace('/')
   }
-  catch (e) {
+  catch {
     errorMessage.value = 'Failed to reconnect to Bancho. Please try to restart the app.'
   }
 }

@@ -45,6 +45,7 @@ import { once } from '@tauri-apps/api/event'
 import { dbService } from '@/services/database'
 import { globalState, modalsState } from '@/stores/global'
 import LoadingText from '../UI/LoadingText.vue'
+import { OauthTokenCallback } from '@/types'
 
 const manualConnectionString = ref('')
 
@@ -74,7 +75,7 @@ async function handleOAuthTokenCallback(payload: { payload: OauthTokenCallback }
   await handleTokenData(data)
 }
 
-async function handleTokenData(data: any) {
+async function handleTokenData(data: OauthTokenCallback) {
   if (!data) {
     console.error('No OAuth token data received')
     return

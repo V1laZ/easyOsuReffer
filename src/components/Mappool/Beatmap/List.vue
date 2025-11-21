@@ -29,6 +29,7 @@
     >
       <Item
         v-for="beatmap in groupedBeatmaps"
+        :key="beatmap.id"
         :beatmap="beatmap"
         :can-remove="canRemove"
         @remove="removeBeatmap(beatmap.id)"
@@ -45,7 +46,7 @@ import { dbService } from '@/services/database'
 import type { BeatmapEntry } from '@/types'
 
 const { beatmaps = [], canRemove = true } = defineProps<{
-  beatmaps: BeatmapEntry[]
+  beatmaps?: BeatmapEntry[]
   canRemove?: boolean
 }>()
 

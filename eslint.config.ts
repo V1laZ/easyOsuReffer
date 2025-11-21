@@ -7,6 +7,9 @@ import stylistic from '@stylistic/eslint-plugin'
 
 export default defineConfig([
   {
+    ignores: ['**/dist/**', '**/node_modules/**', '**/src-tauri/**'],
+  },
+  {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,vue}'],
     plugins: { js },
     extends: ['js/recommended'],
@@ -22,7 +25,8 @@ export default defineConfig([
         parser: tseslint.parser,
       },
     },
+    rules: {
+      'vue/multi-word-component-names': 'off',
+    },
   },
-], {
-  ignores: ['dist/**', 'node_modules/**', 'src-tauri/**', '**/*.d.ts'],
-})
+])

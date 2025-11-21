@@ -43,6 +43,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { dbService } from '@/services/database'
+import { NewMappoolForm } from '@/types'
 
 const emit = defineEmits<{
   create: [mappool: NewMappoolForm]

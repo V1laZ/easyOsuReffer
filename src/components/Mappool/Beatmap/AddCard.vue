@@ -147,6 +147,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { dbService } from '@/services/database'
 import { globalState } from '@/stores/global'
 import Mod from '../../Mod.vue'
+import { BeatmapData } from '@/types'
 
 const props = defineProps<{
   selectedMappoolId: number
