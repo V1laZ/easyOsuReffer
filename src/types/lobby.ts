@@ -37,7 +37,6 @@ export interface LobbySettings {
 }
 
 export interface LobbyState {
-  channel: string
   settings: LobbySettings | null
   currentMap: CurrentMap | null
   slots: PlayerSlot[]

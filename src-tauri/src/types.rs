@@ -19,6 +19,7 @@ pub struct Room {
     pub messages: Vec<IrcMessage>,
     pub unread_count: u32,
     pub is_active: bool,
+    pub lobby_state: Option<LobbyState>,
 }
 
 impl Room {
@@ -30,6 +31,12 @@ impl Room {
             RoomType::Channel
         };
 
+        let lobby_state = if is_multiplayer {
+            Some(LobbyState::new())
+        } else {
+            None
+        };
+
         Self {
             display_name: channel_name.clone(),
             id: channel_name,
@@ -37,6 +44,7 @@ impl Room {
             messages: Vec::new(),
             unread_count: 0,
             is_active: false,
+            lobby_state,
         }
     }
 
@@ -48,6 +56,7 @@ impl Room {
             messages: Vec::new(),
             unread_count: 0,
             is_active: false,
+            lobby_state: None,
         }
     }
 
@@ -102,7 +111,6 @@ pub struct LobbySettings {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LobbyState {
-    pub channel: String,
     pub settings: Option<LobbySettings>,
     pub current_map: Option<CurrentMap>,
     pub slots: Vec<PlayerSlot>,
@@ -114,11 +122,10 @@ pub struct LobbyState {
 }
 
 impl LobbyState {
-    pub fn new(channel: String) -> Self {
+    pub fn new() -> Self {
         let slots = (1..=16).map(|id| PlayerSlot { id, player: None }).collect();
 
         Self {
-            channel,
             settings: None,
             current_map: None,
             current_mappool_id: None,
@@ -140,7 +147,6 @@ pub struct IrcClientState {
     pub config: Option<ConnectionConfig>,
     pub client: Option<Arc<Mutex<irc::client::Client>>>,
     pub message_sender: Option<tokio::sync::mpsc::UnboundedSender<IrcCommand>>,
-    pub lobby_states: HashMap<String, LobbyState>,
     pub current_username: Option<String>,
 }
 
@@ -162,7 +168,6 @@ impl Default for IrcClientState {
             config: None,
             client: None,
             message_sender: None,
-            lobby_states: HashMap::new(),
             current_username: None,
         }
     }

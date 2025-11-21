@@ -158,15 +158,6 @@ pub async fn join_channel(room_id: String, state: State<'_, IrcState>) -> Result
             let mut irc_state = state.lock().unwrap();
             let room = Room::new_channel(room_id.clone());
             irc_state.rooms.insert(room_id.clone(), room);
-
-            // If it's a lobby room, create lobby state
-            if room_id.starts_with("#mp_") {
-                if !irc_state.lobby_states.contains_key(&room_id) {
-                    irc_state
-                        .lobby_states
-                        .insert(room_id.clone(), LobbyState::new(room_id.clone()));
-                }
-            }
         }
 
         Ok(format!("Joining channel: {}", room_id))
@@ -253,7 +244,6 @@ pub async fn disconnect_from_bancho(state: State<'_, IrcState>) -> Result<String
             irc_state.client = None;
             irc_state.message_sender = None;
             irc_state.current_username = None;
-            irc_state.lobby_states.clear();
         }
     }
 
@@ -332,7 +322,10 @@ pub async fn get_lobby_state(
     state: State<'_, IrcState>,
 ) -> Result<Option<LobbyState>, String> {
     let irc_state = state.lock().unwrap();
-    Ok(irc_state.lobby_states.get(&room_id).cloned())
+    Ok(irc_state
+        .rooms
+        .get(&room_id)
+        .and_then(|room| room.lobby_state.clone()))
 }
 
 #[tauri::command]
@@ -342,9 +335,11 @@ pub async fn set_mappool(
     state: State<'_, IrcState>,
 ) -> Result<Option<u64>, String> {
     let mut irc_state = state.lock().unwrap();
-    if let Some(lobby_state) = irc_state.lobby_states.get_mut(&room_id) {
-        lobby_state.current_mappool_id = mappool_id;
-        return Ok(mappool_id);
+    if let Some(room) = irc_state.rooms.get_mut(&room_id) {
+        if let Some(lobby_state) = &mut room.lobby_state {
+            lobby_state.current_mappool_id = mappool_id;
+            return Ok(mappool_id);
+        }
     }
     Err("Lobby state not found".to_string())
 }
@@ -399,10 +394,6 @@ pub fn remove_room(room_id: &str, state: &IrcState) {
     let mut irc_state = state.lock().unwrap();
     irc_state.rooms.remove(room_id);
 
-    if room_id.starts_with("#mp_") {
-        irc_state.lobby_states.remove(room_id);
-    }
-
     // Clear active_room_id if the removed room was active
     if irc_state.active_room_id.as_deref() == Some(room_id) {
         irc_state.active_room_id = None;
@@ -411,9 +402,11 @@ pub fn remove_room(room_id: &str, state: &IrcState) {
 
 pub fn clear_all_players(room_id: &str, state: &IrcState) {
     let mut irc_state = state.lock().unwrap();
-    if let Some(lobby) = irc_state.lobby_states.get_mut(room_id) {
-        for slot in &mut lobby.slots {
-            slot.player = None;
+    if let Some(room) = irc_state.rooms.get_mut(room_id) {
+        if let Some(lobby) = &mut room.lobby_state {
+            for slot in &mut lobby.slots {
+                slot.player = None;
+            }
         }
     }
 }

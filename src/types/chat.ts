@@ -1,3 +1,5 @@
+import type { LobbyState } from './lobby'
+
 export type RoomType = 'Channel' | 'PrivateMessage' | 'MultiplayerLobby'
 
 export interface ConnectionStatus {
@@ -12,6 +14,7 @@ export interface Room {
   messages: IrcMessage[]
   unreadCount: number
   isActive: boolean
+  lobbyState: LobbyState | null
 }
 
 export interface IrcMessage {
