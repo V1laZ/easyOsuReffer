@@ -286,23 +286,24 @@ pub async fn get_room_messages(
 }
 
 #[tauri::command]
-pub async fn set_active_room(room_id: String, state: State<'_, IrcState>) -> Result<(), String> {
+pub async fn set_active_room(room_id: String, state: State<'_, IrcState>) -> Result<Room, String> {
     let mut irc_state = state.lock().unwrap();
 
-    // Mark all rooms as inactive first
     for room in irc_state.rooms.values_mut() {
         room.is_active = false;
     }
 
-    // Mark new room as active and set it as active_room_id
-    if let Some(room) = irc_state.rooms.get_mut(&room_id) {
-        room.is_active = true;
-        room.mark_as_read();
-        irc_state.active_room_id = Some(room_id);
-        Ok(())
-    } else {
-        Err("Room not found".to_string())
+    if irc_state.rooms.contains_key(&room_id) {
+        irc_state.active_room_id = Some(room_id.clone());
+
+        if let Some(room) = irc_state.rooms.get_mut(&room_id) {
+            room.is_active = true;
+            room.mark_as_read();
+            return Ok(room.clone());
+        }
     }
+
+    Err("Room not found".to_string())
 }
 
 #[tauri::command]
