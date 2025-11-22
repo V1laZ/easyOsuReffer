@@ -290,6 +290,7 @@ const selectRoom = async (roomId: string) => {
     const room = await invoke<RoomUnion>('set_active_room', { roomId })
     activeRoom.value = room
     leftDrawerOpen.value = false
+    roomsMap.value.get(roomId)!.unreadCount = 0
   }
   catch (error) {
     console.error('Failed to select room:', error)
