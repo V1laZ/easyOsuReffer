@@ -1,5 +1,6 @@
 import Database from '@tauri-apps/plugin-sql'
 import { fetch } from '@tauri-apps/plugin-http'
+import { UserCredentials, Mappool, BeatmapEntry } from '@/types'
 
 class DatabaseService {
   private db: Database | null = null
@@ -35,8 +36,8 @@ class DatabaseService {
     if (!this.db) throw new Error('Database not initialized')
 
     const result = await this.db.select<UserCredentials[]>(
-      `SELECT id, username, password, created_at, updated_at 
-       FROM user_credentials 
+      `SELECT id, username, password, created_at, updated_at
+       FROM user_credentials
        LIMIT 1`,
     )
 
@@ -91,7 +92,7 @@ class DatabaseService {
     const now = new Date().toISOString()
 
     const result = await this.db.execute(
-      `INSERT INTO mappools (name, description, created_at, updated_at) 
+      `INSERT INTO mappools (name, description, created_at, updated_at)
        VALUES (?, ?, ?, ?)`,
       [name, description || null, now, now],
     )
@@ -103,8 +104,8 @@ class DatabaseService {
     if (!this.db) throw new Error('Database not initialized')
 
     return await this.db.select<Mappool[]>(
-      `SELECT id, name, description, created_at, updated_at 
-       FROM mappools 
+      `SELECT id, name, description, created_at, updated_at
+       FROM mappools
        ORDER BY updated_at DESC`,
     )
   }
@@ -130,8 +131,8 @@ class DatabaseService {
     const now = new Date().toISOString()
 
     await this.db.execute(
-      `INSERT INTO beatmap_entries 
-       (mappool_id, beatmap_id, artist, title, difficulty, mapper, mod_combination, category, created_at) 
+      `INSERT INTO beatmap_entries
+       (mappool_id, beatmap_id, artist, title, difficulty, mapper, mod_combination, category, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [mappoolId, beatmapId, artist, title, difficulty, mapper, modCombination || null, category || null, now],
     )
@@ -141,9 +142,9 @@ class DatabaseService {
     if (!this.db) throw new Error('Database not initialized')
 
     return await this.db.select<BeatmapEntry[]>(
-      `SELECT id, mappool_id, beatmap_id, artist, title, difficulty, mapper, mod_combination, category, created_at 
-       FROM beatmap_entries 
-       WHERE mappool_id = ? 
+      `SELECT id, mappool_id, beatmap_id, artist, title, difficulty, mapper, mod_combination, category, created_at
+       FROM beatmap_entries
+       WHERE mappool_id = ?
        ORDER BY created_at`,
       [mappoolId],
     )

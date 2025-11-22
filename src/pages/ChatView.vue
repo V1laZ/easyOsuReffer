@@ -19,6 +19,7 @@
         v-if="activeRoom && activeRoom.roomType === 'MultiplayerLobby'"
         :is-open="isOpenSelectMap"
         :lobby-state="activeRoom.lobbyState"
+        :room-id="activeRoom.id"
         @close="isOpenSelectMap = false"
         @set-mappool="activeRoom.lobbyState.currentMappoolId = $event"
         @select-beatmap="selectMap"

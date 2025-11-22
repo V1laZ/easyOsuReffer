@@ -90,6 +90,7 @@ import type { LobbyState, BeatmapEntry, Mappool } from '@/types'
 const props = defineProps<{
   isOpen: boolean
   lobbyState: LobbyState
+  roomId: string
 }>()
 
 const emit = defineEmits<{
@@ -127,7 +128,7 @@ const setActiveMappool = async () => {
   if (!selectedMappoolId.value || !props.lobbyState) return
   try {
     const res = await invoke<number>('set_mappool', {
-      roomId: props.lobbyState.channel,
+      roomId: props.roomId,
       mappoolId: selectedMappoolId.value,
     })
     emit('setMappool', res)
