@@ -87,7 +87,7 @@ pub fn run() {
             description: "recreate_oauth_tokens_with_username",
             sql: "
             DROP TABLE IF EXISTS oauth_tokens;
-
+            
             CREATE TABLE oauth_tokens (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 irc_username TEXT NOT NULL UNIQUE,
