@@ -448,16 +448,15 @@ const leaveRoom = async (roomId: string) => {
 
 const handleCreateLobby = async (settings: CreateLobbySettings) => {
   try {
-    settingsForNewLobby.value = settings
-
-    createLobbyOpen.value = false
-
     await invoke('start_private_message', { username: 'BanchoBot' })
 
     await invoke('send_message_to_room', {
       roomId: 'BanchoBot',
       message: `!mp make ${settings.name}`,
     })
+
+    settingsForNewLobby.value = settings
+    createLobbyOpen.value = false
   }
   catch (error) {
     console.error('Failed to create lobby:', error)
