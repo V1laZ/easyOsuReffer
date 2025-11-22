@@ -1,4 +1,4 @@
-export interface Player {
+export type Player = {
   username: string
   team: 'red' | 'blue' | null
   isReady: boolean
@@ -6,29 +6,29 @@ export interface Player {
   isHost: boolean
 }
 
-export interface PlayerMoveEvent {
+export type PlayerMoveEvent = {
   playerName: string
   to: number
 }
 
-export interface PlayerTeamChangeEvent {
+export type PlayerTeamChangeEvent = {
   playerName: string
   team: 'red' | 'blue'
 }
 
-export interface PlayerSlot {
+export type PlayerSlot = {
   id: number
   player: Player | null
 }
 
-export interface CurrentMap {
+export type CurrentMap = {
   beatmapId: number
   title: string
   difficulty: string
   artist: string
 }
 
-export interface LobbySettings {
+export type LobbySettings = {
   roomName: string
   teamMode: 'HeadToHead' | 'TagCoop' | 'TeamVs' | 'TagTeamVs'
   winCondition: 'Score' | 'Accuracy' | 'Combo' | 'ScoreV2'
@@ -36,8 +36,7 @@ export interface LobbySettings {
   password?: string
 }
 
-export interface LobbyState {
-  channel: string
+export type LobbyState = {
   settings: LobbySettings | null
   currentMap: CurrentMap | null
   slots: PlayerSlot[]
@@ -48,7 +47,7 @@ export interface LobbyState {
   currentMappoolId: number | null
 }
 
-export interface CreateLobbySettings {
+export type CreateLobbySettings = {
   name: string
   teamMode: '0' | '1' | '2' | '3'
   scoreMode: '0' | '1' | '2' | '3'

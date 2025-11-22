@@ -6,6 +6,22 @@ use tauri::Emitter;
 pub struct BanchoBotParser;
 
 impl BanchoBotParser {
+    fn emit_lobby_update(
+        channel: &str,
+        lobby: &LobbyState,
+        active_room_id: Option<&str>,
+        app_handle: &tauri::AppHandle,
+    ) {
+        let is_active = active_room_id == Some(channel);
+
+        if is_active {
+            let _ = app_handle.emit(
+                "active-room-lobby-state-updated",
+                serde_json::json!({ "lobbyState": lobby }),
+            );
+        }
+    }
+
     pub fn parse_irc_message(
         message: &IrcMessage,
         state: &IrcState,
@@ -41,16 +57,6 @@ impl BanchoBotParser {
 
         if !channel.starts_with("#mp_") {
             return false;
-        }
-
-        // Ensure lobby state exists
-        {
-            let mut irc_state = state.lock().unwrap();
-            if !irc_state.lobby_states.contains_key(channel) {
-                irc_state
-                    .lobby_states
-                    .insert(channel.clone(), LobbyState::new(channel.clone()));
-            }
         }
 
         // Room name pattern
@@ -368,15 +374,18 @@ impl BanchoBotParser {
                 let username = captures.get(1).unwrap().as_str();
                 let team = captures.get(2).unwrap().as_str().to_lowercase();
                 let mut irc_state = state.lock().unwrap();
-                if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
-                    for slot in &mut lobby.slots {
-                        if let Some(ref mut player) = slot.player {
-                            if player.username == username {
-                                player.team = Some(team.clone());
+                let active_room_id = irc_state.active_room_id.clone();
+                if let Some(room) = irc_state.rooms.get_mut(channel) {
+                    if let Some(lobby) = &mut room.lobby_state {
+                        for slot in &mut lobby.slots {
+                            if let Some(ref mut player) = slot.player {
+                                if player.username == username {
+                                    player.team = Some(team.clone());
+                                }
                             }
                         }
+                        Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
                     }
-                    let _ = app_handle.emit("lobby-updated", lobby.clone());
                 }
                 return true;
             }
@@ -436,7 +445,6 @@ impl BanchoBotParser {
             }
         }
     }
-
     fn update_lobby_settings<F>(
         channel: &str,
         updater: F,
@@ -446,23 +454,25 @@ impl BanchoBotParser {
         F: FnOnce(&mut LobbySettings),
     {
         let mut irc_state = state.lock().unwrap();
-        if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
-            if lobby.settings.is_none() {
-                lobby.settings = Some(LobbySettings {
-                    room_name: String::new(),
-                    team_mode: "HeadToHead".to_string(),
-                    win_condition: "Score".to_string(),
-                    size: 16,
-                    password: None,
-                });
-            }
+        let active_room_id = irc_state.active_room_id.clone();
+        if let Some(room) = irc_state.rooms.get_mut(channel) {
+            if let Some(lobby) = &mut room.lobby_state {
+                if lobby.settings.is_none() {
+                    lobby.settings = Some(LobbySettings {
+                        room_name: String::new(),
+                        team_mode: "HeadToHead".to_string(),
+                        win_condition: "Score".to_string(),
+                        size: 16,
+                        password: None,
+                    });
+                }
 
-            if let Some(ref mut settings) = lobby.settings {
-                updater(settings);
-            }
+                if let Some(ref mut settings) = lobby.settings {
+                    updater(settings);
+                }
 
-            // Emit update to frontend
-            let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
+            }
         }
     }
 
@@ -473,9 +483,12 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
-        if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
-            lobby.current_map = Some(map);
-            let _ = app_handle.emit("lobby-updated", lobby.clone());
+        let active_room_id = irc_state.active_room_id.clone();
+        if let Some(room) = irc_state.rooms.get_mut(channel) {
+            if let Some(lobby) = &mut room.lobby_state {
+                lobby.current_map = Some(map);
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
+            }
         }
     }
 
@@ -487,10 +500,13 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
-        if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
-            if let Some(slot) = lobby.slots.iter_mut().find(|s| s.id == slot_id) {
-                slot.player = Some(player);
-                let _ = app_handle.emit("lobby-updated", lobby.clone());
+        let active_room_id = irc_state.active_room_id.clone();
+        if let Some(room) = irc_state.rooms.get_mut(channel) {
+            if let Some(lobby) = &mut room.lobby_state {
+                if let Some(slot) = lobby.slots.iter_mut().find(|s| s.id == slot_id) {
+                    slot.player = Some(player);
+                    Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
+                }
             }
         }
     }
@@ -502,16 +518,19 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
-        if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
-            for slot in &mut lobby.slots {
-                if let Some(ref player) = slot.player {
-                    if player.username == username {
-                        slot.player = None;
-                        break;
+        let active_room_id = irc_state.active_room_id.clone();
+        if let Some(room) = irc_state.rooms.get_mut(channel) {
+            if let Some(lobby) = &mut room.lobby_state {
+                for slot in &mut lobby.slots {
+                    if let Some(ref player) = slot.player {
+                        if player.username == username {
+                            slot.player = None;
+                            break;
+                        }
                     }
                 }
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
             }
-            let _ = app_handle.emit("lobby-updated", lobby.clone());
         }
     }
 
@@ -522,33 +541,39 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
-        if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
-            lobby.match_status = status.to_string();
+        let active_room_id = irc_state.active_room_id.clone();
+        if let Some(room) = irc_state.rooms.get_mut(channel) {
+            if let Some(lobby) = &mut room.lobby_state {
+                lobby.match_status = status.to_string();
 
-            if status == "ready" {
-                for slot in &mut lobby.slots {
-                    if let Some(ref mut player) = slot.player {
-                        player.is_ready = true;
+                if status == "ready" {
+                    for slot in &mut lobby.slots {
+                        if let Some(ref mut player) = slot.player {
+                            player.is_ready = true;
+                        }
                     }
                 }
-            }
 
-            let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
+            }
         }
     }
 
     fn clear_host(channel: &str, state: &IrcState, app_handle: &tauri::AppHandle) {
         let mut irc_state = state.lock().unwrap();
-        if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
-            lobby.host = None;
+        let active_room_id = irc_state.active_room_id.clone();
+        if let Some(room) = irc_state.rooms.get_mut(channel) {
+            if let Some(lobby) = &mut room.lobby_state {
+                lobby.host = None;
 
-            for slot in &mut lobby.slots {
-                if let Some(ref mut player) = slot.player {
-                    player.is_host = false;
+                for slot in &mut lobby.slots {
+                    if let Some(ref mut player) = slot.player {
+                        player.is_host = false;
+                    }
                 }
-            }
 
-            let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
+            }
         }
     }
 
@@ -559,16 +584,19 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
-        if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
-            lobby.host = Some(host_username.to_string());
+        let active_room_id = irc_state.active_room_id.clone();
+        if let Some(room) = irc_state.rooms.get_mut(channel) {
+            if let Some(lobby) = &mut room.lobby_state {
+                lobby.host = Some(host_username.to_string());
 
-            for slot in &mut lobby.slots {
-                if let Some(ref mut player) = slot.player {
-                    player.is_host = player.username == host_username;
+                for slot in &mut lobby.slots {
+                    if let Some(ref mut player) = slot.player {
+                        player.is_host = player.username == host_username;
+                    }
                 }
-            }
 
-            let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
+            }
         }
     }
 
@@ -581,30 +609,33 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
-        if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
-            // Find the player in their current slot and remove them
-            let mut player_data = None;
-            for slot in &mut lobby.slots {
-                if let Some(ref player) = slot.player {
-                    if player.username == username {
-                        player_data = slot.player.take();
-                        break;
+        let active_room_id = irc_state.active_room_id.clone();
+        if let Some(room) = irc_state.rooms.get_mut(channel) {
+            if let Some(lobby) = &mut room.lobby_state {
+                // Find the player in their current slot and remove them
+                let mut player_data = None;
+                for slot in &mut lobby.slots {
+                    if let Some(ref player) = slot.player {
+                        if player.username == username {
+                            player_data = slot.player.take();
+                            break;
+                        }
                     }
                 }
-            }
 
-            // Move the player to their new slot
-            if let Some(mut player) = player_data {
-                if let Some(team) = team {
-                    player.team = Some(team);
+                // Move the player to their new slot
+                if let Some(mut player) = player_data {
+                    if let Some(team) = team {
+                        player.team = Some(team);
+                    }
+
+                    if let Some(slot) = lobby.slots.iter_mut().find(|s| s.id == new_slot_id) {
+                        slot.player = Some(player);
+                    }
                 }
 
-                if let Some(slot) = lobby.slots.iter_mut().find(|s| s.id == new_slot_id) {
-                    slot.player = Some(player);
-                }
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
             }
-
-            let _ = app_handle.emit("lobby-updated", lobby.clone());
         }
     }
 
@@ -634,10 +665,13 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
-        if let Some(lobby) = irc_state.lobby_states.get_mut(channel) {
-            lobby.selected_mods = mods;
-            lobby.freemod = freemod;
-            let _ = app_handle.emit("lobby-updated", lobby.clone());
+        let active_room_id = irc_state.active_room_id.clone();
+        if let Some(room) = irc_state.rooms.get_mut(channel) {
+            if let Some(lobby) = &mut room.lobby_state {
+                lobby.selected_mods = mods;
+                lobby.freemod = freemod;
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
+            }
         }
     }
 }
