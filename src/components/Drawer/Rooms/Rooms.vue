@@ -42,7 +42,6 @@
             v-for="room in chatRooms"
             :key="room.id"
             :room="room"
-            :is-active="activeRoom === room.id"
             @select="emit('selectRoom', room.id)"
             @leave="handleLeaveRoom(room)"
           />
@@ -70,7 +69,6 @@
               v-for="room in mutiplayerLobbies"
               :key="room.id"
               :room="room"
-              :is-active="activeRoom === room.id"
               @select="emit('selectRoom', room.id)"
               @leave="handleLeaveRoom(room)"
             />
@@ -140,12 +138,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import RoomItem from './RoomItem.vue'
-import type { Room } from '@/types'
+import type { RoomListItem } from '@/types'
 
 const props = defineProps<{
   isOpen: boolean
-  rooms: Room[]
-  activeRoom: string | null
+  rooms: RoomListItem[]
 }>()
 
 const emit = defineEmits<{
@@ -205,7 +202,7 @@ const handleJoinOrMessage = () => {
   newRoomName.value = ''
 }
 
-const handleLeaveRoom = (room: Room) => {
+const handleLeaveRoom = (room: RoomListItem) => {
   const confirmMessage = room.roomType === 'MultiplayerLobby'
     ? `Are you sure you want to leave the multiplayer room ${room.displayName}? You will stop receiving messages from this room.`
     : room.roomType === 'Channel'

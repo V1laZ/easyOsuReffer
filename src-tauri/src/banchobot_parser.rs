@@ -6,6 +6,24 @@ use tauri::Emitter;
 pub struct BanchoBotParser;
 
 impl BanchoBotParser {
+    fn emit_lobby_update(
+        channel: &str,
+        lobby: &LobbyState,
+        state: &IrcState,
+        app_handle: &tauri::AppHandle,
+    ) {
+        let is_active = {
+            let irc_state = state.lock().unwrap();
+            irc_state.active_room_id.as_deref() == Some(channel)
+        };
+
+        if is_active {
+            let _ = app_handle.emit("active-room-lobby-state-updated", serde_json::json!({
+                "lobbyState": lobby
+            }));
+        }
+    }
+
     pub fn parse_irc_message(
         message: &IrcMessage,
         state: &IrcState,
@@ -369,7 +387,7 @@ impl BanchoBotParser {
                                 }
                             }
                         }
-                        let _ = app_handle.emit("lobby-updated", lobby.clone());
+                        Self::emit_lobby_update(channel, lobby, state, app_handle);
                     }
                 }
                 return true;
@@ -456,8 +474,7 @@ impl BanchoBotParser {
                     updater(settings);
                 }
 
-                // Emit update to frontend
-                let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, state, app_handle);
             }
         }
     }
@@ -472,7 +489,7 @@ impl BanchoBotParser {
         if let Some(room) = irc_state.rooms.get_mut(channel) {
             if let Some(lobby) = &mut room.lobby_state {
                 lobby.current_map = Some(map);
-                let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, state, app_handle);
             }
         }
     }
@@ -489,7 +506,7 @@ impl BanchoBotParser {
             if let Some(lobby) = &mut room.lobby_state {
                 if let Some(slot) = lobby.slots.iter_mut().find(|s| s.id == slot_id) {
                     slot.player = Some(player);
-                    let _ = app_handle.emit("lobby-updated", lobby.clone());
+                    Self::emit_lobby_update(channel, lobby, state, app_handle);
                 }
             }
         }
@@ -512,7 +529,7 @@ impl BanchoBotParser {
                         }
                     }
                 }
-                let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, state, app_handle);
             }
         }
     }
@@ -536,7 +553,7 @@ impl BanchoBotParser {
                     }
                 }
 
-                let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, state, app_handle);
             }
         }
     }
@@ -553,7 +570,7 @@ impl BanchoBotParser {
                     }
                 }
 
-                let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, state, app_handle);
             }
         }
     }
@@ -575,7 +592,7 @@ impl BanchoBotParser {
                     }
                 }
 
-                let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, state, app_handle);
             }
         }
     }
@@ -613,7 +630,7 @@ impl BanchoBotParser {
                     }
                 }
 
-                let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, state, app_handle);
             }
         }
     }
@@ -648,7 +665,7 @@ impl BanchoBotParser {
             if let Some(lobby) = &mut room.lobby_state {
                 lobby.selected_mods = mods;
                 lobby.freemod = freemod;
-                let _ = app_handle.emit("lobby-updated", lobby.clone());
+                Self::emit_lobby_update(channel, lobby, state, app_handle);
             }
         }
     }

@@ -23,7 +23,7 @@ pub struct Room {
 }
 
 impl Room {
-    pub fn new_channel(channel_name: String) -> Self {
+    pub fn new_channel(channel_name: String, is_active: bool) -> Self {
         let is_multiplayer = channel_name.starts_with("#mp_");
         let room_type = if is_multiplayer {
             RoomType::MultiplayerLobby
@@ -43,7 +43,7 @@ impl Room {
             room_type,
             messages: Vec::new(),
             unread_count: 0,
-            is_active: false,
+            is_active: is_active,
             lobby_state,
         }
     }
@@ -70,6 +70,37 @@ impl Room {
     pub fn mark_as_read(&mut self) {
         self.unread_count = 0;
     }
+}
+
+// Lightweight room list item without messages
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RoomListItem {
+    pub id: String,
+    pub display_name: String,
+    pub room_type: RoomType,
+    pub unread_count: u32,
+    pub is_active: bool,
+}
+
+impl From<&Room> for RoomListItem {
+    fn from(room: &Room) -> Self {
+        Self {
+            id: room.id.clone(),
+            display_name: room.display_name.clone(),
+            room_type: room.room_type.clone(),
+            unread_count: room.unread_count,
+            is_active: room.is_active,
+        }
+    }
+}
+
+// Response for get_rooms_list command
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RoomsListResponse {
+    pub rooms: Vec<RoomListItem>,
+    pub active_room_id: Option<String>,
 }
 
 // Lobby state structures

@@ -87,7 +87,7 @@ pub fn run() {
             description: "recreate_oauth_tokens_with_username",
             sql: "
             DROP TABLE IF EXISTS oauth_tokens;
-            
+
             CREATE TABLE oauth_tokens (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 irc_username TEXT NOT NULL UNIQUE,
@@ -134,11 +134,9 @@ pub fn run() {
             leave_channel,
             close_private_message,
             get_connection_status,
-            get_joined_rooms,
-            get_room_messages,
+            get_rooms_list,
             set_active_room,
             start_private_message,
-            get_lobby_state,
             fetch_beatmap_data,
             set_mappool,
         ])

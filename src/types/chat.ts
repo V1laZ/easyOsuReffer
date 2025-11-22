@@ -7,17 +7,32 @@ export type ConnectionStatus = {
   message: string
 }
 
-export type Room = {
+export type RoomBase = {
   id: string
   displayName: string
-  roomType: RoomType
   messages: IrcMessage[]
   unreadCount: number
   isActive: boolean
-  lobbyState: LobbyState | null
 }
 
-export type RoomItem = Omit<Room, 'messages'>
+export type MultiplayerRoom = RoomBase & {
+  roomType: 'MultiplayerLobby'
+  lobbyState: LobbyState
+}
+
+export type ChannelRoom = RoomBase & {
+  roomType: 'Channel'
+}
+
+export type PrivateMessageRoom = RoomBase & {
+  roomType: 'PrivateMessage'
+}
+
+export type RoomUnion = MultiplayerRoom | ChannelRoom | PrivateMessageRoom
+
+export type RoomListItem = Omit<RoomUnion, 'messages' | 'lobbyState'>
+
+export type RoomsMap = Map<string, RoomListItem>
 
 export type IrcMessage = {
   roomId: string
@@ -27,7 +42,35 @@ export type IrcMessage = {
   isPrivate: boolean
 }
 
+export type RoomError = {
+  channel: string
+  error: string
+}
+
 export type UserJoinEvent = {
   username: string
   channel: string
+}
+
+export type ActiveRoomMessageEvent = {
+  roomId: string
+  message: IrcMessage
+}
+
+export type InactiveRoomUnreadUpdateEvent = {
+  roomId: string
+  unreadCount: number
+}
+
+export type ActiveRoomLobbyStateUpdateEvent = {
+  lobbyState: LobbyState
+}
+
+export type ActiveRoomChangedEvent = {
+  room: RoomUnion | null
+}
+
+export type RoomsListUpdatedEvent = {
+  rooms: RoomListItem[]
+  activeRoomId: string | null
 }

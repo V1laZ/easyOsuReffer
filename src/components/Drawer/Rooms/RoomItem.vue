@@ -2,7 +2,7 @@
   <div class="relative group">
     <div
       class="flex items-center rounded-lg transition-colors"
-      :class="isActive
+      :class="room.isActive
         ? 'bg-pink-500 text-white'
         : 'text-gray-300 hover:bg-gray-700 hover:text-white'
       "
@@ -52,7 +52,7 @@
       <!-- Leave Room Button -->
       <button
         class="flex-shrink-0 m-1 rounded opacity-100 md:opacity-0 group-hover:opacity-100 transition-all duration-200"
-        :class="isActive
+        :class="room.isActive
           ? 'text-white'
           : 'text-gray-400 hover:text-white'
         "
@@ -78,15 +78,14 @@
 </template>
 
 <script setup lang="ts">
-import type { Room } from '@/types'
+import type { RoomListItem } from '@/types'
 
 defineProps<{
-  room: Room
-  isActive: boolean
+  room: RoomListItem
 }>()
 
 const emit = defineEmits<{
   select: [id: string]
-  leave: [room: Room]
+  leave: [room: RoomListItem]
 }>()
 </script>
