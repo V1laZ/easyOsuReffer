@@ -121,7 +121,7 @@ pub async fn send_message_to_room(
             let command = match room.room_type {
                 RoomType::Channel | RoomType::MultiplayerLobby => {
                     if message.trim() == "!mp settings" {
-                        clear_all_players(&room_id, &state);
+                        clear_lobby_state(&room_id, &state);
                     }
                     IrcCommand::SendMessage { room_id, message }
                 }
@@ -414,13 +414,14 @@ pub fn remove_room(room_id: &str, state: &IrcState) {
     }
 }
 
-pub fn clear_all_players(room_id: &str, state: &IrcState) {
+pub fn clear_lobby_state(room_id: &str, state: &IrcState) {
     let mut irc_state = state.lock().unwrap();
     if let Some(room) = irc_state.rooms.get_mut(room_id) {
         if let Some(lobby) = &mut room.lobby_state {
             for slot in &mut lobby.slots {
                 slot.player = None;
             }
+            lobby.match_status = "idle".to_string();
         }
     }
 }

@@ -328,7 +328,7 @@ impl BanchoBotParser {
         }
 
         // Match aborted
-        if text == "The match was aborted" || text.contains("aborted the match") {
+        if text == "The match was aborted" || text.contains("Aborted the match") {
             Self::update_match_status(channel, "idle", state, app_handle);
             return true;
         }
