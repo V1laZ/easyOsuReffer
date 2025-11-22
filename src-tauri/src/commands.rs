@@ -205,7 +205,7 @@ pub async fn close_private_message(
     state: State<'_, IrcState>,
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
-    remove_room(&username, &state, &app_handle);
+    remove_room(&username, &state);
 
     emit_rooms_list_updated(&app_handle, &state);
 
