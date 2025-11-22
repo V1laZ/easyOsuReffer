@@ -118,7 +118,7 @@
       <!-- Footer -->
       <div class="mt-8 pt-6 border-t border-gray-700">
         <div class="flex items-center justify-between text-sm text-gray-400">
-          <span>osu! Reffer v0.4.1</span>
+          <span>osu! Reffer v0.5.0</span>
         </div>
       </div>
     </div>
