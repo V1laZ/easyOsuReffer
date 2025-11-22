@@ -7,10 +7,10 @@
           <div
             class="w-3 h-3 rounded-full"
             :class="{
-              'bg-green-500': lobbyState.matchStatus === 'ready',
-              'bg-yellow-500': lobbyState.matchStatus === 'active',
-              'bg-yellow-500/50': lobbyState.matchStatus === 'starting',
-              'bg-gray-500': !lobbyState || lobbyState.matchStatus === 'idle'
+              'bg-green-500': room.lobbyState.matchStatus === 'ready',
+              'bg-yellow-500': room.lobbyState.matchStatus === 'active',
+              'bg-yellow-500/50': room.lobbyState.matchStatus === 'starting',
+              'bg-gray-500': !room.lobbyState || room.lobbyState.matchStatus === 'idle'
             }"
           />
           <span class="text-sm font-medium text-white">
@@ -23,14 +23,14 @@
       <div class="flex items-center space-x-2">
         <div class="flex items-center space-x-1">
           <button
-            :disabled="!lobbyState || lobbyState.matchStatus === 'active' || !currentMap"
+            :disabled="room.lobbyState.matchStatus === 'active' || !currentMap"
             class="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
             @click="handleQuickAction('start')"
           >
             Start
           </button>
           <button
-            :disabled="!lobbyState || lobbyState.matchStatus === 'active'"
+            :disabled="room.lobbyState.matchStatus === 'active'"
             class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
             @click="emit('openSelectMap')"
           >
@@ -63,18 +63,18 @@
         <span class="text-sm text-gray-400">Mods:</span>
         <div class="flex items-center space-x-1">
           <Mod
-            v-for="mod in lobbyState.selectedMods"
+            v-for="mod in room.lobbyState.selectedMods"
             :key="mod"
             :mod="mod"
           />
           <span
-            v-if="lobbyState.freemod"
+            v-if="room.lobbyState.freemod"
             class="px-2 py-0.5 bg-orange-600 text-white text-xs rounded-md font-medium"
           >
             Freemod
           </span>
           <span
-            v-else-if="lobbyState.selectedMods.length === 0"
+            v-else-if="room.lobbyState.selectedMods.length === 0"
             class="px-2 py-0.5 bg-gray-600 text-white text-xs rounded-md font-medium"
           >
             NoMod
@@ -89,22 +89,20 @@
 import { computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import Mod from '../Mod.vue'
-import type { LobbyState } from '@/types'
+import type { MultiplayerRoom } from '@/types'
 
 const props = defineProps<{
-  lobbyState: LobbyState
+  room: MultiplayerRoom
 }>()
 
 const emit = defineEmits<{
   openSelectMap: []
 }>()
 
-const currentMap = computed(() => props.lobbyState.currentMap || null)
+const currentMap = computed(() => props.room.lobbyState.currentMap || null)
 
 const matchStatusText = computed(() => {
-  if (!props.lobbyState) return 'Idle'
-
-  switch (props.lobbyState.matchStatus) {
+  switch (props.room.lobbyState.matchStatus) {
     case 'active':
       return 'In progress'
     case 'starting':
@@ -122,13 +120,13 @@ const handleQuickAction = (action: string) => {
   switch (action) {
     case 'start':
       invoke('send_message_to_room', {
-        roomId: props.lobbyState.channel,
+        roomId: props.room.id,
         message: '!mp start 10',
       })
       break
     case 'abort':
       invoke('send_message_to_room', {
-        roomId: props.lobbyState.channel,
+        roomId: props.room.id,
         message: '!mp abort',
       })
       break

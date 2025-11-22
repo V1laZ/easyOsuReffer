@@ -57,15 +57,28 @@ pub async fn handle_irc_connection(
                                 is_private: false,
                             };
 
-                            {
+                            let (unread_count, is_active) = {
                                 let mut irc_state = state.lock().unwrap();
+                                let is_active = irc_state.active_room_id.as_ref() == Some(&room_id);
                                 if let Some(room) = irc_state.rooms.get_mut(&room_id) {
-                                    room.add_message(our_message.clone());
+                                    room.add_message(our_message.clone(), is_active);
+                                    (room.unread_count, is_active)
+                                } else {
+                                    (0, false)
                                 }
-                            }
+                            };
 
-                            if let Err(e) = app_handle.emit("irc-message", &our_message) {
-                                println!("Failed to emit our message to frontend: {}", e);
+                            // Emit event based on room state
+                            if is_active {
+                                let _ = app_handle.emit("active-room-message", serde_json::json!({
+                                    "roomId": room_id,
+                                    "message": our_message
+                                }));
+                            } else {
+                                let _ = app_handle.emit("inactive-room-unread-updated", serde_json::json!({
+                                    "roomId": room_id,
+                                    "unreadCount": unread_count
+                                }));
                             }
                         }
                     }
@@ -92,15 +105,28 @@ pub async fn handle_irc_connection(
                                 is_private: true,
                             };
 
-                            {
+                            let (unread_count, is_active) = {
                                 let mut irc_state = state.lock().unwrap();
+                                let is_active = irc_state.active_room_id.as_ref() == Some(&username);
                                 if let Some(room) = irc_state.rooms.get_mut(&username) {
-                                    room.add_message(our_message.clone());
+                                    room.add_message(our_message.clone(), is_active);
+                                    (room.unread_count, is_active)
+                                } else {
+                                    (0, false)
                                 }
-                            }
+                            };
 
-                            if let Err(e) = app_handle.emit("irc-message", &our_message) {
-                                println!("Failed to emit our PM to frontend: {}", e);
+                            // Emit event based on room state
+                            if is_active {
+                                let _ = app_handle.emit("active-room-message", serde_json::json!({
+                                    "roomId": username,
+                                    "message": our_message
+                                }));
+                            } else {
+                                let _ = app_handle.emit("inactive-room-unread-updated", serde_json::json!({
+                                    "roomId": username,
+                                    "unreadCount": unread_count
+                                }));
                             }
                         }
                     }
@@ -193,7 +219,7 @@ fn handle_incoming_message(
 
                 println!("[{}] <{}> {}", room_id, nick, text);
 
-                {
+                let (unread_count, is_active) = {
                     let mut irc_state = state.lock().unwrap();
 
                     // Create room if it doesn't exist (for incoming PMs)
@@ -202,18 +228,32 @@ fn handle_incoming_message(
                         irc_state.rooms.insert(room_id.clone(), new_room);
                     }
 
+                    let is_active = irc_state.active_room_id.as_ref() == Some(&room_id);
+
                     // Add message to appropriate room
                     if let Some(room_obj) = irc_state.rooms.get_mut(&room_id) {
-                        room_obj.add_message(irc_message.clone());
+                        room_obj.add_message(irc_message.clone(), is_active);
+                        (room_obj.unread_count, is_active)
+                    } else {
+                        (0, false)
                     }
-                }
+                };
 
                 if room_id.starts_with("#mp_") {
                     BanchoBotParser::parse_irc_message(&irc_message, state, app_handle);
                 }
 
-                if let Err(e) = app_handle.emit("irc-message", &irc_message) {
-                    println!("Failed to emit message to frontend: {}", e);
+                // Emit event based on room state
+                if is_active {
+                    let _ = app_handle.emit("active-room-message", serde_json::json!({
+                        "roomId": room_id,
+                        "message": irc_message
+                    }));
+                } else {
+                    let _ = app_handle.emit("inactive-room-unread-updated", serde_json::json!({
+                        "roomId": room_id,
+                        "unreadCount": unread_count
+                    }));
                 }
             }
         }
@@ -224,16 +264,31 @@ fn handle_incoming_message(
                     irc::proto::Prefix::ServerName(server) => server,
                 };
 
-                {
+                let should_emit_list = {
                     let mut irc_state = state.lock().unwrap();
                     let current_username = irc_state.current_username.clone().unwrap_or_default();
-                    if nick == current_username {
+                    if nick.to_lowercase() == current_username.to_lowercase() {
                         if !irc_state.rooms.contains_key(&channel) {
                             let new_room = Room::new_channel(channel.clone());
                             irc_state.rooms.insert(channel.clone(), new_room);
+                            irc_state.active_room_id = Some(channel.clone());
                         }
-                        irc_state.active_room = Some(channel.clone());
+                        true
+                    } else {
+                        false
                     }
+                };
+
+                if should_emit_list {
+                    // Emit rooms list update
+                    let rooms_response = {
+                        let irc_state = state.lock().unwrap();
+                        RoomsListResponse {
+                            rooms: irc_state.rooms.values().map(RoomListItem::from).collect(),
+                            active_room_id: irc_state.active_room_id.clone(),
+                        }
+                    };
+                    let _ = app_handle.emit("rooms-list-updated", rooms_response);
                 }
 
                 println!("{} joined {}", nick, channel);
@@ -256,12 +311,30 @@ fn handle_incoming_message(
                     irc::proto::Prefix::ServerName(server) => server,
                 };
 
-                {
+                let should_emit_list = {
                     let mut irc_state = state.lock().unwrap();
-                    if nick == irc_state.current_username.clone().unwrap_or_default() {
+                    if nick.to_lowercase() == irc_state.current_username.clone().unwrap_or_default().to_lowercase() {
                         irc_state.rooms.remove(&channel);
-                        irc_state.active_room = None;
+                        // Only clear active_room_id if the removed room was active
+                        if irc_state.active_room_id.as_deref() == Some(channel.as_str()) {
+                            irc_state.active_room_id = None;
+                        }
+                        true
+                    } else {
+                        false
                     }
+                };
+
+                if should_emit_list {
+                    // Emit rooms list update
+                    let rooms_response = {
+                        let irc_state = state.lock().unwrap();
+                        RoomsListResponse {
+                            rooms: irc_state.rooms.values().map(RoomListItem::from).collect(),
+                            active_room_id: irc_state.active_room_id.clone(),
+                        }
+                    };
+                    let _ = app_handle.emit("rooms-list-updated", rooms_response);
                 }
 
                 println!("{} left {}", nick, channel);

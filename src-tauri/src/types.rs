@@ -18,7 +18,7 @@ pub struct Room {
     pub room_type: RoomType,
     pub messages: Vec<IrcMessage>,
     pub unread_count: u32,
-    pub is_active: bool,
+    pub lobby_state: Option<LobbyState>,
 }
 
 impl Room {
@@ -30,13 +30,19 @@ impl Room {
             RoomType::Channel
         };
 
+        let lobby_state = if is_multiplayer {
+            Some(LobbyState::new())
+        } else {
+            None
+        };
+
         Self {
             display_name: channel_name.clone(),
             id: channel_name,
             room_type,
             messages: Vec::new(),
             unread_count: 0,
-            is_active: false,
+            lobby_state,
         }
     }
 
@@ -47,13 +53,13 @@ impl Room {
             room_type: RoomType::PrivateMessage,
             messages: Vec::new(),
             unread_count: 0,
-            is_active: false,
+            lobby_state: None,
         }
     }
 
-    pub fn add_message(&mut self, message: IrcMessage) {
+    pub fn add_message(&mut self, message: IrcMessage, is_active: bool) {
         self.messages.push(message);
-        if !self.is_active {
+        if !is_active {
             self.unread_count += 1;
         }
     }
@@ -61,6 +67,35 @@ impl Room {
     pub fn mark_as_read(&mut self) {
         self.unread_count = 0;
     }
+}
+
+// Lightweight room list item without messages
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RoomListItem {
+    pub id: String,
+    pub display_name: String,
+    pub room_type: RoomType,
+    pub unread_count: u32,
+}
+
+impl From<&Room> for RoomListItem {
+    fn from(room: &Room) -> Self {
+        Self {
+            id: room.id.clone(),
+            display_name: room.display_name.clone(),
+            room_type: room.room_type.clone(),
+            unread_count: room.unread_count,
+        }
+    }
+}
+
+// Response for get_rooms_list command
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RoomsListResponse {
+    pub rooms: Vec<RoomListItem>,
+    pub active_room_id: Option<String>,
 }
 
 // Lobby state structures
@@ -102,7 +137,6 @@ pub struct LobbySettings {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LobbyState {
-    pub channel: String,
     pub settings: Option<LobbySettings>,
     pub current_map: Option<CurrentMap>,
     pub slots: Vec<PlayerSlot>,
@@ -114,11 +148,10 @@ pub struct LobbyState {
 }
 
 impl LobbyState {
-    pub fn new(channel: String) -> Self {
+    pub fn new() -> Self {
         let slots = (1..=16).map(|id| PlayerSlot { id, player: None }).collect();
 
         Self {
-            channel,
             settings: None,
             current_map: None,
             current_mappool_id: None,
@@ -136,11 +169,10 @@ impl LobbyState {
 pub struct IrcClientState {
     pub connected: bool,
     pub rooms: HashMap<String, Room>,
-    pub active_room: Option<String>,
+    pub active_room_id: Option<String>,
     pub config: Option<ConnectionConfig>,
     pub client: Option<Arc<Mutex<irc::client::Client>>>,
     pub message_sender: Option<tokio::sync::mpsc::UnboundedSender<IrcCommand>>,
-    pub lobby_states: HashMap<String, LobbyState>,
     pub current_username: Option<String>,
 }
 
@@ -158,11 +190,10 @@ impl Default for IrcClientState {
         Self {
             connected: false,
             rooms: HashMap::new(),
-            active_room: None,
+            active_room_id: None,
             config: None,
             client: None,
             message_sender: None,
-            lobby_states: HashMap::new(),
             current_username: None,
         }
     }

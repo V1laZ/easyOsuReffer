@@ -29,10 +29,10 @@
         </h1>
         <!-- Lobby Info -->
         <div
-          v-if="isMpLobby && lobbyState?.settings?.roomName"
+          v-if="activeChannel && activeChannel.roomType === 'MultiplayerLobby' && activeChannel.lobbyState.settings?.roomName"
           class="text-sm text-gray-400 max-w-md truncate"
         >
-          {{ lobbyState.settings.roomName }}
+          {{ activeChannel.lobbyState.settings.roomName }}
         </div>
       </div>
     </div>
@@ -136,11 +136,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { LobbyState } from '@/types'
+import type { RoomUnion } from '@/types'
 
 const props = defineProps<{
-  activeChannel: string | null
-  lobbyState?: LobbyState | null
+  activeChannel: RoomUnion | null
 }>()
 
 const emit = defineEmits<{
@@ -152,17 +151,17 @@ const emit = defineEmits<{
 }>()
 
 const isMpLobby = computed(() => {
-  return props.activeChannel && props.activeChannel.startsWith('#mp_')
+  return props.activeChannel && props.activeChannel.roomType === 'MultiplayerLobby'
 })
 
 const displayChannelName = computed(() => {
   if (!props.activeChannel) return ''
 
   // Show just the MP ID for lobby channels
-  if (props.activeChannel.startsWith('#mp_')) {
-    return props.activeChannel.replace('#mp_', 'Lobby ')
+  if (props.activeChannel.roomType === 'MultiplayerLobby') {
+    return props.activeChannel.id.replace('#mp_', 'Lobby ')
   }
 
-  return props.activeChannel
+  return props.activeChannel.id
 })
 </script>

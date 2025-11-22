@@ -1,4 +1,4 @@
-export interface Mappool {
+export type Mappool = {
   id: number
   name: string
   description?: string
@@ -6,7 +6,7 @@ export interface Mappool {
   updated_at: string
 }
 
-export interface BeatmapEntry {
+export type BeatmapEntry = {
   id: number
   mappool_id: number
   beatmap_id: number
@@ -19,7 +19,7 @@ export interface BeatmapEntry {
   created_at: string
 }
 
-export interface BeatmapData {
+export type BeatmapData = {
   id: number
   beatmapset_id: number
   artist: string
