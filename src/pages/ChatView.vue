@@ -204,7 +204,7 @@ onMounted(async () => {
 
     unlistenUserJoin = await listen<UserJoinEvent>('user-joined', async (event) => {
       const joinEvent = event.payload
-      if (joinEvent.username.toLocaleLowerCase() === globalState.user?.toLocaleLowerCase()) {
+      if (joinEvent.username.toLowerCase() === globalState.user?.toLowerCase()) {
         leftDrawerOpen.value = false
 
         if (joinEvent.channel.startsWith('#mp_')) {
