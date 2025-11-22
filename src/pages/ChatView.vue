@@ -178,7 +178,6 @@ onMounted(async () => {
     })
 
     unlistenActiveRoomLobbyState = await listen<ActiveRoomLobbyStateUpdateEvent>('active-room-lobby-state-updated', (event) => {
-      console.log('Received active room lobby state update event')
       const { lobbyState } = event.payload
 
       if (activeRoom.value && activeRoom.value.roomType === 'MultiplayerLobby') {
@@ -187,7 +186,6 @@ onMounted(async () => {
     })
 
     unlistenRoomsListUpdated = await listen<RoomsListUpdatedEvent>('rooms-list-updated', async (event) => {
-      console.log('Received rooms list updated event')
       await handleRoomsListResponse(event.payload)
     })
 
