@@ -404,7 +404,7 @@ pub async fn fetch_beatmap_data(
     })
 }
 
-pub fn remove_room(room_id: &str, state: &IrcState, _app_handle: &tauri::AppHandle) {
+pub fn remove_room(room_id: &str, state: &IrcState) {
     let mut irc_state = state.lock().unwrap();
     irc_state.rooms.remove(room_id);
 
