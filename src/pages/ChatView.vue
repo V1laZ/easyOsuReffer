@@ -221,15 +221,15 @@ onMounted(async () => {
             }
           }
 
-          // try {
-          //   await invoke('send_message_to_room', {
-          //     roomId: joinEvent.channel,
-          //     message: '!mp settings',
-          //   })
-          // }
-          // catch (error) {
-          //   console.error('Failed to send !mp settings:', error)
-          // }
+          try {
+            await invoke('send_message_to_room', {
+              roomId: joinEvent.channel,
+              message: '!mp settings',
+            })
+          }
+          catch (error) {
+            console.error('Failed to send !mp settings:', error)
+          }
         }
       }
     })
