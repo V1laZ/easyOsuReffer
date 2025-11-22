@@ -9,18 +9,16 @@ impl BanchoBotParser {
     fn emit_lobby_update(
         channel: &str,
         lobby: &LobbyState,
-        state: &IrcState,
+        active_room_id: Option<&str>,
         app_handle: &tauri::AppHandle,
     ) {
-        let is_active = {
-            let irc_state = state.lock().unwrap();
-            irc_state.active_room_id.as_deref() == Some(channel)
-        };
+        let is_active = active_room_id == Some(channel);
 
         if is_active {
-            let _ = app_handle.emit("active-room-lobby-state-updated", serde_json::json!({
-                "lobbyState": lobby
-            }));
+            let _ = app_handle.emit(
+                "active-room-lobby-state-updated",
+                serde_json::json!({ "lobbyState": lobby }),
+            );
         }
     }
 
@@ -60,8 +58,6 @@ impl BanchoBotParser {
         if !channel.starts_with("#mp_") {
             return false;
         }
-
-        // Lobby state is already initialized in Room::new_channel for multiplayer lobbies
 
         // Room name pattern
         if let Ok(regex) = Regex::new(r"^Room name: (.+), History: https://osu\.ppy\.sh/mp/(\d+)$")
@@ -378,6 +374,7 @@ impl BanchoBotParser {
                 let username = captures.get(1).unwrap().as_str();
                 let team = captures.get(2).unwrap().as_str().to_lowercase();
                 let mut irc_state = state.lock().unwrap();
+                let active_room_id = irc_state.active_room_id.clone();
                 if let Some(room) = irc_state.rooms.get_mut(channel) {
                     if let Some(lobby) = &mut room.lobby_state {
                         for slot in &mut lobby.slots {
@@ -387,7 +384,7 @@ impl BanchoBotParser {
                                 }
                             }
                         }
-                        Self::emit_lobby_update(channel, lobby, state, app_handle);
+                        Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
                     }
                 }
                 return true;
@@ -448,7 +445,6 @@ impl BanchoBotParser {
             }
         }
     }
-
     fn update_lobby_settings<F>(
         channel: &str,
         updater: F,
@@ -458,6 +454,7 @@ impl BanchoBotParser {
         F: FnOnce(&mut LobbySettings),
     {
         let mut irc_state = state.lock().unwrap();
+        let active_room_id = irc_state.active_room_id.clone();
         if let Some(room) = irc_state.rooms.get_mut(channel) {
             if let Some(lobby) = &mut room.lobby_state {
                 if lobby.settings.is_none() {
@@ -474,7 +471,7 @@ impl BanchoBotParser {
                     updater(settings);
                 }
 
-                Self::emit_lobby_update(channel, lobby, state, app_handle);
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
             }
         }
     }
@@ -486,10 +483,11 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
+        let active_room_id = irc_state.active_room_id.clone();
         if let Some(room) = irc_state.rooms.get_mut(channel) {
             if let Some(lobby) = &mut room.lobby_state {
                 lobby.current_map = Some(map);
-                Self::emit_lobby_update(channel, lobby, state, app_handle);
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
             }
         }
     }
@@ -502,11 +500,12 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
+        let active_room_id = irc_state.active_room_id.clone();
         if let Some(room) = irc_state.rooms.get_mut(channel) {
             if let Some(lobby) = &mut room.lobby_state {
                 if let Some(slot) = lobby.slots.iter_mut().find(|s| s.id == slot_id) {
                     slot.player = Some(player);
-                    Self::emit_lobby_update(channel, lobby, state, app_handle);
+                    Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
                 }
             }
         }
@@ -519,6 +518,7 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
+        let active_room_id = irc_state.active_room_id.clone();
         if let Some(room) = irc_state.rooms.get_mut(channel) {
             if let Some(lobby) = &mut room.lobby_state {
                 for slot in &mut lobby.slots {
@@ -529,7 +529,7 @@ impl BanchoBotParser {
                         }
                     }
                 }
-                Self::emit_lobby_update(channel, lobby, state, app_handle);
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
             }
         }
     }
@@ -541,6 +541,7 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
+        let active_room_id = irc_state.active_room_id.clone();
         if let Some(room) = irc_state.rooms.get_mut(channel) {
             if let Some(lobby) = &mut room.lobby_state {
                 lobby.match_status = status.to_string();
@@ -553,13 +554,14 @@ impl BanchoBotParser {
                     }
                 }
 
-                Self::emit_lobby_update(channel, lobby, state, app_handle);
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
             }
         }
     }
 
     fn clear_host(channel: &str, state: &IrcState, app_handle: &tauri::AppHandle) {
         let mut irc_state = state.lock().unwrap();
+        let active_room_id = irc_state.active_room_id.clone();
         if let Some(room) = irc_state.rooms.get_mut(channel) {
             if let Some(lobby) = &mut room.lobby_state {
                 lobby.host = None;
@@ -570,7 +572,7 @@ impl BanchoBotParser {
                     }
                 }
 
-                Self::emit_lobby_update(channel, lobby, state, app_handle);
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
             }
         }
     }
@@ -582,6 +584,7 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
+        let active_room_id = irc_state.active_room_id.clone();
         if let Some(room) = irc_state.rooms.get_mut(channel) {
             if let Some(lobby) = &mut room.lobby_state {
                 lobby.host = Some(host_username.to_string());
@@ -592,7 +595,7 @@ impl BanchoBotParser {
                     }
                 }
 
-                Self::emit_lobby_update(channel, lobby, state, app_handle);
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
             }
         }
     }
@@ -606,6 +609,7 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
+        let active_room_id = irc_state.active_room_id.clone();
         if let Some(room) = irc_state.rooms.get_mut(channel) {
             if let Some(lobby) = &mut room.lobby_state {
                 // Find the player in their current slot and remove them
@@ -630,7 +634,7 @@ impl BanchoBotParser {
                     }
                 }
 
-                Self::emit_lobby_update(channel, lobby, state, app_handle);
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
             }
         }
     }
@@ -661,11 +665,12 @@ impl BanchoBotParser {
         app_handle: &tauri::AppHandle,
     ) {
         let mut irc_state = state.lock().unwrap();
+        let active_room_id = irc_state.active_room_id.clone();
         if let Some(room) = irc_state.rooms.get_mut(channel) {
             if let Some(lobby) = &mut room.lobby_state {
                 lobby.selected_mods = mods;
                 lobby.freemod = freemod;
-                Self::emit_lobby_update(channel, lobby, state, app_handle);
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
             }
         }
     }

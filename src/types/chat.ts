@@ -12,7 +12,6 @@ export type RoomBase = {
   displayName: string
   messages: IrcMessage[]
   unreadCount: number
-  isActive: boolean
 }
 
 export type MultiplayerRoom = RoomBase & {
@@ -64,10 +63,6 @@ export type InactiveRoomUnreadUpdateEvent = {
 
 export type ActiveRoomLobbyStateUpdateEvent = {
   lobbyState: LobbyState
-}
-
-export type ActiveRoomChangedEvent = {
-  room: RoomUnion | null
 }
 
 export type RoomsListUpdatedEvent = {

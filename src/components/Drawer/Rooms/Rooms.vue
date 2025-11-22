@@ -42,6 +42,7 @@
             v-for="room in chatRooms"
             :key="room.id"
             :room="room"
+            :is-active="room.id === activeRoomId"
             @select="emit('selectRoom', room.id)"
             @leave="handleLeaveRoom(room)"
           />
@@ -69,6 +70,7 @@
               v-for="room in mutiplayerLobbies"
               :key="room.id"
               :room="room"
+              :is-active="room.id === activeRoomId"
               @select="emit('selectRoom', room.id)"
               @leave="handleLeaveRoom(room)"
             />
@@ -143,6 +145,7 @@ import type { RoomListItem } from '@/types'
 const props = defineProps<{
   isOpen: boolean
   rooms: RoomListItem[]
+  activeRoomId?: string
 }>()
 
 const emit = defineEmits<{

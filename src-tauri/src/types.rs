@@ -18,12 +18,11 @@ pub struct Room {
     pub room_type: RoomType,
     pub messages: Vec<IrcMessage>,
     pub unread_count: u32,
-    pub is_active: bool,
     pub lobby_state: Option<LobbyState>,
 }
 
 impl Room {
-    pub fn new_channel(channel_name: String, is_active: bool) -> Self {
+    pub fn new_channel(channel_name: String) -> Self {
         let is_multiplayer = channel_name.starts_with("#mp_");
         let room_type = if is_multiplayer {
             RoomType::MultiplayerLobby
@@ -43,7 +42,6 @@ impl Room {
             room_type,
             messages: Vec::new(),
             unread_count: 0,
-            is_active: is_active,
             lobby_state,
         }
     }
@@ -55,14 +53,13 @@ impl Room {
             room_type: RoomType::PrivateMessage,
             messages: Vec::new(),
             unread_count: 0,
-            is_active: false,
             lobby_state: None,
         }
     }
 
-    pub fn add_message(&mut self, message: IrcMessage) {
+    pub fn add_message(&mut self, message: IrcMessage, is_active: bool) {
         self.messages.push(message);
-        if !self.is_active {
+        if !is_active {
             self.unread_count += 1;
         }
     }
@@ -80,7 +77,6 @@ pub struct RoomListItem {
     pub display_name: String,
     pub room_type: RoomType,
     pub unread_count: u32,
-    pub is_active: bool,
 }
 
 impl From<&Room> for RoomListItem {
@@ -90,7 +86,6 @@ impl From<&Room> for RoomListItem {
             display_name: room.display_name.clone(),
             room_type: room.room_type.clone(),
             unread_count: room.unread_count,
-            is_active: room.is_active,
         }
     }
 }

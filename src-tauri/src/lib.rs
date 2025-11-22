@@ -139,6 +139,7 @@ pub fn run() {
             start_private_message,
             fetch_beatmap_data,
             set_mappool,
+            get_room_state,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

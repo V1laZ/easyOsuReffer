@@ -59,9 +59,10 @@ pub async fn handle_irc_connection(
 
                             let (unread_count, is_active) = {
                                 let mut irc_state = state.lock().unwrap();
+                                let is_active = irc_state.active_room_id.as_ref() == Some(&room_id);
                                 if let Some(room) = irc_state.rooms.get_mut(&room_id) {
-                                    room.add_message(our_message.clone());
-                                    (room.unread_count, room.is_active)
+                                    room.add_message(our_message.clone(), is_active);
+                                    (room.unread_count, is_active)
                                 } else {
                                     (0, false)
                                 }
@@ -106,9 +107,10 @@ pub async fn handle_irc_connection(
 
                             let (unread_count, is_active) = {
                                 let mut irc_state = state.lock().unwrap();
+                                let is_active = irc_state.active_room_id.as_ref() == Some(&username);
                                 if let Some(room) = irc_state.rooms.get_mut(&username) {
-                                    room.add_message(our_message.clone());
-                                    (room.unread_count, room.is_active)
+                                    room.add_message(our_message.clone(), is_active);
+                                    (room.unread_count, is_active)
                                 } else {
                                     (0, false)
                                 }
@@ -226,10 +228,12 @@ fn handle_incoming_message(
                         irc_state.rooms.insert(room_id.clone(), new_room);
                     }
 
+                    let is_active = irc_state.active_room_id.as_ref() == Some(&room_id);
+
                     // Add message to appropriate room
                     if let Some(room_obj) = irc_state.rooms.get_mut(&room_id) {
-                        room_obj.add_message(irc_message.clone());
-                        (room_obj.unread_count, room_obj.is_active)
+                        room_obj.add_message(irc_message.clone(), is_active);
+                        (room_obj.unread_count, is_active)
                     } else {
                         (0, false)
                     }
@@ -260,40 +264,22 @@ fn handle_incoming_message(
                     irc::proto::Prefix::ServerName(server) => server,
                 };
 
-                let should_emit = {
+                let should_emit_list = {
                     let mut irc_state = state.lock().unwrap();
                     let current_username = irc_state.current_username.clone().unwrap_or_default();
                     if nick.to_lowercase() == current_username.to_lowercase() {
-                        // Set all existing rooms to inactive
-                        for room in irc_state.rooms.values_mut() {
-                            room.is_active = false;
-                        }
-
                         if !irc_state.rooms.contains_key(&channel) {
-                            let new_room = Room::new_channel(channel.clone(), true);
+                            let new_room = Room::new_channel(channel.clone());
                             irc_state.rooms.insert(channel.clone(), new_room);
-                        } else {
-                            if let Some(room) = irc_state.rooms.get_mut(&channel) {
-                                room.is_active = true;
-                            }
+                            irc_state.active_room_id = Some(channel.clone());
                         }
-                        irc_state.active_room_id = Some(channel.clone());
                         true
                     } else {
                         false
                     }
                 };
 
-                if should_emit {
-                    let room_data = {
-                        let irc_state = state.lock().unwrap();
-                        irc_state.rooms.get(&channel).cloned()
-                    };
-
-                    let _ = app_handle.emit("active-room-changed", serde_json::json!({
-                        "room": room_data
-                    }));
-
+                if should_emit_list {
                     // Emit rooms list update
                     let rooms_response = {
                         let irc_state = state.lock().unwrap();
@@ -325,22 +311,21 @@ fn handle_incoming_message(
                     irc::proto::Prefix::ServerName(server) => server,
                 };
 
-                let should_emit = {
+                let should_emit_list = {
                     let mut irc_state = state.lock().unwrap();
-                    if nick == irc_state.current_username.clone().unwrap_or_default() {
+                    if nick.to_lowercase() == irc_state.current_username.clone().unwrap_or_default().to_lowercase() {
                         irc_state.rooms.remove(&channel);
-                        irc_state.active_room_id = None;
+                        // Only clear active_room_id if the removed room was active
+                        if irc_state.active_room_id.as_deref() == Some(channel.as_str()) {
+                            irc_state.active_room_id = None;
+                        }
                         true
                     } else {
                         false
                     }
                 };
 
-                if should_emit {
-                    let _ = app_handle.emit("active-room-changed", serde_json::json!({
-                        "room": Option::<Room>::None
-                    }));
-
+                if should_emit_list {
                     // Emit rooms list update
                     let rooms_response = {
                         let irc_state = state.lock().unwrap();

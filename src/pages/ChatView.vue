@@ -4,6 +4,7 @@
     <RoomsDrawer
       :is-open="leftDrawerOpen"
       :rooms="roomsList"
+      :active-room-id="activeRoom?.id"
       @close="leftDrawerOpen = false"
       @select-room="selectRoom"
       @join-channel="joinChannel"
@@ -131,7 +132,7 @@ import SettingsModal from '@/components/modals/SettingsModal.vue'
 import CreateLobbyModal from '@/components/modals/CreateLobbyModal.vue'
 import { globalState } from '@/stores/global'
 import SelectMap from '@/components/Drawer/SelectMap.vue'
-import type { RoomUnion, RoomListItem, CreateLobbySettings, BeatmapEntry, UserJoinEvent, RoomError, ActiveRoomMessageEvent, InactiveRoomUnreadUpdateEvent, ActiveRoomLobbyStateUpdateEvent, ActiveRoomChangedEvent, RoomsListUpdatedEvent, RoomsMap } from '@/types'
+import type { RoomUnion, CreateLobbySettings, BeatmapEntry, UserJoinEvent, RoomError, ActiveRoomMessageEvent, InactiveRoomUnreadUpdateEvent, ActiveRoomLobbyStateUpdateEvent, RoomsListUpdatedEvent, RoomsMap } from '@/types'
 
 const router = useRouter()
 
@@ -151,11 +152,9 @@ const roomsList = computed(() => Array.from(roomsMap.value.values()))
 let unlistenActiveRoomMessage: UnlistenFn | null = null
 let unlistenInactiveRoomUnread: UnlistenFn | null = null
 let unlistenActiveRoomLobbyState: UnlistenFn | null = null
-let unlistenActiveRoomChanged: UnlistenFn | null = null
 let unlistenRoomsListUpdated: UnlistenFn | null = null
 let unlistenChannelError: UnlistenFn | null = null
 let unlistenUserJoin: UnlistenFn | null = null
-let unlistenUserLeft: UnlistenFn | null = null
 
 onMounted(async () => {
   try {
@@ -179,6 +178,7 @@ onMounted(async () => {
     })
 
     unlistenActiveRoomLobbyState = await listen<ActiveRoomLobbyStateUpdateEvent>('active-room-lobby-state-updated', (event) => {
+      console.log('Received active room lobby state update event')
       const { lobbyState } = event.payload
 
       if (activeRoom.value && activeRoom.value.roomType === 'MultiplayerLobby') {
@@ -186,13 +186,9 @@ onMounted(async () => {
       }
     })
 
-    unlistenActiveRoomChanged = await listen<ActiveRoomChangedEvent>('active-room-changed', async (event) => {
-      activeRoom.value = event.payload.room
-    })
-
     unlistenRoomsListUpdated = await listen<RoomsListUpdatedEvent>('rooms-list-updated', async (event) => {
-      const { rooms, activeRoomId } = event.payload
-      handleRoomsListResponse(rooms, activeRoomId)
+      console.log('Received rooms list updated event')
+      await handleRoomsListResponse(event.payload)
     })
 
     unlistenChannelError = await listen<RoomError>('room-error', (event) => {
@@ -210,11 +206,7 @@ onMounted(async () => {
 
     unlistenUserJoin = await listen<UserJoinEvent>('user-joined', async (event) => {
       const joinEvent = event.payload
-      if (joinEvent.username === globalState.user) {
-        await loadRoomsList()
-
-        // Switch to the newly joined room
-        await selectRoom(joinEvent.channel)
+      if (joinEvent.username.toLocaleLowerCase() === globalState.user?.toLocaleLowerCase()) {
         leftDrawerOpen.value = false
 
         if (joinEvent.channel.startsWith('#mp_')) {
@@ -231,25 +223,15 @@ onMounted(async () => {
             }
           }
 
-          try {
-            await invoke('send_message_to_room', {
-              roomId: joinEvent.channel,
-              message: '!mp settings',
-            })
-          }
-          catch (error) {
-            console.error('Failed to send !mp settings:', error)
-          }
-        }
-      }
-    })
-
-    unlistenUserLeft = await listen<UserJoinEvent>('user-left', async (event) => {
-      const joinEvent = event.payload
-      if (joinEvent.username === globalState.user) {
-        await loadRoomsList()
-        if (activeRoom.value?.id === joinEvent.channel) {
-          activeRoom.value = null
+          // try {
+          //   await invoke('send_message_to_room', {
+          //     roomId: joinEvent.channel,
+          //     message: '!mp settings',
+          //   })
+          // }
+          // catch (error) {
+          //   console.error('Failed to send !mp settings:', error)
+          // }
         }
       }
     })
@@ -264,29 +246,37 @@ onUnmounted(() => {
   if (unlistenActiveRoomMessage) unlistenActiveRoomMessage()
   if (unlistenInactiveRoomUnread) unlistenInactiveRoomUnread()
   if (unlistenActiveRoomLobbyState) unlistenActiveRoomLobbyState()
-  if (unlistenActiveRoomChanged) unlistenActiveRoomChanged()
   if (unlistenRoomsListUpdated) unlistenRoomsListUpdated()
   if (unlistenChannelError) unlistenChannelError()
   if (unlistenUserJoin) unlistenUserJoin()
-  if (unlistenUserLeft) unlistenUserLeft()
 })
 
-const handleRoomsListResponse = (rooms: RoomListItem[], activeRoomId: string | null) => {
-  roomsMap.value = new Map(rooms.map(room => [room.id, room]))
+const handleRoomsListResponse = async (response: RoomsListUpdatedEvent) => {
+  roomsMap.value = new Map(response.rooms.map(room => [room.id, room]))
 
-  if (activeRoomId) {
-    selectRoom(activeRoomId)
+  if (!response.activeRoomId) {
+    activeRoom.value = null
+    return
   }
-  else if (!activeRoom.value && rooms.length > 0) {
-    // If backend has no active room but we have rooms, select the first one
-    selectRoom(rooms[0].id)
+
+  activeRoom.value = await getRoomState(response.activeRoomId)
+}
+
+const getRoomState = async (roomId: string): Promise<RoomUnion | null> => {
+  try {
+    const room = await invoke<RoomUnion | null>('get_room_state', { roomId })
+    return room
+  }
+  catch (error) {
+    console.error('Failed to get room state:', error)
+    return null
   }
 }
 
 const loadRoomsList = async () => {
   try {
-    const response = await invoke<{ rooms: RoomListItem[], activeRoomId: string | null }>('get_rooms_list')
-    handleRoomsListResponse(response.rooms, response.activeRoomId)
+    const response = await invoke<RoomsListUpdatedEvent>('get_rooms_list')
+    await handleRoomsListResponse(response)
   }
   catch (error) {
     console.error('Failed to load rooms:', error)
@@ -299,7 +289,8 @@ const selectRoom = async (roomId: string) => {
   }
 
   try {
-    await invoke<RoomUnion>('set_active_room', { roomId })
+    const room = await invoke<RoomUnion>('set_active_room', { roomId })
+    activeRoom.value = room
     leftDrawerOpen.value = false
   }
   catch (error) {

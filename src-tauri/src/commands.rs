@@ -120,7 +120,7 @@ pub async fn send_message_to_room(
         if let Some(room) = room {
             let command = match room.room_type {
                 RoomType::Channel | RoomType::MultiplayerLobby => {
-                    if message == "!mp settings" {
+                    if message.trim() == "!mp settings" {
                         clear_all_players(&room_id, &state);
                     }
                     IrcCommand::SendMessage { room_id, message }
@@ -144,7 +144,7 @@ pub async fn send_message_to_room(
 }
 
 #[tauri::command]
-pub async fn join_channel(room_id: String, state: State<'_, IrcState>, app_handle: tauri::AppHandle) -> Result<String, String> {
+pub async fn join_channel(room_id: String, state: State<'_, IrcState>) -> Result<String, String> {
     let sender = {
         let irc_state = state.lock().unwrap();
         if !irc_state.connected {
@@ -166,23 +166,6 @@ pub async fn join_channel(room_id: String, state: State<'_, IrcState>, app_handl
             return Err("Failed to queue join command".to_string());
         }
 
-        // Update the rooms list optimistically
-        {
-            let mut irc_state = state.lock().unwrap();
-
-            // Set all existing rooms to inactive
-            for room in irc_state.rooms.values_mut() {
-                room.is_active = false;
-            }
-
-            // Add new room as active
-            let room = Room::new_channel(room_id.clone(), true);
-            irc_state.rooms.insert(room_id.clone(), room);
-            irc_state.active_room_id = Some(room_id.clone());
-        }
-
-        emit_rooms_list_updated(&app_handle, &state);
-
         Ok(format!("Joining channel: {}", room_id))
     } else {
         Err("Message sender not available".to_string())
@@ -192,8 +175,7 @@ pub async fn join_channel(room_id: String, state: State<'_, IrcState>, app_handl
 #[tauri::command]
 pub async fn leave_channel(
     room_id: String,
-    state: State<'_, IrcState>,
-    app_handle: tauri::AppHandle,
+    state: State<'_, IrcState>
 ) -> Result<String, String> {
     let sender = {
         let irc_state = state.lock().unwrap();
@@ -210,10 +192,6 @@ pub async fn leave_channel(
         if let Err(_) = sender.send(command) {
             return Err("Failed to queue leave command".to_string());
         }
-
-        remove_room(&room_id, &state, &app_handle);
-
-        emit_rooms_list_updated(&app_handle, &state);
 
         Ok(format!("Left channel: {}", room_id))
     } else {
@@ -257,7 +235,7 @@ pub async fn reconnect_to_bancho(
 #[tauri::command]
 pub async fn disconnect_from_bancho(
     state: State<'_, IrcState>,
-    app_handle: tauri::AppHandle,
+    _app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
     let sender = {
         let irc_state = state.lock().unwrap();
@@ -279,10 +257,6 @@ pub async fn disconnect_from_bancho(
             irc_state.client = None;
             irc_state.message_sender = None;
             irc_state.current_username = None;
-
-            let _ = app_handle.emit("active-room-changed", serde_json::json!({
-                "room": Option::<Room>::None
-            }));
         }
     }
 
@@ -305,38 +279,41 @@ pub async fn get_rooms_list(state: State<'_, IrcState>) -> Result<RoomsListRespo
 }
 
 #[tauri::command]
-pub async fn set_active_room(
+pub async fn get_room_state(
     room_id: String,
     state: State<'_, IrcState>,
-    app_handle: tauri::AppHandle,
-) -> Result<(), String> {
-    {
+) -> Result<Option<Room>, String> {
+    let irc_state = state.lock().unwrap();
+    if let Some(room) = irc_state.rooms.get(&room_id) {
+        Ok(Some(room.clone()))
+    } else {
+        Ok(None)
+    }
+}
+
+#[tauri::command]
+pub async fn set_active_room(
+    room_id: String,
+    state: State<'_, IrcState>
+) -> Result<Room, String> {
+    let room_clone = {
         let mut irc_state = state.lock().unwrap();
 
-        for room in irc_state.rooms.values_mut() {
-            room.is_active = false;
+        if !irc_state.rooms.contains_key(&room_id) {
+            return Err("Room not found".to_string());
         }
 
-        if irc_state.rooms.contains_key(&room_id) {
-            irc_state.active_room_id = Some(room_id.clone());
+        irc_state.active_room_id = Some(room_id.clone());
 
-            if let Some(room) = irc_state.rooms.get_mut(&room_id) {
-                room.is_active = true;
-                room.mark_as_read();
-
-                let _ = app_handle.emit("active-room-changed", serde_json::json!({
-                    "room": Some(room.clone())
-                }));
-            }
+        if let Some(room) = irc_state.rooms.get_mut(&room_id) {
+            room.mark_as_read();
+            room.clone()
         } else {
             return Err("Room not found".to_string());
         }
-    }
+    };
 
-    // Emit rooms list update
-    emit_rooms_list_updated(&app_handle, &state);
-
-    Ok(())
+    Ok(room_clone)
 }
 
 #[tauri::command]
@@ -355,14 +332,9 @@ pub async fn start_private_message(
             ));
         }
 
-        // Set all existing rooms to inactive
-        for room in irc_state.rooms.values_mut() {
-            room.is_active = false;
-        }
-
+        // Add new PM room as inactive - frontend will activate it if needed
         let room = Room::new_private_message(username.clone());
         irc_state.rooms.insert(username.clone(), room);
-        irc_state.active_room_id = Some(username.clone());
     }
 
     emit_rooms_list_updated(&app_handle, &state);
@@ -432,18 +404,13 @@ pub async fn fetch_beatmap_data(
     })
 }
 
-pub fn remove_room(room_id: &str, state: &IrcState, app_handle: &tauri::AppHandle) {
+pub fn remove_room(room_id: &str, state: &IrcState, _app_handle: &tauri::AppHandle) {
     let mut irc_state = state.lock().unwrap();
     irc_state.rooms.remove(room_id);
 
     // Clear active_room_id if the removed room was active
-    let was_active = irc_state.active_room_id.as_deref() == Some(room_id);
-    if was_active {
+    if irc_state.active_room_id.as_deref() == Some(room_id) {
         irc_state.active_room_id = None;
-
-        let _ = app_handle.emit("active-room-changed", serde_json::json!({
-            "room": Option::<Room>::None
-        }));
     }
 }
 
