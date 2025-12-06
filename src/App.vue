@@ -91,7 +91,7 @@ const loading = ref(true)
 const disconnected = ref(false)
 const loadingMessage = ref('Loading...')
 const errorMessage = ref('')
-const isAuthenticated = ref(false)
+const isAuthenticated = ref(true)
 
 let unlisteDisconnect: UnlistenFn | null = null
 let unlistenIsAuthenticated: UnlistenFn | null = null

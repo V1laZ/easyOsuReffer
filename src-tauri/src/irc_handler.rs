@@ -483,6 +483,13 @@ fn handle_incoming_message(
                         }
                     }
                 }
+                Response::ERR_PASSWDMISMATCH => {
+                    println!("Password mismatch error from server");
+
+                    if let Err(e) = app_handle.emit( "is-authenticated",false) {
+                        println!("Failed to emit authentication error: {}", e);
+                    }
+                }
                 _ => {}
             }
         }
