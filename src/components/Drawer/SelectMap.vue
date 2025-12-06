@@ -1,7 +1,12 @@
 <template>
   <div
     class="absolute h-[70vh] left-0 z-20 w-full bottom-0 bg-gray-900/80 overflow-hidden shadow-xl shadow-pink-50 border border-gray-700 rounded-t-2xl transform transition-transform ease-in-out duration-500 flex flex-col"
-    :class="isOpen ? 'translate-y-0' : 'translate-y-full'"
+    :class="{
+      'translate-y-0': isOpen,
+      'translate-y-full': !isOpen,
+    }"
+    :aria-hidden="!isOpen"
+    :inert="!isOpen"
     style="backdrop-filter: blur(8px);"
   >
     <div class="flex items-start justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">

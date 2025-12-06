@@ -14,24 +14,45 @@
           <span>{{ readyPlayers }}/{{ occupiedSlots }}</span>
         </div>
       </div>
-      <button
-        class="lg:hidden p-2 rounded-lg hover:bg-gray-700 transition-colors"
-        @click="emit('close')"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      <div class="flex items-center space-x-2">
+        <button
+          class="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+          title="Invite Player"
+          @click="invitePlayerDialog?.showModal()"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
+          <svg
+            class="size-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+            />
+          </svg>
+        </button>
+        <button
+          class="lg:hidden p-2 rounded-lg hover:bg-gray-700 transition-colors"
+          @click="emit('close')"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Player Slots -->
@@ -54,6 +75,7 @@
 import { computed } from 'vue'
 import PlayerSlot from './PlayerSlot.vue'
 import type { LobbyState, PlayerMoveEvent, PlayerTeamChangeEvent } from '@/types'
+import { useDialog } from '@/composables/useDialog'
 
 const props = defineProps<{
   isOpen: boolean
@@ -65,7 +87,10 @@ const emit = defineEmits<{
   move: [move: PlayerMoveEvent]
   teamChange: [event: PlayerTeamChangeEvent]
   host: [host: string | null]
+  openInvitePlayer: []
 }>()
+
+const invitePlayerDialog = useDialog('invitePlayerDialog')
 
 const occupiedSlots = computed(() =>
   props.lobbyState.slots.filter(slot => slot.player !== null).length || 0,
