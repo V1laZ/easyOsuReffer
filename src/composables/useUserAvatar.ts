@@ -43,12 +43,23 @@ export function useUserAvatar(username: string) {
       rejectRequest = reject
     })
 
-    pendingRequests.set(username, {
-      promise,
-      resolve: resolveRequest!,
-      reject: rejectRequest!,
-    })
-
+    // Double-checked locking: check again before setting
+    if (pendingRequests.has(username)) {
+      try {
+        const url = await pendingRequests.get(username)!.promise
+        avatarUrl.value = url
+      }
+      catch (err) {
+        console.error(`Failed to load avatar for ${username}:`, err)
+      }
+      return
+    } else {
+      pendingRequests.set(username, {
+        promise,
+        resolve: resolveRequest!,
+        reject: rejectRequest!,
+      })
+    }
     try {
       const userData = await invoke<{ avatar_url?: string }>('fetch_user_data', {
         username,
