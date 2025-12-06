@@ -9,6 +9,7 @@
         Select Beatmap
       </h2>
       <button
+        :tabindex="isOpen ? 0 : -1"
         class="text-gray-400 hover:text-white text-2xl leading-none"
         @click="$emit('close')"
       >
