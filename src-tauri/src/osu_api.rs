@@ -39,6 +39,7 @@ pub struct OsuApiBeatmapset {
 pub struct UserData {
     pub id: u64,
     pub username: String,
+    pub avatar_url: String,
     pub country: String,
     pub pp: f64,
     pub rank: Option<u64>,

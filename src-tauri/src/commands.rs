@@ -413,7 +413,7 @@ pub async fn fetch_user_data(
     let client = reqwest::Client::new();
     let response = client
         .get(&format!(
-            "https://osu.ppy.sh/api/v2/users/{}?key=mode=0",
+            "https://osu.ppy.sh/api/v2/users/@{}",
             username
         ))
         .header("Authorization", format!("Bearer {}", access_token))
@@ -440,6 +440,7 @@ pub async fn fetch_user_data(
     Ok(UserData {
         id: api_response.id,
         username: api_response.username,
+        avatar_url: api_response.avatar_url,
         country: api_response.country.code,
         pp: api_response.statistics.pp,
         rank: api_response.statistics.global_rank,
