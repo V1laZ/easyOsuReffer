@@ -6,8 +6,11 @@ import './assets/css/main.css'
 
 import LoginView from './pages/LoginView.vue'
 import ChatView from './pages/ChatView.vue'
+import { PendingRequest } from '@/types'
 
 export const dialogRegistry = new Map<string, HTMLDialogElement>()
+export const avatarCache = new Map<string, string>()
+export const pendingRequests = new Map<string, PendingRequest>()
 
 const routes = [
   { path: '/login', component: LoginView },

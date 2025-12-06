@@ -4,13 +4,22 @@
       <!-- Avatar -->
       <div class="flex-shrink-0 mt-1">
         <div
-          class="size-8 rounded-full flex items-center justify-center"
+          class="size-10 rounded-full flex items-center justify-center overflow-hidden"
           :class="{
             'bg-gray-600': message.username === 'BanchoBot',
-            'bg-gradient-to-br from-pink-500 to-purple-600': message.username !== 'BanchoBot'
+            'bg-gradient-to-br from-pink-500 to-purple-600': message.username !== 'BanchoBot' && !avatarUrl
           }"
         >
-          <span class="text-sm font-medium text-white">
+          <img
+            v-if="avatarUrl"
+            :src="avatarUrl"
+            :alt="message.username"
+            class="size-full object-cover"
+          >
+          <span
+            v-else
+            class="text-sm font-medium text-white"
+          >
             <template v-if="message.username === 'BanchoBot'">
               <svg
                 class="size-5 -mt-0.5"
@@ -62,11 +71,15 @@
 
 <script setup lang="ts">
 import { IrcMessage } from '@/types'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useUserAvatar } from '@/composables/useUserAvatar'
+import { globalState } from '@/stores/global'
 
 const props = defineProps<{
   message: IrcMessage
 }>()
+
+const { avatarUrl, fetchAvatar } = useUserAvatar(props.message.username)
 
 const formattedTime = computed(() => {
   return new Date(props.message.timestamp * 1000).toLocaleTimeString([], {
@@ -81,5 +94,10 @@ const formattedMessage = computed(() => {
     /(https?:\/\/[^\s]+)/g,
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline">$1</a>',
   )
+})
+
+onMounted(() => {
+  if (!globalState.isConnectedOsu) return
+  fetchAvatar()
 })
 </script>

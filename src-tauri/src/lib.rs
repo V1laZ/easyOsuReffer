@@ -1,107 +1,21 @@
 mod banchobot_parser;
 mod commands;
 mod irc_handler;
+mod migrations;
+mod osu_api;
 mod types;
 
 use base64::Engine;
 use commands::*;
 use tauri::{Emitter, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
-use tauri_plugin_sql::{Migration, MigrationKind};
 
+use crate::migrations::get_migrations;
 use crate::types::IrcState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let migrations = vec![
-        Migration {
-            version: 1,
-            description: "create_initial_tables",
-            sql: "
-            CREATE TABLE IF NOT EXISTS user_credentials (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL UNIQUE,
-                password TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS mappools (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                description TEXT,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS beatmap_entries (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                mappool_id INTEGER NOT NULL,
-                beatmap_id INTEGER NOT NULL,
-                artist TEXT NOT NULL,
-                title TEXT NOT NULL,
-                difficulty TEXT NOT NULL,
-                mapper TEXT NOT NULL,
-                mod_combination TEXT,
-                category TEXT,
-                created_at TEXT NOT NULL,
-                FOREIGN KEY (mappool_id) REFERENCES mappools (id) ON DELETE CASCADE
-            );
-        ",
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 2,
-            description: "add_oauth_token_table",
-            sql: "
-            CREATE TABLE IF NOT EXISTS oauth_tokens (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                access_token TEXT NOT NULL,
-                refresh_token TEXT NOT NULL,
-                expires_in INTEGER NOT NULL,
-                expires_at TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            );
-        ",
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 3,
-            description: "add_user_id_foreign_key_to_oauth_tokens",
-            sql: "
-            ALTER TABLE oauth_tokens ADD COLUMN user_id INTEGER REFERENCES user_credentials(id) ON DELETE CASCADE;
-        ",
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 4,
-            description: "make_user_id_unique_in_oauth_tokens",
-            sql: "
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_oauth_tokens_user_id ON oauth_tokens(user_id);
-        ",
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 5,
-            description: "recreate_oauth_tokens_with_username",
-            sql: "
-            DROP TABLE IF EXISTS oauth_tokens;
-            
-            CREATE TABLE oauth_tokens (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                irc_username TEXT NOT NULL UNIQUE,
-                access_token TEXT NOT NULL,
-                refresh_token TEXT NOT NULL,
-                expires_in INTEGER NOT NULL,
-                expires_at TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            );
-        ",
-            kind: MigrationKind::Up,
-        },
-    ];
+    let migrations = get_migrations();
 
     let mut builder = tauri::Builder::default();
 
@@ -138,6 +52,7 @@ pub fn run() {
             set_active_room,
             start_private_message,
             fetch_beatmap_data,
+            fetch_user_data,
             set_mappool,
             get_room_state,
         ])
