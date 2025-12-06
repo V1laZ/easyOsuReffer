@@ -1,4 +1,5 @@
 use crate::irc_handler::handle_irc_connection;
+use crate::osu_api::*;
 use crate::types::*;
 use anyhow::Result;
 use irc::client::prelude::*;

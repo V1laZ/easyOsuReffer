@@ -2,6 +2,7 @@ mod banchobot_parser;
 mod commands;
 mod irc_handler;
 mod migrations;
+mod osu_api;
 mod types;
 
 use base64::Engine;
