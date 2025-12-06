@@ -7,6 +7,8 @@ import './assets/css/main.css'
 import LoginView from './pages/LoginView.vue'
 import ChatView from './pages/ChatView.vue'
 
+export const dialogRegistry = new Map<string, HTMLDialogElement>()
+
 const routes = [
   { path: '/login', component: LoginView },
   { path: '/', component: ChatView },
