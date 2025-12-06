@@ -405,6 +405,49 @@ pub async fn fetch_beatmap_data(
     })
 }
 
+#[tauri::command]
+pub async fn fetch_user_data(
+    username: String,
+    access_token: String,
+) -> Result<UserData, String> {
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&format!(
+            "https://osu.ppy.sh/api/v2/users/{}?key=mode=0",
+            username
+        ))
+        .header("Authorization", format!("Bearer {}", access_token))
+        .header("Content-Type", "application/json")
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch user data: {}", e))?;
+
+    if !response.status().is_success() {
+        if response.status().as_u16() == 404 {
+            return Err("User not found".to_string());
+        }
+        return Err(format!(
+            "Failed to fetch user data: {}",
+            response.status()
+        ));
+    }
+
+    let api_response: OsuApiUserResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse API response: {}", e))?;
+
+    Ok(UserData {
+        id: api_response.id,
+        username: api_response.username,
+        country: api_response.country.code,
+        pp: api_response.statistics.pp,
+        rank: api_response.statistics.global_rank,
+        country_rank: api_response.statistics.country_rank,
+        accuracy: api_response.statistics.hit_accuracy,
+    })
+}
+
 pub fn remove_room(room_id: &str, state: &IrcState) {
     let mut irc_state = state.lock().unwrap();
     irc_state.rooms.remove(room_id);

@@ -52,6 +52,7 @@ pub fn run() {
             set_active_room,
             start_private_message,
             fetch_beatmap_data,
+            fetch_user_data,
             set_mappool,
             get_room_state,
         ])
