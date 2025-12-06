@@ -356,6 +356,20 @@ fn handle_incoming_message(
             match response {
                 Response::RPL_WELCOME => {
                     println!("Successfully connected and welcomed to the server!");
+                    if let Err(e) = app_handle.emit("is-authenticated", true) {
+                        println!("Failed to emit authenticated event: {}", e);
+                    }
+                }
+                Response::RPL_MOTD => {
+                    if args.len() >= 2 {
+                        let motd_line = &args[1];
+
+                        if motd_line.starts_with("- You are required to authenticate") {
+                            if let Err(e) = app_handle.emit("is-authenticated", false) {
+                                println!("Failed to emit authentication required event: {}", e);
+                            }
+                        }
+                    }
                 }
                 Response::RPL_NAMREPLY => {
                     if args.len() >= 4 {
