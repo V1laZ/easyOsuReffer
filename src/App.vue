@@ -91,8 +91,10 @@ const loading = ref(true)
 const disconnected = ref(false)
 const loadingMessage = ref('Loading...')
 const errorMessage = ref('')
+const isAuthenticated = ref(false)
 
 let unlisteDisconnect: UnlistenFn | null = null
+let unlistenIsAuthenticated: UnlistenFn | null = null
 
 async function connectWithCredentials(saved: UserCredentials) {
   globalState.user = saved.username
@@ -143,12 +145,21 @@ async function reconnectToBancho() {
   }
 }
 
+function handleIsAuthenticated(isAuth: boolean) {
+  isAuthenticated.value = isAuth
+  if (isAuth) return
+  return router.replace('/login')
+}
+
 function handleOfflineState() {
   globalState.isConnected = false
   loading.value = false
-  disconnected.value = true
   loadingMessage.value = ''
   errorMessage.value = ''
+
+  if (!isAuthenticated.value) return
+
+  disconnected.value = true
 }
 
 function setRealVh() {
@@ -157,6 +168,9 @@ function setRealVh() {
 
 onMounted(async () => {
   unlisteDisconnect = await listen('irc-disconnected', handleOfflineState)
+  unlistenIsAuthenticated = await listen<boolean>('is-authenticated', ({ payload }) => {
+    handleIsAuthenticated(payload)
+  })
 
   window.addEventListener('resize', setRealVh)
   setRealVh()
@@ -185,6 +199,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (unlisteDisconnect) unlisteDisconnect()
+  if (unlistenIsAuthenticated) unlistenIsAuthenticated()
   window.removeEventListener('resize', setRealVh)
 })
 </script>
