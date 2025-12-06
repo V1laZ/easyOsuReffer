@@ -106,6 +106,10 @@
       @create-lobby="handleCreateLobby"
     />
 
+    <InvitePlayerModal
+      @invite="sendMessage(`!mp invite ${$event}`)"
+    />
+
     <!-- Mobile Overlay -->
     <div
       class="fixed transition-colors inset-0 bg-black/80 z-30 lg:hidden"
@@ -133,6 +137,7 @@ import SettingsModal from '@/components/modals/SettingsModal.vue'
 import CreateLobbyModal from '@/components/modals/CreateLobbyModal.vue'
 import { globalState } from '@/stores/global'
 import SelectMap from '@/components/Drawer/SelectMap.vue'
+import InvitePlayerModal from '@/components/modals/InvitePlayerModal.vue'
 import type { RoomUnion, CreateLobbySettings, BeatmapEntry, UserJoinEvent, RoomError, ActiveRoomMessageEvent, InactiveRoomUnreadUpdateEvent, ActiveRoomLobbyStateUpdateEvent, RoomsListUpdatedEvent, RoomsMap } from '@/types'
 
 const router = useRouter()
