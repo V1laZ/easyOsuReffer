@@ -23,6 +23,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Extract version from tag
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION="0.0.0"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Update version in files
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Update package.json
+          if [ -f "package.json" ]; then
+            sed -i.bak "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
+            rm -f package.json.bak
+            echo "Updated package.json to version $VERSION"
+          fi
+
+          # Update Cargo.toml
+          if [ -f "src-tauri/Cargo.toml" ]; then
+            sed -i.bak "s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+            rm -f src-tauri/Cargo.toml.bak
+            echo "Updated Cargo.toml to version $VERSION"
+          fi
+
+          # Update tauri.conf.json
+          if [ -f "src-tauri/tauri.conf.json" ]; then
+            sed -i.bak "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+            rm -f src-tauri/tauri.conf.json.bak
+            echo "Updated tauri.conf.json to version $VERSION"
+          fi
+
       - name: setup node
         uses: actions/setup-node@v4
         with:
@@ -73,10 +111,13 @@ jobs:
         run: pnpm install
 
       - uses: tauri-apps/tauri-action@dev
+        id: tauri-action
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPIMAGE_BUNDLE_GLIBC: '1'
           APPIMAGETOOL_DEPLOY_GTK_VERSION: '3'
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           # AppImage signing
           SIGN: ${{ runner.os == 'Linux' && secrets.APPIMAGE_KEY_ID != '' && '1' || '' }}
           SIGN_KEY: ${{ secrets.APPIMAGE_KEY_ID }}
@@ -88,3 +129,156 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+  generate-updater-json:
+    needs: publish-tauri
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION="0.0.0"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Wait for release assets
+        run: sleep 30
+
+      - name: Generate updater JSON
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ steps.version.outputs.tag }}"
+
+          # Fetch release information
+          RELEASE_DATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG")
+
+          RELEASE_BODY=$(echo "$RELEASE_DATA" | jq -r '.body // "Update available"')
+          PUB_DATE=$(echo "$RELEASE_DATA" | jq -r '.published_at // .created_at')
+
+          # Start building the JSON
+          cat > latest.json << EOF
+          {
+            "version": "$VERSION",
+            "notes": $(echo "$RELEASE_BODY" | jq -R -s .),
+            "pub_date": "$PUB_DATE",
+            "platforms": {}
+          }
+          EOF
+
+          # Fetch all assets
+          ASSETS=$(echo "$RELEASE_DATA" | jq -c '.assets[]')
+
+          # Build platforms object
+          PLATFORMS_JSON="{}"
+
+          while IFS= read -r asset; do
+            ASSET_NAME=$(echo "$asset" | jq -r '.name')
+            ASSET_URL=$(echo "$asset" | jq -r '.browser_download_url')
+
+            # Skip if this is a signature file
+            if [[ "$ASSET_NAME" == *.sig ]]; then
+              continue
+            fi
+
+            # Determine platform
+            PLATFORM=""
+            if [[ "$ASSET_NAME" == *"amd64.AppImage.tar.gz" ]]; then
+              PLATFORM="linux-x86_64"
+            elif [[ "$ASSET_NAME" == *"x64-setup.nsis.zip" ]]; then
+              PLATFORM="windows-x86_64"
+            elif [[ "$ASSET_NAME" == *"x64.app.tar.gz" ]] && [[ "$ASSET_NAME" != *"aarch64"* ]]; then
+              PLATFORM="darwin-x86_64"
+            elif [[ "$ASSET_NAME" == *"aarch64.app.tar.gz" ]] || [[ "$ASSET_NAME" == *"arm64.app.tar.gz" ]]; then
+              PLATFORM="darwin-aarch64"
+            fi
+
+            if [[ -n "$PLATFORM" ]]; then
+              # Find corresponding signature file
+              SIG_ASSET=$(echo "$RELEASE_DATA" | jq -r ".assets[] | select(.name == \"${ASSET_NAME}.sig\") | .browser_download_url")
+
+              if [[ -n "$SIG_ASSET" ]] && [[ "$SIG_ASSET" != "null" ]]; then
+                # Download signature content
+                SIGNATURE=$(curl -sL "$SIG_ASSET")
+
+                # Add platform to JSON
+                PLATFORMS_JSON=$(echo "$PLATFORMS_JSON" | jq \
+                  --arg platform "$PLATFORM" \
+                  --arg url "$ASSET_URL" \
+                  --arg sig "$SIGNATURE" \
+                  '.[$platform] = {"signature": $sig, "url": $url}')
+              fi
+            fi
+          done <<< "$ASSETS"
+
+          # Create final JSON
+          jq --argjson platforms "$PLATFORMS_JSON" '.platforms = $platforms' latest.json > latest-tmp.json
+          mv latest-tmp.json latest.json
+
+          echo "Generated latest.json:"
+          cat latest.json
+
+      - name: Upload updater JSON as release asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+
+          # Get release ID
+          RELEASE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" | jq -r '.id')
+
+          # Upload latest.json
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @latest.json \
+            "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=latest.json"
+
+      - name: Commit updater JSON to repository
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Create releases directory if it doesn't exist
+          mkdir -p releases
+
+          # Copy JSON to releases directory
+          cp latest.json releases/latest.json
+
+          # Update version in package.json
+          if [ -f "package.json" ]; then
+            sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
+            echo "Updated package.json to version $VERSION"
+          fi
+
+          # Update version in Cargo.toml
+          if [ -f "src-tauri/Cargo.toml" ]; then
+            sed -i "s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+            echo "Updated Cargo.toml to version $VERSION"
+          fi
+
+          # Update version in tauri.conf.json
+          if [ -f "src-tauri/tauri.conf.json" ]; then
+            sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+            echo "Updated tauri.conf.json to version $VERSION"
+          fi
+
+          # Add and commit all changes
+          git add releases/latest.json package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore: bump version to $VERSION [skip ci]"
+          git push origin HEAD:master

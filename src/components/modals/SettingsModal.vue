@@ -118,7 +118,7 @@
       <!-- Footer -->
       <div class="mt-8 pt-6 border-t border-gray-700">
         <div class="flex items-center justify-between text-sm text-gray-400">
-          <span>osu! Reffer v0.6.0</span>
+          <span>osu! Reffer v{{ appVersion }}</span>
         </div>
       </div>
     </div>
@@ -126,6 +126,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { getVersion } from '@tauri-apps/api/app'
 import { globalState } from '@/stores/global'
 import ConnectOsuBtn from '../ConnectOsuBtn.vue'
 import { dbService } from '@/services/database'
@@ -134,6 +136,17 @@ const emit = defineEmits<{
   close: []
   logout: []
 }>()
+
+const appVersion = ref('')
+
+onMounted(async () => {
+  try {
+    appVersion.value = await getVersion()
+  }
+  catch (error) {
+    console.error('Failed to get app version:', error)
+  }
+})
 
 const removeOsuConnect = () => {
   if (!globalState.user || !globalState.isConnectedOsu) return

@@ -470,3 +470,77 @@ pub fn clear_lobby_state(room_id: &str, state: &IrcState) {
         }
     }
 }
+
+#[cfg(desktop)]
+#[tauri::command]
+pub async fn check_for_updates(app_handle: tauri::AppHandle) -> Result<Option<serde_json::Value>, String> {
+    use tauri_plugin_updater::UpdaterExt;
+
+    match app_handle.updater() {
+        Ok(updater) => {
+            match updater.check().await {
+                Ok(Some(update)) => {
+                    let date_str = update.date.map(|d| d.to_string());
+
+                    let update_info = serde_json::json!({
+                        "available": true,
+                        "current_version": update.current_version,
+                        "latest_version": update.version,
+                        "date": date_str,
+                        "body": update.body,
+                    });
+                    Ok(Some(update_info))
+                },
+                Ok(None) => {
+                    Ok(None)
+                },
+                Err(e) => Err(format!("Failed to check for updates: {}", e)),
+            }
+        },
+        Err(e) => Err(format!("Failed to get updater: {}", e)),
+    }
+}
+
+#[cfg(desktop)]
+#[tauri::command]
+pub async fn install_update(app_handle: tauri::AppHandle) -> Result<(), String> {
+    use tauri_plugin_updater::UpdaterExt;
+
+    match app_handle.updater() {
+        Ok(updater) => {
+            match updater.check().await {
+                Ok(Some(update)) => {
+                    update.download_and_install(
+                        |chunk_length, content_length| {
+                            if let Some(total) = content_length {
+                                let percentage = (chunk_length as f64 / total as f64) * 100.0;
+                                let _ = app_handle.emit("update-download-progress", percentage);
+                            }
+                        },
+                        || {
+                            let _ = app_handle.emit("update-download-complete", ());
+                        }
+                    ).await.map_err(|e| format!("Failed to install update: {}", e))?;
+
+                    Ok(())
+                },
+                Ok(None) => Err("No update available".to_string()),
+                Err(e) => Err(format!("Failed to check for updates: {}", e)),
+            }
+        },
+        Err(e) => Err(format!("Failed to get updater: {}", e)),
+    }
+}
+
+// Mobile stub - these functions only work on desktop
+#[cfg(not(desktop))]
+#[tauri::command]
+pub async fn check_for_updates(_app_handle: tauri::AppHandle) -> Result<Option<serde_json::Value>, String> {
+    Err("Updates are not supported on mobile platforms".to_string())
+}
+
+#[cfg(not(desktop))]
+#[tauri::command]
+pub async fn install_update(_app_handle: tauri::AppHandle) -> Result<(), String> {
+    Err("Updates are not supported on mobile platforms".to_string())
+}

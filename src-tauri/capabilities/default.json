@@ -11,6 +11,7 @@
     "sql:default",
     "sql:allow-execute",
     "deep-link:default",
+    "updater:default",
     {
       "identifier": "http:default",
       "allow": [

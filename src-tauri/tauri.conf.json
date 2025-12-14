@@ -23,6 +23,14 @@
     }
   },
   "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDNBQUYxMzRBOUFBQzI2OEMKUldTTUpxeWFTaE92T3N3OTFwRFcwWXV1L1A3d1JhZ0Q5VkEvRjYzRTJkTVZtSkJVWURPbUNJakoK",
+      "endpoints": [
+        "https://osureffer.vilaz.dev/updates",
+        "https://raw.githubusercontent.com/V1laZ/easyOsuReffer/master/releases/latest.json",
+        "https://github.com/V1laZ/easyOsuReffer/releases/latest/download/latest.json"
+      ]
+    },
     "sql": {
       "preload": [
         "sqlite:osu_reffer_database.db"
@@ -45,6 +53,7 @@
     }
   },
   "bundle": {
+    "createUpdaterArtifacts": true,
     "active": true,
     "targets": "all",
     "icon": [

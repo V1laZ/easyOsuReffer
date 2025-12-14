@@ -26,7 +26,9 @@ pub fn run() {
                 .get_webview_window("main")
                 .expect("no main window")
                 .set_focus();
-        }));
+        }))
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
     }
 
     builder
@@ -55,6 +57,8 @@ pub fn run() {
             fetch_user_data,
             set_mappool,
             get_room_state,
+            check_for_updates,
+            install_update,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

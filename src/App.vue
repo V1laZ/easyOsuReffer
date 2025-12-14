@@ -71,6 +71,21 @@
     </main>
 
     <OAuthCallback v-if="modalsState.showOAuthCallback" />
+
+    <Transition
+      enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="translate-y-full opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="translate-y-full opacity-0"
+    >
+      <UpdateToast
+        v-if="updateInfo"
+        :update-info="updateInfo"
+        @close="updateInfo = null"
+      />
+    </Transition>
   </div>
 </template>
 
@@ -82,8 +97,9 @@ import { dbService } from './services/database'
 import { globalState } from './stores/global'
 import { type UnlistenFn, listen } from '@tauri-apps/api/event'
 import OAuthCallback from './components/modals/OAuthCallback.vue'
+import UpdateToast from './components/UI/UpdateToast.vue'
 import { modalsState } from './stores/global'
-import { UserCredentials } from '@/types'
+import { UpdateInfo, UserCredentials } from '@/types'
 
 const router = useRouter()
 
@@ -92,6 +108,7 @@ const disconnected = ref(false)
 const loadingMessage = ref('Loading...')
 const errorMessage = ref('')
 const isAuthenticated = ref(true)
+const updateInfo = ref<UpdateInfo | null>(null)
 
 let unlisteDisconnect: UnlistenFn | null = null
 let unlistenIsAuthenticated: UnlistenFn | null = null
@@ -166,6 +183,19 @@ function setRealVh() {
   document.documentElement.style.setProperty('--real-vh', `${window.innerHeight * 0.01}px`)
 }
 
+async function checkForUpdates() {
+  try {
+    const result = await invoke<UpdateInfo>('check_for_updates')
+
+    if (result) {
+      updateInfo.value = result
+    }
+  }
+  catch (error) {
+    console.log('Update check failed:', error)
+  }
+}
+
 onMounted(async () => {
   unlisteDisconnect = await listen('irc-disconnected', handleOfflineState)
   unlistenIsAuthenticated = await listen<boolean>('is-authenticated', ({ payload }) => {
@@ -189,6 +219,10 @@ onMounted(async () => {
       loading.value = false
       router.replace('/login')
     }
+
+    setTimeout(() => {
+      checkForUpdates()
+    }, 2000)
   }
   catch (error) {
     errorMessage.value = 'Failed to initialize database.' + (error instanceof Error ? ' ' + error.message : error ? ' ' + String(error) : '')
