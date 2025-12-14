@@ -35,30 +35,59 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
+          # Check if version has non-numeric pre-release identifier
+          if [[ "$VERSION" =~ -[^0-9] ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "Non-numeric pre-release identifier detected"
+
+            # For Windows MSI, convert to numeric pre-release
+            # Extract the base version and convert pre-release to a number
+            BASE_VERSION=$(echo "$VERSION" | cut -d'-' -f1)
+            # Use build number or hash of pre-release string as numeric identifier
+            NUMERIC_ID=$(echo "$VERSION" | cut -d'-' -f2 | md5sum | grep -o '[0-9]' | head -5 | tr -d '\n')
+            NUMERIC_ID=$((10#$NUMERIC_ID % 65535))
+            WINDOWS_VERSION="$BASE_VERSION-$NUMERIC_ID"
+            echo "windows_version=$WINDOWS_VERSION" >> $GITHUB_OUTPUT
+            echo "Windows compatible version: $WINDOWS_VERSION"
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "windows_version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
       - name: Update version in files
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          WINDOWS_VERSION="${{ steps.version.outputs.windows_version }}"
+
+          # Determine which version to use based on platform
+          if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
+            ACTUAL_VERSION="$WINDOWS_VERSION"
+          else
+            ACTUAL_VERSION="$VERSION"
+          fi
+
+          echo "Using version: $ACTUAL_VERSION for ${{ matrix.platform }}"
 
           # Update package.json
           if [ -f "package.json" ]; then
-            sed -i.bak "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
+            sed -i.bak "s/\"version\": \".*\"/\"version\": \"$ACTUAL_VERSION\"/" package.json
             rm -f package.json.bak
-            echo "Updated package.json to version $VERSION"
+            echo "Updated package.json to version $ACTUAL_VERSION"
           fi
 
           # Update Cargo.toml
           if [ -f "src-tauri/Cargo.toml" ]; then
-            sed -i.bak "s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+            sed -i.bak "s/^version = \".*\"/version = \"$ACTUAL_VERSION\"/" src-tauri/Cargo.toml
             rm -f src-tauri/Cargo.toml.bak
-            echo "Updated Cargo.toml to version $VERSION"
+            echo "Updated Cargo.toml to version $ACTUAL_VERSION"
           fi
 
           # Update tauri.conf.json
           if [ -f "src-tauri/tauri.conf.json" ]; then
-            sed -i.bak "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+            sed -i.bak "s/\"version\": \".*\"/\"version\": \"$ACTUAL_VERSION\"/" src-tauri/tauri.conf.json
             rm -f src-tauri/tauri.conf.json.bak
-            echo "Updated tauri.conf.json to version $VERSION"
+            echo "Updated tauri.conf.json to version $ACTUAL_VERSION"
           fi
 
       - name: setup node
