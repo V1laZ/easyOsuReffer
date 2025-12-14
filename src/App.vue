@@ -222,7 +222,7 @@ onMounted(async () => {
 
     setTimeout(() => {
       checkForUpdates()
-    }, 2000)
+    }, 1000)
   }
   catch (error) {
     errorMessage.value = 'Failed to initialize database.' + (error instanceof Error ? ' ' + error.message : error ? ' ' + String(error) : '')

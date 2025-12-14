@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed bottom-4 right-4 z-50 w-full max-w-md">
+  <div class="fixed bottom-4 right-4 z-50 w-full shadow max-w-md">
     <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
       <!-- Update Available -->
       <div
