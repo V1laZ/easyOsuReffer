@@ -55,7 +55,8 @@ jobs:
       - uses: tauri-apps/tauri-action@dev
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NO_STRIP: 'true'
+          APPIMAGE_BUNDLE_GLIBC: '1'
+          APPIMAGETOOL_DEPLOY_GTK_VERSION: '3'
         with:
           tagName: v__VERSION__
           releaseName: 'v__VERSION__'
