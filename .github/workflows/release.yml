@@ -130,7 +130,7 @@ jobs:
           prerelease: false
           args: ${{ matrix.args }}
 
-  generate-updater-json:
+  commit-version-bump:
     needs: publish-tauri
     runs-on: ubuntu-latest
     permissions:
@@ -148,117 +148,13 @@ jobs:
             VERSION="0.0.0"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Wait for release assets
-        run: sleep 30
-
-      - name: Generate updater JSON
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          TAG="${{ steps.version.outputs.tag }}"
-
-          # Fetch release information
-          RELEASE_DATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG")
-
-          RELEASE_BODY=$(echo "$RELEASE_DATA" | jq -r '.body // "Update available"')
-          PUB_DATE=$(echo "$RELEASE_DATA" | jq -r '.published_at // .created_at')
-
-          # Start building the JSON
-          cat > latest.json << EOF
-          {
-            "version": "$VERSION",
-            "notes": $(echo "$RELEASE_BODY" | jq -R -s .),
-            "pub_date": "$PUB_DATE",
-            "platforms": {}
-          }
-          EOF
-
-          # Fetch all assets
-          ASSETS=$(echo "$RELEASE_DATA" | jq -c '.assets[]')
-
-          # Build platforms object
-          PLATFORMS_JSON="{}"
-
-          while IFS= read -r asset; do
-            ASSET_NAME=$(echo "$asset" | jq -r '.name')
-            ASSET_URL=$(echo "$asset" | jq -r '.browser_download_url')
-
-            # Skip if this is a signature file
-            if [[ "$ASSET_NAME" == *.sig ]]; then
-              continue
-            fi
-
-            # Determine platform
-            PLATFORM=""
-            if [[ "$ASSET_NAME" == *"amd64.AppImage.tar.gz" ]]; then
-              PLATFORM="linux-x86_64"
-            elif [[ "$ASSET_NAME" == *"x64-setup.nsis.zip" ]]; then
-              PLATFORM="windows-x86_64"
-            elif [[ "$ASSET_NAME" == *"x64.app.tar.gz" ]] && [[ "$ASSET_NAME" != *"aarch64"* ]]; then
-              PLATFORM="darwin-x86_64"
-            elif [[ "$ASSET_NAME" == *"aarch64.app.tar.gz" ]] || [[ "$ASSET_NAME" == *"arm64.app.tar.gz" ]]; then
-              PLATFORM="darwin-aarch64"
-            fi
-
-            if [[ -n "$PLATFORM" ]]; then
-              # Find corresponding signature file
-              SIG_ASSET=$(echo "$RELEASE_DATA" | jq -r ".assets[] | select(.name == \"${ASSET_NAME}.sig\") | .browser_download_url")
-
-              if [[ -n "$SIG_ASSET" ]] && [[ "$SIG_ASSET" != "null" ]]; then
-                # Download signature content
-                SIGNATURE=$(curl -sL "$SIG_ASSET")
-
-                # Add platform to JSON
-                PLATFORMS_JSON=$(echo "$PLATFORMS_JSON" | jq \
-                  --arg platform "$PLATFORM" \
-                  --arg url "$ASSET_URL" \
-                  --arg sig "$SIGNATURE" \
-                  '.[$platform] = {"signature": $sig, "url": $url}')
-              fi
-            fi
-          done <<< "$ASSETS"
-
-          # Create final JSON
-          jq --argjson platforms "$PLATFORMS_JSON" '.platforms = $platforms' latest.json > latest-tmp.json
-          mv latest-tmp.json latest.json
-
-          echo "Generated latest.json:"
-          cat latest.json
-
-      - name: Upload updater JSON as release asset
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${{ steps.version.outputs.tag }}"
-
-          # Get release ID
-          RELEASE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" | jq -r '.id')
-
-          # Upload latest.json
-          curl -X POST \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data-binary @latest.json \
-            "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=latest.json"
-
-      - name: Commit updater JSON to repository
+      - name: Commit version bump to repository
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
           VERSION="${{ steps.version.outputs.version }}"
-
-          # Create releases directory if it doesn't exist
-          mkdir -p releases
-
-          # Copy JSON to releases directory
-          cp latest.json releases/latest.json
 
           # Update version in package.json
           if [ -f "package.json" ]; then
@@ -278,7 +174,7 @@ jobs:
             echo "Updated tauri.conf.json to version $VERSION"
           fi
 
-          # Add and commit all changes
-          git add releases/latest.json package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json
+          # Add and commit version changes only
+          git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json
           git diff --quiet && git diff --staged --quiet || git commit -m "chore: bump version to $VERSION [skip ci]"
           git push origin HEAD:master
