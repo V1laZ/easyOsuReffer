@@ -28,20 +28,29 @@
       <!-- Quick Actions -->
       <div class="flex items-center space-x-2">
         <div class="flex items-center space-x-1">
-          <button
-            :disabled="room.lobbyState.matchStatus === 'active' || !currentMap"
-            class="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
-            @click="emit('sendMessage', '!mp start 10')"
-          >
-            Start
-          </button>
-          <button
-            :disabled="room.lobbyState.matchStatus === 'active'"
-            class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
-            @click="emit('openSelectMap')"
-          >
-            Change Map
-          </button>
+          <template v-if="room.lobbyState.matchStatus === 'active'">
+            <button
+              class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+              @click="handleAbort"
+            >
+              Abort
+            </button>
+          </template>
+          <template v-else>
+            <button
+              :disabled="!currentMap"
+              class="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
+              @click="emit('sendMessage', '!mp start 10')"
+            >
+              Start
+            </button>
+            <button
+              class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
+              @click="emit('openSelectMap')"
+            >
+              Change Map
+            </button>
+          </template>
         </div>
       </div>
     </div>
@@ -111,6 +120,12 @@ const lobbyState = computed(() => props.room.lobbyState)
 const roomId = computed(() => props.room.id)
 
 const { formattedTime } = useMatchCountdown(lobbyState, roomId)
+
+function handleAbort() {
+  if (confirm('Are you sure you want to abort the match?')) {
+    emit('sendMessage', '!mp abort')
+  }
+}
 
 const matchStatusText = computed(() => {
   switch (props.room.lobbyState.matchStatus) {
