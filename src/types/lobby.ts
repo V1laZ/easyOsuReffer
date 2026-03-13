@@ -45,6 +45,8 @@ export type LobbyState = {
   freemod: boolean
   selectedMods: string[]
   currentMappoolId: number | null
+  matchStartTime: number | null
+  mapDrainTime: number | null
 }
 
 export type CreateLobbySettings = {

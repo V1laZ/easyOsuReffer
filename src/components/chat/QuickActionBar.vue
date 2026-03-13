@@ -16,6 +16,12 @@
           <span class="text-sm font-medium text-white">
             {{ matchStatusText }}
           </span>
+          <span
+            v-if="formattedTime"
+            class="text-sm font-mono text-yellow-400"
+          >
+            {{ formattedTime }}
+          </span>
         </div>
       </div>
 
@@ -88,6 +94,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Mod from '../Mod.vue'
+import { useMatchCountdown } from '@/composables/useMatchCountdown'
 import type { MultiplayerRoom } from '@/types'
 
 const props = defineProps<{
@@ -100,6 +107,10 @@ const emit = defineEmits<{
 }>()
 
 const currentMap = computed(() => props.room.lobbyState.currentMap || null)
+const lobbyState = computed(() => props.room.lobbyState)
+const roomId = computed(() => props.room.id)
+
+const { formattedTime } = useMatchCountdown(lobbyState, roomId)
 
 const matchStatusText = computed(() => {
   switch (props.room.lobbyState.matchStatus) {

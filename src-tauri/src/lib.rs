@@ -56,6 +56,7 @@ pub fn run() {
             fetch_beatmap_data,
             fetch_user_data,
             set_mappool,
+            set_map_drain_time,
             get_room_state,
             check_for_updates,
             install_update,

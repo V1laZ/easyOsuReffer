@@ -360,6 +360,22 @@ pub async fn set_mappool(
 }
 
 #[tauri::command]
+pub async fn set_map_drain_time(
+    room_id: String,
+    drain_time: u32,
+    state: State<'_, IrcState>,
+) -> Result<(), String> {
+    let mut irc_state = state.lock().unwrap();
+    if let Some(room) = irc_state.rooms.get_mut(&room_id) {
+        if let Some(lobby) = &mut room.lobby_state {
+            lobby.map_drain_time = Some(drain_time);
+            return Ok(());
+        }
+    }
+    Err("Lobby not found".to_string())
+}
+
+#[tauri::command]
 pub async fn fetch_beatmap_data(
     beatmap_id: String,
     access_token: String,

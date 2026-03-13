@@ -1,6 +1,7 @@
 use crate::types::*;
 use regex::Regex;
 use std::sync::OnceLock;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Emitter;
 
 /// Compiles a regex pattern once and reuses it for all subsequent calls.
@@ -545,12 +546,26 @@ impl BanchoBotParser {
             if let Some(lobby) = &mut room.lobby_state {
                 lobby.match_status = status.to_string();
 
-                if status == "ready" {
-                    for slot in &mut lobby.slots {
-                        if let Some(ref mut player) = slot.player {
-                            player.is_ready = true;
+                match status {
+                    "active" => {
+                        lobby.match_start_time = Some(
+                            SystemTime::now()
+                                .duration_since(UNIX_EPOCH)
+                                .unwrap_or_default()
+                                .as_secs(),
+                        );
+                    }
+                    "idle" => {
+                        lobby.match_start_time = None;
+                    }
+                    "ready" => {
+                        for slot in &mut lobby.slots {
+                            if let Some(ref mut player) = slot.player {
+                                player.is_ready = true;
+                            }
                         }
                     }
+                    _ => {}
                 }
 
                 Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
