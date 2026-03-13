@@ -1,8 +1,16 @@
 use crate::types::*;
 use regex::Regex;
+use std::sync::OnceLock;
 use tauri::Emitter;
 
-// BanchoBot parsing logic
+/// Compiles a regex pattern once and reuses it for all subsequent calls.
+macro_rules! static_regex {
+    ($pattern:expr) => {{
+        static RE: OnceLock<Regex> = OnceLock::new();
+        RE.get_or_init(|| Regex::new($pattern).expect("Invalid regex pattern"))
+    }};
+}
+
 pub struct BanchoBotParser;
 
 impl BanchoBotParser {
@@ -29,13 +37,13 @@ impl BanchoBotParser {
     ) -> bool {
         if message.username != "BanchoBot" {
             // Handle user leaving lobby
-            if let Ok(regex) = Regex::new(r"^(.+) left (#mp_\d+)$") {
-                if let Some(captures) = regex.captures(&message.message) {
-                    let username = captures.get(1).unwrap().as_str();
-                    let channel = captures.get(2).unwrap().as_str();
-                    Self::remove_player_by_username(username, channel, state, app_handle);
-                    return true;
-                }
+            if let Some(captures) =
+                static_regex!(r"^(.+) left (#mp_\d+)$").captures(&message.message)
+            {
+                let username = captures.get(1).unwrap().as_str();
+                let channel = captures.get(2).unwrap().as_str();
+                Self::remove_player_by_username(username, channel, state, app_handle);
+                return true;
             }
             return false;
         }
@@ -60,179 +68,80 @@ impl BanchoBotParser {
         }
 
         // Room name pattern
-        if let Ok(regex) = Regex::new(r"^Room name: (.+), History: https://osu\.ppy\.sh/mp/(\d+)$")
+        if let Some(captures) = static_regex!(
+            r"^Room name: (.+), History: https://osu\.ppy\.sh/mp/(\d+)$"
+        )
+        .captures(text)
         {
-            if let Some(captures) = regex.captures(text) {
-                let room_name = captures.get(1).unwrap().as_str();
-                Self::update_lobby_settings(
-                    channel,
-                    |settings| {
-                        settings.room_name = room_name.to_string();
-                    },
-                    state,
-                    app_handle,
-                );
-                return true;
-            }
+            let room_name = captures.get(1).unwrap().as_str();
+            Self::update_lobby_settings(
+                channel,
+                |settings| {
+                    settings.room_name = room_name.to_string();
+                },
+                state,
+                app_handle,
+            );
+            return true;
         }
 
         // Team mode and win condition
-        if let Ok(regex) = Regex::new(r"^Team mode: (.+), Win condition: (.+)$") {
-            if let Some(captures) = regex.captures(text) {
-                let team_mode_str = captures.get(1).unwrap().as_str();
-                let win_condition_str = captures.get(2).unwrap().as_str();
+        if let Some(captures) =
+            static_regex!(r"^Team mode: (.+), Win condition: (.+)$").captures(text)
+        {
+            let team_mode = match captures.get(1).unwrap().as_str() {
+                "Head To Head" => "HeadToHead",
+                "Tag Coop" => "TagCoop",
+                "Team Vs" => "TeamVs",
+                "Tag Team Vs" => "TagTeamVs",
+                _ => "HeadToHead",
+            };
 
-                let team_mode = match team_mode_str {
-                    "Head To Head" => "HeadToHead",
-                    "Tag Coop" => "TagCoop",
-                    "Team Vs" => "TeamVs",
-                    "Tag Team Vs" => "TagTeamVs",
-                    _ => "HeadToHead",
-                };
+            let win_condition = match captures.get(2).unwrap().as_str() {
+                "Score" => "Score",
+                "Accuracy" => "Accuracy",
+                "Combo" => "Combo",
+                "Score V2" => "ScoreV2",
+                _ => "Score",
+            };
 
-                let win_condition = match win_condition_str {
-                    "Score" => "Score",
-                    "Accuracy" => "Accuracy",
-                    "Combo" => "Combo",
-                    "Score V2" => "ScoreV2",
-                    _ => "Score",
-                };
-
-                Self::update_lobby_settings(
-                    channel,
-                    |settings| {
-                        settings.team_mode = team_mode.to_string();
-                        settings.win_condition = win_condition.to_string();
-                    },
-                    state,
-                    app_handle,
-                );
-                return true;
-            }
+            Self::update_lobby_settings(
+                channel,
+                |settings| {
+                    settings.team_mode = team_mode.to_string();
+                    settings.win_condition = win_condition.to_string();
+                },
+                state,
+                app_handle,
+            );
+            return true;
         }
 
         // Slot info
-        if let Ok(regex) = Regex::new(r"^Slot (\d+)\s+(.+)$") {
-            if let Some(captures) = regex.captures(text) {
-                if let Ok(slot_id) = captures.get(1).unwrap().as_str().parse::<u8>() {
-                    let slot_info = captures.get(2).unwrap().as_str();
-                    Self::parse_slot_info(slot_info, slot_id, channel, state, app_handle);
-                    return true;
-                }
-            }
-        }
-
-        // Current beatmap (manually set by user in lobby)
-        if let Ok(regex) = Regex::new(r"^Beatmap: https://osu\.ppy\.sh/b/(\d+) (.+) \[(.+)\]$") {
-            if let Some(captures) = regex.captures(text) {
-                if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
-                    let full_title = captures.get(2).unwrap().as_str();
-                    let difficulty = captures.get(3).unwrap().as_str();
-
-                    if let Ok(title_regex) = Regex::new(r"^(.+) - (.+)$") {
-                        if let Some(title_captures) = title_regex.captures(full_title) {
-                            let artist = title_captures.get(1).unwrap().as_str();
-                            let title = title_captures.get(2).unwrap().as_str();
-
-                            Self::update_current_map(
-                                channel,
-                                CurrentMap {
-                                    beatmap_id,
-                                    artist: artist.to_string(),
-                                    title: title.to_string(),
-                                    difficulty: difficulty.to_string(),
-                                },
-                                state,
-                                app_handle,
-                            );
-                        }
-                    }
-                    return true;
-                }
-            }
-        }
-
-        // Changed beatmap to (from !mp map {map_id})
-        if let Ok(regex) =
-            Regex::new(r"^Changed beatmap to https://osu\.ppy\.sh/b/(\d+) (.+) - (.+)$")
-        {
-            if let Some(captures) = regex.captures(text) {
-                if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
-                    let artist = captures.get(2).unwrap().as_str();
-                    let title = captures.get(3).unwrap().as_str();
-
-                    Self::update_current_map(
-                        channel,
-                        CurrentMap {
-                            beatmap_id,
-                            artist: artist.to_string(),
-                            title: title.to_string(),
-                            difficulty: "".to_string(),
-                        },
-                        state,
-                        app_handle,
-                    );
-                    return true;
-                }
-            }
-        }
-
-        // Current beatmap (from !mp map {map_id})
-        if let Ok(regex) = Regex::new(r"^Beatmap: https://osu\.ppy\.sh/b/(\d+) (.+) - (.+)$") {
-            if let Some(captures) = regex.captures(text) {
-                if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
-                    let artist = captures.get(2).unwrap().as_str();
-                    let title = captures.get(3).unwrap().as_str();
-
-                    Self::update_current_map(
-                        channel,
-                        CurrentMap {
-                            beatmap_id,
-                            artist: artist.to_string(),
-                            title: title.to_string(),
-                            difficulty: "".to_string(),
-                        },
-                        state,
-                        app_handle,
-                    );
-                    return true;
-                }
-            }
-        }
-
-        // Active mods
-        if let Ok(regex) = Regex::new(r"^Active mods: (.+)$") {
-            if let Some(captures) = regex.captures(text) {
-                let mods_str = captures.get(1).unwrap().as_str();
-                let mut mods: Vec<String> = mods_str
-                    .split(", ")
-                    .map(|m| Self::normalize_mod_name(m))
-                    .collect();
-
-                let mut freemod = false;
-                mods.retain(|m| {
-                    if m == "Freemod" {
-                        freemod = true;
-                        false
-                    } else {
-                        true
-                    }
-                });
-
-                Self::update_mods(channel, mods, freemod, state, app_handle);
+        if let Some(captures) = static_regex!(r"^Slot (\d+)\s+(.+)$").captures(text) {
+            if let Ok(slot_id) = captures.get(1).unwrap().as_str().parse::<u8>() {
+                let slot_info = captures.get(2).unwrap().as_str();
+                Self::parse_slot_info(slot_info, slot_id, channel, state, app_handle);
                 return true;
             }
         }
 
-        // Beatmap changed (manually by user in lobby)
-        if let Ok(regex) = Regex::new(
-            r"^Beatmap changed to: (.+) - (.+) \[(.+)\] \(https://osu\.ppy\.sh/b/(\d+)\)$",
-        ) {
-            if let Some(captures) = regex.captures(text) {
-                let artist = captures.get(1).unwrap().as_str();
-                let title = captures.get(2).unwrap().as_str();
+        // Current beatmap (from !mp settings)
+        if let Some(captures) = static_regex!(
+            r"^Beatmap: https://osu\.ppy\.sh/b/(\d+) (.+) \[(.+)\]$"
+        )
+        .captures(text)
+        {
+            if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
+                let full_title = captures.get(2).unwrap().as_str();
                 let difficulty = captures.get(3).unwrap().as_str();
-                if let Ok(beatmap_id) = captures.get(4).unwrap().as_str().parse::<u64>() {
+
+                if let Some(title_captures) =
+                    static_regex!(r"^(.+) - (.+)$").captures(full_title)
+                {
+                    let artist = title_captures.get(1).unwrap().as_str();
+                    let title = title_captures.get(2).unwrap().as_str();
+
                     Self::update_current_map(
                         channel,
                         CurrentMap {
@@ -244,43 +153,131 @@ impl BanchoBotParser {
                         state,
                         app_handle,
                     );
-                    return true;
                 }
+                return true;
+            }
+        }
+
+        // Changed beatmap to (from !mp map {map_id})
+        if let Some(captures) = static_regex!(
+            r"^Changed beatmap to https://osu\.ppy\.sh/b/(\d+) (.+) - (.+)$"
+        )
+        .captures(text)
+        {
+            if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
+                Self::update_current_map(
+                    channel,
+                    CurrentMap {
+                        beatmap_id,
+                        artist: captures.get(2).unwrap().as_str().to_string(),
+                        title: captures.get(3).unwrap().as_str().to_string(),
+                        difficulty: String::new(),
+                    },
+                    state,
+                    app_handle,
+                );
+                return true;
+            }
+        }
+
+        // Current beatmap without difficulty bracket (from !mp map {map_id})
+        if let Some(captures) =
+            static_regex!(r"^Beatmap: https://osu\.ppy\.sh/b/(\d+) (.+) - (.+)$").captures(text)
+        {
+            if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
+                Self::update_current_map(
+                    channel,
+                    CurrentMap {
+                        beatmap_id,
+                        artist: captures.get(2).unwrap().as_str().to_string(),
+                        title: captures.get(3).unwrap().as_str().to_string(),
+                        difficulty: String::new(),
+                    },
+                    state,
+                    app_handle,
+                );
+                return true;
+            }
+        }
+
+        // Active mods
+        if let Some(captures) = static_regex!(r"^Active mods: (.+)$").captures(text) {
+            let mods_str = captures.get(1).unwrap().as_str();
+            let mut mods: Vec<String> = mods_str
+                .split(", ")
+                .map(|m| Self::normalize_mod_name(m))
+                .collect();
+
+            let mut freemod = false;
+            mods.retain(|m| {
+                if m == "Freemod" {
+                    freemod = true;
+                    false
+                } else {
+                    true
+                }
+            });
+
+            Self::update_mods(channel, mods, freemod, state, app_handle);
+            return true;
+        }
+
+        // Beatmap changed (manually by user in lobby)
+        if let Some(captures) = static_regex!(
+            r"^Beatmap changed to: (.+) - (.+) \[(.+)\] \(https://osu\.ppy\.sh/b/(\d+)\)$"
+        )
+        .captures(text)
+        {
+            if let Ok(beatmap_id) = captures.get(4).unwrap().as_str().parse::<u64>() {
+                Self::update_current_map(
+                    channel,
+                    CurrentMap {
+                        beatmap_id,
+                        artist: captures.get(1).unwrap().as_str().to_string(),
+                        title: captures.get(2).unwrap().as_str().to_string(),
+                        difficulty: captures.get(3).unwrap().as_str().to_string(),
+                    },
+                    state,
+                    app_handle,
+                );
+                return true;
             }
         }
 
         // Player joined
-        if let Ok(regex) = Regex::new(r"^(.+) joined in slot (\d+)( for team (red|blue))?\.?$") {
-            if let Some(captures) = regex.captures(text) {
-                let username = captures.get(1).unwrap().as_str();
-                if let Ok(slot_id) = captures.get(2).unwrap().as_str().parse::<u8>() {
-                    let team = captures.get(4).map(|m| m.as_str().to_string());
+        if let Some(captures) =
+            static_regex!(r"^(.+) joined in slot (\d+)( for team (red|blue))?\.?$")
+                .captures(text)
+        {
+            if let Ok(slot_id) = captures.get(2).unwrap().as_str().parse::<u8>() {
+                let team = captures.get(4).map(|m| m.as_str().to_string());
 
-                    Self::add_player(
-                        channel,
-                        slot_id,
-                        Player {
-                            username: username.to_string(),
-                            team,
-                            is_ready: false,
-                            is_playing: false,
-                            is_host: false,
-                        },
-                        state,
-                        app_handle,
-                    );
-                    return true;
-                }
+                Self::add_player(
+                    channel,
+                    slot_id,
+                    Player {
+                        username: captures.get(1).unwrap().as_str().to_string(),
+                        team,
+                        is_ready: false,
+                        is_playing: false,
+                        is_host: false,
+                    },
+                    state,
+                    app_handle,
+                );
+                return true;
             }
         }
 
         // Player left
-        if let Ok(regex) = Regex::new(r"^(.+) left the game\.?$") {
-            if let Some(captures) = regex.captures(text) {
-                let username = captures.get(1).unwrap().as_str();
-                Self::remove_player_by_username(username, channel, state, app_handle);
-                return true;
-            }
+        if let Some(captures) = static_regex!(r"^(.+) left the game\.?$").captures(text) {
+            Self::remove_player_by_username(
+                captures.get(1).unwrap().as_str(),
+                channel,
+                state,
+                app_handle,
+            );
+            return true;
         }
 
         // Match status changes
@@ -300,54 +297,26 @@ impl BanchoBotParser {
         }
 
         // Host changed
-        if let Ok(regex) = Regex::new(r"^Changed match host to (.+)$") {
-            if let Some(captures) = regex.captures(text) {
-                let new_host = captures.get(1).unwrap().as_str();
-                Self::update_host(channel, new_host, state, app_handle);
-                return true;
-            }
+        if let Some(captures) =
+            static_regex!(r"^Changed match host to (.+)$").captures(text)
+        {
+            Self::update_host(
+                channel,
+                captures.get(1).unwrap().as_str(),
+                state,
+                app_handle,
+            );
+            return true;
         }
 
         // Player moved to different slot
-        if let Ok(regex) = Regex::new(r"^(.+) moved to slot (\d+)$") {
-            if let Some(captures) = regex.captures(text) {
-                let username = captures.get(1).unwrap().as_str();
-                if let Ok(new_slot_id) = captures.get(2).unwrap().as_str().parse::<u8>() {
-                    let team = captures.get(4).map(|m| m.as_str().to_string());
-                    Self::move_player_to_slot(
-                        channel,
-                        username,
-                        new_slot_id,
-                        team,
-                        state,
-                        app_handle,
-                    );
-                    return true;
-                }
-            }
-        }
-
-        // Match aborted
-        if text == "The match was aborted" || text.contains("Aborted the match") {
-            Self::update_match_status(channel, "idle", state, app_handle);
-            return true;
-        }
-
-        // Match finished
-        if text.contains("finished playing") || text.contains("The match has finished!") {
-            Self::update_match_status(channel, "idle", state, app_handle);
-            return true;
-        }
-
-        // Match settings changed
-        if let Ok(regex) = Regex::new(r#"^Room name updated to "(.+)"$"#) {
-            if let Some(captures) = regex.captures(text) {
-                let room_name = captures.get(1).unwrap().as_str();
-                Self::update_lobby_settings(
+        if let Some(captures) = static_regex!(r"^(.+) moved to slot (\d+)$").captures(text) {
+            if let Ok(new_slot_id) = captures.get(2).unwrap().as_str().parse::<u8>() {
+                Self::move_player_to_slot(
                     channel,
-                    |settings| {
-                        settings.room_name = room_name.to_string();
-                    },
+                    captures.get(1).unwrap().as_str(),
+                    new_slot_id,
+                    None,
                     state,
                     app_handle,
                 );
@@ -355,40 +324,72 @@ impl BanchoBotParser {
             }
         }
 
-        // Mods changed
-        if let Ok(regex) = Regex::new(r"^Enabled (.+), disabled FreeMod$") {
-            if let Some(captures) = regex.captures(text) {
-                let mods_str = captures.get(1).unwrap().as_str();
-                let mods = mods_str
-                    .split(", ")
-                    .map(|m| Self::normalize_mod_name(m))
-                    .collect();
-                Self::update_mods(channel, mods, false, state, app_handle);
-                return true;
-            }
+        // Match aborted or finished
+        if text == "The match was aborted" || text.contains("Aborted the match") {
+            Self::update_match_status(channel, "idle", state, app_handle);
+            return true;
+        }
+
+        if text.contains("finished playing") || text.contains("The match has finished!") {
+            Self::update_match_status(channel, "idle", state, app_handle);
+            return true;
+        }
+
+        // Room name updated
+        if let Some(captures) =
+            static_regex!(r#"^Room name updated to "(.+)"$"#).captures(text)
+        {
+            let room_name = captures.get(1).unwrap().as_str().to_string();
+            Self::update_lobby_settings(
+                channel,
+                |settings| {
+                    settings.room_name = room_name.clone();
+                },
+                state,
+                app_handle,
+            );
+            return true;
+        }
+
+        // Mods changed (freemod disabled)
+        if let Some(captures) =
+            static_regex!(r"^Enabled (.+), disabled FreeMod$").captures(text)
+        {
+            let mods = captures
+                .get(1)
+                .unwrap()
+                .as_str()
+                .split(", ")
+                .map(|m| Self::normalize_mod_name(m))
+                .collect();
+            Self::update_mods(channel, mods, false, state, app_handle);
+            return true;
         }
 
         // Player changed team
-        if let Ok(regex) = Regex::new(r#"^(.+) changed to (Red|Blue)$"#) {
-            if let Some(captures) = regex.captures(text) {
-                let username = captures.get(1).unwrap().as_str();
-                let team = captures.get(2).unwrap().as_str().to_lowercase();
-                let mut irc_state = state.lock().unwrap();
-                let active_room_id = irc_state.active_room_id.clone();
-                if let Some(room) = irc_state.rooms.get_mut(channel) {
-                    if let Some(lobby) = &mut room.lobby_state {
-                        for slot in &mut lobby.slots {
-                            if let Some(ref mut player) = slot.player {
-                                if player.username == username {
-                                    player.team = Some(team.clone());
-                                }
+        if let Some(captures) = static_regex!(r#"^(.+) changed to (Red|Blue)$"#).captures(text) {
+            let username = captures.get(1).unwrap().as_str();
+            let team = captures.get(2).unwrap().as_str().to_lowercase();
+            let mut irc_state = state.lock().unwrap();
+            let active_room_id = irc_state.active_room_id.clone();
+            if let Some(room) = irc_state.rooms.get_mut(channel.as_str()) {
+                if let Some(lobby) = &mut room.lobby_state {
+                    for slot in &mut lobby.slots {
+                        if let Some(ref mut player) = slot.player {
+                            if player.username == username {
+                                player.team = Some(team.clone());
                             }
                         }
-                        Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
                     }
+                    Self::emit_lobby_update(
+                        channel,
+                        lobby,
+                        active_room_id.as_deref(),
+                        app_handle,
+                    );
                 }
-                return true;
             }
+            return true;
         }
 
         if text == "Disabled all mods, enabled FreeMod" {
@@ -413,38 +414,36 @@ impl BanchoBotParser {
     ) {
         let is_ready = !slot_text.contains("Not Ready") && !slot_text.contains("No Map");
 
-        // Extract username
-        if let Ok(regex) = Regex::new(r"https?://osu\.ppy\.sh/u/\d+\s+([^\s\[]+)") {
-            if let Some(captures) = regex.captures(slot_text) {
-                let username = captures.get(1).unwrap().as_str().trim();
-                if !username.is_empty() {
-                    let is_host = slot_text.contains("[Host");
+        if let Some(captures) =
+            static_regex!(r"https?://osu\.ppy\.sh/u/\d+\s+([^\s\[]+)").captures(slot_text)
+        {
+            let username = captures.get(1).unwrap().as_str().trim();
+            if !username.is_empty() {
+                let team = if slot_text.contains("Team Blue") {
+                    Some("blue".to_string())
+                } else if slot_text.contains("Team Red") {
+                    Some("red".to_string())
+                } else {
+                    None
+                };
 
-                    let team = if slot_text.contains("Team Blue") {
-                        Some("blue".to_string())
-                    } else if slot_text.contains("Team Red") {
-                        Some("red".to_string())
-                    } else {
-                        None
-                    };
-
-                    Self::add_player(
-                        channel,
-                        slot_id,
-                        Player {
-                            username: username.to_string(),
-                            team,
-                            is_ready,
-                            is_playing: false,
-                            is_host,
-                        },
-                        state,
-                        app_handle,
-                    );
-                }
+                Self::add_player(
+                    channel,
+                    slot_id,
+                    Player {
+                        username: username.to_string(),
+                        team,
+                        is_ready,
+                        is_playing: false,
+                        is_host: slot_text.contains("[Host"),
+                    },
+                    state,
+                    app_handle,
+                );
             }
         }
     }
+
     fn update_lobby_settings<F>(
         channel: &str,
         updater: F,
@@ -612,7 +611,6 @@ impl BanchoBotParser {
         let active_room_id = irc_state.active_room_id.clone();
         if let Some(room) = irc_state.rooms.get_mut(channel) {
             if let Some(lobby) = &mut room.lobby_state {
-                // Find the player in their current slot and remove them
                 let mut player_data = None;
                 for slot in &mut lobby.slots {
                     if let Some(ref player) = slot.player {
@@ -623,7 +621,6 @@ impl BanchoBotParser {
                     }
                 }
 
-                // Move the player to their new slot
                 if let Some(mut player) = player_data {
                     if let Some(team) = team {
                         player.team = Some(team);
@@ -641,20 +638,21 @@ impl BanchoBotParser {
 
     fn normalize_mod_name(mod_name: &str) -> String {
         match mod_name {
-            "Hidden" => "HD".to_string(),
-            "HardRock" => "HR".to_string(),
-            "DoubleTime" => "DT".to_string(),
-            "Flashlight" => "FL".to_string(),
-            "NoFail" => "NF".to_string(),
-            "Easy" => "EZ".to_string(),
-            "HalfTime" => "HT".to_string(),
-            "SuddenDeath" => "SD".to_string(),
-            "Perfect" => "PF".to_string(),
-            "Relax" => "RX".to_string(),
-            "Nightcore" => "NC".to_string(),
-            "SpunOut" => "SO".to_string(),
-            _ => mod_name.to_string(),
+            "Hidden" => "HD",
+            "HardRock" => "HR",
+            "DoubleTime" => "DT",
+            "Flashlight" => "FL",
+            "NoFail" => "NF",
+            "Easy" => "EZ",
+            "HalfTime" => "HT",
+            "SuddenDeath" => "SD",
+            "Perfect" => "PF",
+            "Relax" => "RX",
+            "Nightcore" => "NC",
+            "SpunOut" => "SO",
+            other => return other.to_string(),
         }
+        .to_string()
     }
 
     fn update_mods(
