@@ -34,24 +34,10 @@
             />
           </svg>
         </button>
-        <button
-          class="lg:hidden p-2 rounded-lg hover:bg-gray-700 transition-colors"
+        <CloseButton
+          class="lg:hidden"
           @click="emit('close')"
-        >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+        />
       </div>
     </div>
 
@@ -76,6 +62,7 @@ import { computed } from 'vue'
 import PlayerSlot from './PlayerSlot.vue'
 import type { LobbyState, PlayerMoveEvent, PlayerTeamChangeEvent } from '@/types'
 import { useDialog } from '@/composables/useDialog'
+import CloseButton from '../../UI/CloseButton.vue'
 
 const props = defineProps<{
   isOpen: boolean

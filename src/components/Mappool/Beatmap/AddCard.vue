@@ -17,26 +17,10 @@
           class="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
           @click="fetchBeatmapData"
         >
-          <svg
+          <Spinner
             v-if="isLoading"
-            class="animate-spin w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            />
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
+            class="w-4 h-4"
+          />
           <span v-else>Fetch</span>
         </button>
       </div>
@@ -148,6 +132,7 @@ import { dbService } from '@/services/database'
 import { globalState } from '@/stores/global'
 import Mod from '../../Mod.vue'
 import { BeatmapData } from '@/types'
+import Spinner from '../../UI/Spinner.vue'
 
 const props = defineProps<{
   selectedMappoolId: number

@@ -2,22 +2,10 @@
   <div
     class="flex fixed top-0 left-0 z-50 w-full bg-black flex-col items-center justify-center h-screen space-y-4"
   >
-    <div class="absolute top-3 right-3">
-      <button
-        class="text-white hover:text-gray-400 transition-colors"
-        @click="modalsState.showOAuthCallback = false"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-        ><path
-          fill="currentColor"
-          d="M19.41 6.58L17.83 5l-7.59 7.59L2.83 5 1.41 6.41l7.59 7.59L1.41 21l1.42 1.41L12 14.83l7.59 7.58L21 21l-7.59-7.59z"
-        /></svg>
-      </button>
-    </div>
+    <CloseButton
+      class="absolute top-3 right-3"
+      @click="modalsState.showOAuthCallback = false"
+    />
     <div class="p-4">
       <LoadingText
         class="mb-4 text-center text-gray-200"
@@ -45,6 +33,7 @@ import { once } from '@tauri-apps/api/event'
 import { dbService } from '@/services/database'
 import { globalState, modalsState } from '@/stores/global'
 import LoadingText from '../UI/LoadingText.vue'
+import CloseButton from '../UI/CloseButton.vue'
 import { OauthTokenCallback } from '@/types'
 
 const manualConnectionString = ref('')

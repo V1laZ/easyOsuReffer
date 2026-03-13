@@ -11,51 +11,18 @@
       <!-- Loading -->
       <div
         v-if="loading"
-        class="p-8 flex flex-col items-center justify-center space-y-3"
+        class="p-8"
       >
-        <svg
-          class="animate-spin w-8 h-8 text-pink-500"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          />
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          />
-        </svg>
-        <span class="text-gray-400 text-sm">Loading player info…</span>
+        <Loading text="Loading player info…" />
       </div>
 
       <template v-else>
         <!-- Header with avatar -->
         <div class="relative bg-gray-900 px-6 pt-6 pb-4">
-          <button
-            class="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-gray-600/50 text-gray-400 hover:text-white transition-colors"
+          <CloseButton
+            class="absolute top-3 right-3"
             @click="dialogRef?.close()"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+          />
 
           <div class="flex items-center space-x-4">
             <div class="size-16 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-pink-500/50">
@@ -170,6 +137,8 @@ import { useDialog } from '@/composables/useDialog'
 import { dbService } from '@/services/database'
 import { globalState } from '@/stores/global'
 import type { UserData } from '@/types'
+import CloseButton from '@/components/UI/CloseButton.vue'
+import Loading from '@/components/UI/Loading.vue'
 
 const props = defineProps<{
   username: string

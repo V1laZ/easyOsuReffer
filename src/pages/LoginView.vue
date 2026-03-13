@@ -123,27 +123,10 @@
             :disabled="isConnecting || !loginForm.username.trim() || !loginForm.password.trim()"
             class="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           >
-            <svg
+            <Spinner
               v-if="isConnecting"
-              class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              />
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
+              class="-ml-1 mr-3 h-5 w-5 text-white"
+            />
             <span>{{ isConnecting ? 'Connecting...' : 'Connect to Bancho' }}</span>
           </button>
         </form>
@@ -233,6 +216,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { dbService } from '@/services/database'
 import { globalState } from '@/stores/global'
 import type { ConnectionStatus } from '@/types'
+import Spinner from '@/components/UI/Spinner.vue'
 
 const router = useRouter()
 

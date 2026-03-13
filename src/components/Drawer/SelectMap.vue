@@ -13,12 +13,7 @@
       <h2 class="text-lg font-semibold text-white">
         Select Beatmap
       </h2>
-      <button
-        class="text-gray-400 hover:text-white text-2xl leading-none"
-        @click="$emit('close')"
-      >
-        &times;
-      </button>
+      <CloseButton @click="$emit('close')" />
     </div>
 
     <div class="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -91,6 +86,7 @@ import { invoke } from '@tauri-apps/api/core'
 import List from '../Mappool/Beatmap/List.vue'
 import { dbService } from '@/services/database'
 import type { LobbyState, BeatmapEntry, Mappool } from '@/types'
+import CloseButton from '../UI/CloseButton.vue'
 
 const props = defineProps<{
   isOpen: boolean
