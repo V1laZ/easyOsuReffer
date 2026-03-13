@@ -110,7 +110,7 @@ const errorMessage = ref('')
 const isAuthenticated = ref(true)
 const updateInfo = ref<UpdateInfo | null>(null)
 
-let unlisteDisconnect: UnlistenFn | null = null
+let unlistenDisconnect: UnlistenFn | null = null
 let unlistenIsAuthenticated: UnlistenFn | null = null
 
 async function connectWithCredentials(saved: UserCredentials) {
@@ -197,7 +197,7 @@ async function checkForUpdates() {
 }
 
 onMounted(async () => {
-  unlisteDisconnect = await listen('irc-disconnected', handleOfflineState)
+  unlistenDisconnect = await listen('irc-disconnected', handleOfflineState)
   unlistenIsAuthenticated = await listen<boolean>('is-authenticated', ({ payload }) => {
     handleIsAuthenticated(payload)
   })
@@ -232,7 +232,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (unlisteDisconnect) unlisteDisconnect()
+  if (unlistenDisconnect) unlistenDisconnect()
   if (unlistenIsAuthenticated) unlistenIsAuthenticated()
   window.removeEventListener('resize', setRealVh)
 })
