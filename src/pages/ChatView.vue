@@ -6,7 +6,7 @@
       :rooms="roomsList"
       :active-room-id="activeRoom?.id"
       @close="leftDrawerOpen = false"
-      @select-room="selectRoom"
+      @select-room="handleSelectRoom"
       @join-channel="joinChannel"
       @leave-room="leaveRoom"
       @open-create-lobby="createLobbyOpen = true"
@@ -38,6 +38,7 @@
         v-if="activeRoom && activeRoom.roomType === 'MultiplayerLobby'"
         :room="activeRoom"
         @open-select-map="isOpenSelectMap = true"
+        @send-message="sendMessage"
       />
 
       <div
@@ -122,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
@@ -138,9 +139,12 @@ import CreateLobbyModal from '@/components/modals/CreateLobbyModal.vue'
 import { globalState } from '@/stores/global'
 import SelectMap from '@/components/Drawer/SelectMap.vue'
 import InvitePlayerModal from '@/components/modals/InvitePlayerModal.vue'
-import type { RoomUnion, CreateLobbySettings, BeatmapEntry, UserJoinEvent, RoomError, ActiveRoomMessageEvent, InactiveRoomUnreadUpdateEvent, ActiveRoomLobbyStateUpdateEvent, RoomsListUpdatedEvent, RoomsMap } from '@/types'
+import { useIrcRooms } from '@/composables/useIrcRooms'
+import type { CreateLobbySettings, BeatmapEntry, UserJoinEvent } from '@/types'
 
 const router = useRouter()
+
+const { roomsMap, activeRoom, roomsList, selectRoom } = useIrcRooms()
 
 const isOpenSelectMap = ref(false)
 const leftDrawerOpen = ref(false)
@@ -150,157 +154,48 @@ const mappoolsOpen = ref(false)
 const createLobbyOpen = ref(false)
 const settingsForNewLobby = ref<CreateLobbySettings | null>(null)
 
-const roomsMap = ref<RoomsMap>(new Map())
-const activeRoom = ref<RoomUnion | null>(null)
-
-const roomsList = computed(() => Array.from(roomsMap.value.values()))
-
-let unlistenActiveRoomMessage: UnlistenFn | null = null
-let unlistenInactiveRoomUnread: UnlistenFn | null = null
-let unlistenActiveRoomLobbyState: UnlistenFn | null = null
-let unlistenRoomsListUpdated: UnlistenFn | null = null
-let unlistenChannelError: UnlistenFn | null = null
 let unlistenUserJoin: UnlistenFn | null = null
 
 onMounted(async () => {
-  try {
-    await loadRoomsList()
+  unlistenUserJoin = await listen<UserJoinEvent>('user-joined', async ({ payload: joinEvent }) => {
+    if (joinEvent.username.toLowerCase() !== globalState.user?.toLowerCase()) return
 
-    unlistenActiveRoomMessage = await listen<ActiveRoomMessageEvent>('active-room-message', (event) => {
-      const { message } = event.payload
+    leftDrawerOpen.value = false
 
-      if (activeRoom.value) {
-        activeRoom.value.messages.push(message)
+    if (!joinEvent.channel.startsWith('#mp_')) return
+
+    if (settingsForNewLobby.value) {
+      try {
+        await invoke('send_message_to_room', {
+          roomId: joinEvent.channel,
+          message: `!mp set ${settingsForNewLobby.value.teamMode} ${settingsForNewLobby.value.scoreMode} 16`,
+        })
+        settingsForNewLobby.value = null
       }
-    })
-
-    unlistenInactiveRoomUnread = await listen<InactiveRoomUnreadUpdateEvent>('inactive-room-unread-updated', (event) => {
-      const { roomId, unreadCount } = event.payload
-
-      const room = roomsMap.value.get(roomId)
-      if (room) {
-        room.unreadCount = unreadCount
+      catch (error) {
+        console.error('Failed to set lobby settings:', error)
       }
-    })
+    }
 
-    unlistenActiveRoomLobbyState = await listen<ActiveRoomLobbyStateUpdateEvent>('active-room-lobby-state-updated', (event) => {
-      const { lobbyState } = event.payload
-
-      if (activeRoom.value && activeRoom.value.roomType === 'MultiplayerLobby') {
-        activeRoom.value.lobbyState = lobbyState
-      }
-    })
-
-    unlistenRoomsListUpdated = await listen<RoomsListUpdatedEvent>('rooms-list-updated', async (event) => {
-      await handleRoomsListResponse(event.payload)
-    })
-
-    unlistenChannelError = await listen<RoomError>('room-error', (event) => {
-      const errorData = event.payload
-      console.error('Room error:', errorData)
-
-      if (activeRoom.value?.id === errorData.channel) {
-        activeRoom.value = null
-      }
-
-      roomsMap.value.delete(errorData.channel)
-
-      alert(`Failed to join ${errorData.channel}: ${errorData.error}`)
-    })
-
-    unlistenUserJoin = await listen<UserJoinEvent>('user-joined', async (event) => {
-      const joinEvent = event.payload
-      if (joinEvent.username.toLowerCase() === globalState.user?.toLowerCase()) {
-        leftDrawerOpen.value = false
-
-        if (joinEvent.channel.startsWith('#mp_')) {
-          if (settingsForNewLobby.value) {
-            try {
-              await invoke('send_message_to_room', {
-                roomId: joinEvent.channel,
-                message: `!mp set ${settingsForNewLobby.value.teamMode} ${settingsForNewLobby.value.scoreMode} 16`,
-              })
-              settingsForNewLobby.value = null
-            }
-            catch (error) {
-              console.error('Failed to set lobby settings:', error)
-            }
-          }
-
-          try {
-            await invoke('send_message_to_room', {
-              roomId: joinEvent.channel,
-              message: '!mp settings',
-            })
-          }
-          catch (error) {
-            console.error('Failed to send !mp settings:', error)
-          }
-        }
-      }
-    })
-  }
-  catch (error) {
-    console.error('Failed to initialize chat:', error)
-    router.replace('/login')
-  }
+    try {
+      await invoke('send_message_to_room', {
+        roomId: joinEvent.channel,
+        message: '!mp settings',
+      })
+    }
+    catch (error) {
+      console.error('Failed to send !mp settings:', error)
+    }
+  })
 })
 
 onUnmounted(() => {
-  if (unlistenActiveRoomMessage) unlistenActiveRoomMessage()
-  if (unlistenInactiveRoomUnread) unlistenInactiveRoomUnread()
-  if (unlistenActiveRoomLobbyState) unlistenActiveRoomLobbyState()
-  if (unlistenRoomsListUpdated) unlistenRoomsListUpdated()
-  if (unlistenChannelError) unlistenChannelError()
   if (unlistenUserJoin) unlistenUserJoin()
 })
 
-const handleRoomsListResponse = async (response: RoomsListUpdatedEvent) => {
-  roomsMap.value = new Map(response.rooms.map(room => [room.id, room]))
-
-  if (!response.activeRoomId) {
-    activeRoom.value = null
-    return
-  }
-
-  activeRoom.value = await getRoomState(response.activeRoomId)
-}
-
-const getRoomState = async (roomId: string): Promise<RoomUnion | null> => {
-  try {
-    const room = await invoke<RoomUnion | null>('get_room_state', { roomId })
-    return room
-  }
-  catch (error) {
-    console.error('Failed to get room state:', error)
-    return null
-  }
-}
-
-const loadRoomsList = async () => {
-  try {
-    const response = await invoke<RoomsListUpdatedEvent>('get_rooms_list')
-    await handleRoomsListResponse(response)
-  }
-  catch (error) {
-    console.error('Failed to load rooms:', error)
-  }
-}
-
-const selectRoom = async (roomId: string) => {
-  if (activeRoom.value?.id === roomId) {
-    return
-  }
-
-  try {
-    const room = await invoke<RoomUnion>('set_active_room', { roomId })
-    activeRoom.value = room
-    leftDrawerOpen.value = false
-    roomsMap.value.get(roomId)!.unreadCount = 0
-  }
-  catch (error) {
-    console.error('Failed to select room:', error)
-  }
+const handleSelectRoom = async (roomId: string) => {
+  await selectRoom(roomId)
+  leftDrawerOpen.value = false
 }
 
 const refreshLobbyState = async () => {

@@ -52,32 +52,12 @@ class DatabaseService {
       [username],
     )
 
-    if (result) {
-      const expiresAt = new Date(result.expires_at)
-      const isExpired = expiresAt <= new Date()
-      if (!isExpired) return true
+    if (!result) return false
 
-      const res = await fetch(`https://osureffer.vilaz.dev/refresh-token?refresh_token=${result.refresh_token}`, {
-        method: 'POST',
-      })
-      if (!res.ok) {
-        await this.db.execute('DELETE FROM oauth_tokens WHERE irc_username = ?', [username])
-        console.error('Failed to refresh token:', res.status, res.statusText)
-        return false
-      }
-      const resJson = await res.json()
-      try {
-        await this.saveOAuthToken(username, resJson.access_token, resJson.refresh_token, resJson.expires_in)
-        return true
-      }
-      catch (error) {
-        await this.db.execute('DELETE FROM oauth_tokens WHERE irc_username = ?', [username])
-        console.error('Failed to save refreshed token:', error)
-        return false
-      }
-    }
+    const isExpired = new Date(result.expires_at) <= new Date()
+    if (!isExpired) return true
 
-    return false
+    return (await this.refreshToken(username, result.refresh_token)) !== null
   }
 
   async deleteCredentials(): Promise<void> {
@@ -164,33 +144,36 @@ class DatabaseService {
       [username],
     )
 
-    if (result) {
-      const expiresAt = new Date(result.expires_at)
-      const isExpired = expiresAt <= new Date()
+    if (!result) return null
 
-      if (!isExpired) return result.access_token
+    const isExpired = new Date(result.expires_at) <= new Date()
+    if (!isExpired) return result.access_token
 
-      const res = await fetch(`https://osureffer.vilaz.dev/refresh-token?refresh_token=${result.refresh_token}`, {
-        method: 'POST',
-      })
-      if (!res.ok) {
-        await this.db.execute('DELETE FROM oauth_tokens WHERE irc_username = ?', [username])
-        console.error('Failed to refresh token:', res.status, res.statusText)
-        return null
-      }
-      const resJson = await res.json()
-      try {
-        await this.saveOAuthToken(username, resJson.access_token, resJson.refresh_token, resJson.expires_in)
-        return resJson.access_token
-      }
-      catch (error) {
-        await this.db.execute('DELETE FROM oauth_tokens WHERE irc_username = ?', [username])
-        console.error('Failed to save refreshed token:', error)
-        return null
-      }
+    return this.refreshToken(username, result.refresh_token)
+  }
+
+  private async refreshToken(username: string, oldRefreshToken: string): Promise<string | null> {
+    const res = await fetch(
+      `https://osureffer.vilaz.dev/refresh-token?refresh_token=${oldRefreshToken}`,
+      { method: 'POST' },
+    )
+
+    if (!res.ok) {
+      await this.db!.execute('DELETE FROM oauth_tokens WHERE irc_username = ?', [username])
+      console.error('Failed to refresh token:', res.status, res.statusText)
+      return null
     }
 
-    return null
+    const resJson = await res.json()
+    try {
+      await this.saveOAuthToken(username, resJson.access_token, resJson.refresh_token, resJson.expires_in)
+      return resJson.access_token
+    }
+    catch (error) {
+      await this.db!.execute('DELETE FROM oauth_tokens WHERE irc_username = ?', [username])
+      console.error('Failed to save refreshed token:', error)
+      return null
+    }
   }
 
   async saveOAuthToken(

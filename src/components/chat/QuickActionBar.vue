@@ -25,7 +25,7 @@
           <button
             :disabled="room.lobbyState.matchStatus === 'active' || !currentMap"
             class="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors"
-            @click="handleQuickAction('start')"
+            @click="emit('sendMessage', '!mp start 10')"
           >
             Start
           </button>
@@ -87,7 +87,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
 import Mod from '../Mod.vue'
 import type { MultiplayerRoom } from '@/types'
 
@@ -97,39 +96,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   openSelectMap: []
+  sendMessage: [message: string]
 }>()
 
 const currentMap = computed(() => props.room.lobbyState.currentMap || null)
 
 const matchStatusText = computed(() => {
   switch (props.room.lobbyState.matchStatus) {
-    case 'active':
-      return 'In progress'
-    case 'starting':
-      return 'Starting...'
-    case 'idle':
-      return 'Idle'
-    case 'ready':
-      return 'Ready'
-    default:
-      return 'Idle'
+    case 'active': return 'In progress'
+    case 'starting': return 'Starting...'
+    case 'ready': return 'Ready'
+    default: return 'Idle'
   }
 })
-
-const handleQuickAction = (action: string) => {
-  switch (action) {
-    case 'start':
-      invoke('send_message_to_room', {
-        roomId: props.room.id,
-        message: '!mp start 10',
-      })
-      break
-    case 'abort':
-      invoke('send_message_to_room', {
-        roomId: props.room.id,
-        message: '!mp abort',
-      })
-      break
-  }
-}
 </script>
