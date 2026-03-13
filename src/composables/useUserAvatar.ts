@@ -53,7 +53,8 @@ export function useUserAvatar(username: string) {
         console.error(`Failed to load avatar for ${username}:`, err)
       }
       return
-    } else {
+    }
+    else {
       pendingRequests.set(username, {
         promise,
         resolve: resolveRequest!,

@@ -64,6 +64,7 @@
         v-else
         :messages="activeRoom.messages"
         class="flex-1"
+        @click-username="selectedPlayerUsername = $event"
       />
 
       <MessageInput
@@ -111,6 +112,12 @@
       @invite="sendMessage(`!mp invite ${$event}`)"
     />
 
+    <PlayerModal
+      v-if="selectedPlayerUsername"
+      :username="selectedPlayerUsername"
+      @close="selectedPlayerUsername = null"
+    />
+
     <!-- Mobile Overlay -->
     <div
       class="fixed transition-colors inset-0 bg-black/80 z-30 lg:hidden"
@@ -136,6 +143,7 @@ import ChatMessages from '@/components/chat/ChatMessages.vue'
 import MessageInput from '@/components/chat/MessageInput.vue'
 import SettingsModal from '@/components/modals/SettingsModal.vue'
 import CreateLobbyModal from '@/components/modals/CreateLobbyModal.vue'
+import PlayerModal from '@/components/modals/PlayerModal.vue'
 import { globalState } from '@/stores/global'
 import SelectMap from '@/components/Drawer/SelectMap.vue'
 import InvitePlayerModal from '@/components/modals/InvitePlayerModal.vue'
@@ -153,6 +161,7 @@ const settingsOpen = ref(false)
 const mappoolsOpen = ref(false)
 const createLobbyOpen = ref(false)
 const settingsForNewLobby = ref<CreateLobbySettings | null>(null)
+const selectedPlayerUsername = ref<string | null>(null)
 
 let unlistenUserJoin: UnlistenFn | null = null
 

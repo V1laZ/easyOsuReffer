@@ -38,6 +38,7 @@
         v-for="(message, index) in messages"
         :key="`${message.timestamp}${index}`"
         :message="message"
+        @click-username="emit('clickUsername', $event)"
       />
     </div>
 
@@ -77,6 +78,10 @@ import type { IrcMessage } from '@/types'
 defineProps<{
   messages: IrcMessage[]
   activeChannel?: string | null
+}>()
+
+const emit = defineEmits<{
+  clickUsername: [username: string]
 }>()
 
 const messagesContainer = ref<HTMLElement | null>(null)

@@ -10,3 +10,14 @@ export type UpdateInfo = {
   date: string
   body: string
 }
+
+export type UserData = {
+  id: number
+  username: string
+  avatar_url: string
+  country: string
+  pp: number
+  rank: number | null
+  country_rank: number | null
+  accuracy: number
+}

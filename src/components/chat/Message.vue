@@ -3,12 +3,16 @@
     <div class="flex items-start space-x-3">
       <!-- Avatar -->
       <div class="flex-shrink-0 mt-1">
-        <div
-          class="size-10 rounded-full flex items-center justify-center overflow-hidden"
+        <button
+          class="size-10 rounded-full flex items-center justify-center overflow-hidden focus:outline-none"
           :class="{
             'bg-gray-600': message.username === 'BanchoBot',
-            'bg-gradient-to-br from-pink-500 to-purple-600': message.username !== 'BanchoBot' && !avatarUrl
+            'bg-gradient-to-br from-pink-500 to-purple-600': message.username !== 'BanchoBot' && !avatarUrl,
+            'cursor-pointer': message.username !== 'BanchoBot',
+            'cursor-default': message.username === 'BanchoBot',
           }"
+          :disabled="message.username === 'BanchoBot'"
+          @click="handleUsernameClick"
         >
           <img
             v-if="avatarUrl"
@@ -36,21 +40,19 @@
               {{ message.username.charAt(0).toUpperCase() }}
             </template>
           </span>
-        </div>
+        </button>
       </div>
 
       <!-- Message Content -->
       <div class="flex-1 min-w-0">
         <!-- Header -->
         <div class="flex items-baseline space-x-2">
-          <a
+          <button
             class="font-semibold text-white hover:underline cursor-pointer"
-            :href="`https://osu.ppy.sh/users/${message.username}`"
-            target="_blank"
-            rel="noopener noreferrer"
+            @click="handleUsernameClick"
           >
             {{ message.username }}
-          </a>
+          </button>
 
           <span class="text-xs text-gray-500">
             {{ formattedTime }}
@@ -72,11 +74,16 @@
 <script setup lang="ts">
 import { IrcMessage } from '@/types'
 import { computed, onMounted } from 'vue'
+import { openUrl } from '@tauri-apps/plugin-opener'
 import { useUserAvatar } from '@/composables/useUserAvatar'
 import { globalState } from '@/stores/global'
 
 const props = defineProps<{
   message: IrcMessage
+}>()
+
+const emit = defineEmits<{
+  clickUsername: [username: string]
 }>()
 
 const { avatarUrl, fetchAvatar } = useUserAvatar(props.message.username)
@@ -89,12 +96,20 @@ const formattedTime = computed(() => {
 })
 
 const formattedMessage = computed(() => {
-  // Make URLs clickable
   return props.message.message.replace(
     /(https?:\/\/[^\s]+)/g,
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline">$1</a>',
   )
 })
+
+const handleUsernameClick = () => {
+  if (props.message.username === 'BanchoBot') return
+  if (!globalState.isConnectedOsu) {
+    openUrl(`https://osu.ppy.sh/users/${encodeURIComponent(props.message.username)}`)
+    return
+  }
+  emit('clickUsername', props.message.username)
+}
 
 onMounted(() => {
   if (!globalState.isConnectedOsu) return
