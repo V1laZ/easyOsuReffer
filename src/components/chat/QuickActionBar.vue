@@ -59,9 +59,9 @@
             <div class="relative">
               <button
                 :class="timerIsActive
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'bg-gray-500/20 hover:bg-gray-500/30 text-white border border-gray-500/40'"
-                class="p-1.5 rounded-lg transition-colors"
+                  ? 'bg-red-600 hover:bg-red-700 hover:border-red-700 border-red-600 text-white'
+                  : 'bg-gray-500/20 hover:bg-gray-500/30 text-white border-gray-500/40'"
+                class="p-1.5 border rounded-lg transition-colors"
                 :title="timerIsActive ? 'Abort countdown' : 'Start countdown timer'"
                 @click="handleTimerButtonClick"
               >
