@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col h-[100dvh] overflow-hidden">
-    <TitleBar />
+    <TitleBar v-if="currentPlatform !== 'ios' && currentPlatform !== 'android'" />
     <main class="flex-grow flex flex-col overflow-hidden">
       <div
         v-if="loading"
@@ -85,8 +85,10 @@ import Spinner from './components/UI/Spinner.vue'
 import TitleBar from './components/UI/TitleBar.vue'
 import { modalsState } from './stores/global'
 import { UpdateInfo, UserCredentials } from '@/types'
+import { platform } from '@tauri-apps/plugin-os'
 
 const router = useRouter()
+const currentPlatform = platform()
 
 const loading = ref(true)
 const disconnected = ref(false)

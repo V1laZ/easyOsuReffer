@@ -69,10 +69,9 @@ impl BanchoBotParser {
         }
 
         // Room name pattern
-        if let Some(captures) = static_regex!(
-            r"^Room name: (.+), History: https://osu\.ppy\.sh/mp/(\d+)$"
-        )
-        .captures(text)
+        if let Some(captures) =
+            static_regex!(r"^Room name: (.+), History: https://osu\.ppy\.sh/mp/(\d+)$")
+                .captures(text)
         {
             let room_name = captures.get(1).unwrap().as_str();
             Self::update_lobby_settings(
@@ -128,18 +127,14 @@ impl BanchoBotParser {
         }
 
         // Current beatmap (from !mp settings)
-        if let Some(captures) = static_regex!(
-            r"^Beatmap: https://osu\.ppy\.sh/b/(\d+) (.+) \[(.+)\]$"
-        )
-        .captures(text)
+        if let Some(captures) =
+            static_regex!(r"^Beatmap: https://osu\.ppy\.sh/b/(\d+) (.+) \[(.+)\]$").captures(text)
         {
             if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
                 let full_title = captures.get(2).unwrap().as_str();
                 let difficulty = captures.get(3).unwrap().as_str();
 
-                if let Some(title_captures) =
-                    static_regex!(r"^(.+) - (.+)$").captures(full_title)
-                {
+                if let Some(title_captures) = static_regex!(r"^(.+) - (.+)$").captures(full_title) {
                     let artist = title_captures.get(1).unwrap().as_str();
                     let title = title_captures.get(2).unwrap().as_str();
 
@@ -160,10 +155,9 @@ impl BanchoBotParser {
         }
 
         // Changed beatmap to (from !mp map {map_id})
-        if let Some(captures) = static_regex!(
-            r"^Changed beatmap to https://osu\.ppy\.sh/b/(\d+) (.+) - (.+)$"
-        )
-        .captures(text)
+        if let Some(captures) =
+            static_regex!(r"^Changed beatmap to https://osu\.ppy\.sh/b/(\d+) (.+) - (.+)$")
+                .captures(text)
         {
             if let Ok(beatmap_id) = captures.get(1).unwrap().as_str().parse::<u64>() {
                 Self::update_current_map(
@@ -247,8 +241,7 @@ impl BanchoBotParser {
 
         // Player joined
         if let Some(captures) =
-            static_regex!(r"^(.+) joined in slot (\d+)( for team (red|blue))?\.?$")
-                .captures(text)
+            static_regex!(r"^(.+) joined in slot (\d+)( for team (red|blue))?\.?$").captures(text)
         {
             if let Ok(slot_id) = captures.get(2).unwrap().as_str().parse::<u8>() {
                 let team = captures.get(4).map(|m| m.as_str().to_string());
@@ -298,9 +291,7 @@ impl BanchoBotParser {
         }
 
         // Host changed
-        if let Some(captures) =
-            static_regex!(r"^Changed match host to (.+)$").captures(text)
-        {
+        if let Some(captures) = static_regex!(r"^Changed match host to (.+)$").captures(text) {
             Self::update_host(
                 channel,
                 captures.get(1).unwrap().as_str(),
@@ -337,9 +328,7 @@ impl BanchoBotParser {
         }
 
         // Room name updated
-        if let Some(captures) =
-            static_regex!(r#"^Room name updated to "(.+)"$"#).captures(text)
-        {
+        if let Some(captures) = static_regex!(r#"^Room name updated to "(.+)"$"#).captures(text) {
             let room_name = captures.get(1).unwrap().as_str().to_string();
             Self::update_lobby_settings(
                 channel,
@@ -353,9 +342,7 @@ impl BanchoBotParser {
         }
 
         // Mods changed (freemod disabled)
-        if let Some(captures) =
-            static_regex!(r"^Enabled (.+), disabled FreeMod$").captures(text)
-        {
+        if let Some(captures) = static_regex!(r"^Enabled (.+), disabled FreeMod$").captures(text) {
             let mods = captures
                 .get(1)
                 .unwrap()
@@ -382,12 +369,7 @@ impl BanchoBotParser {
                             }
                         }
                     }
-                    Self::emit_lobby_update(
-                        channel,
-                        lobby,
-                        active_room_id.as_deref(),
-                        app_handle,
-                    );
+                    Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
                 }
             }
             return true;
@@ -404,9 +386,7 @@ impl BanchoBotParser {
         }
 
         // Countdown with only seconds
-        if let Some(captures) =
-            static_regex!(r"^Countdown ends in (\d+) seconds$").captures(text)
-        {
+        if let Some(captures) = static_regex!(r"^Countdown ends in (\d+) seconds$").captures(text) {
             if let Ok(duration) = captures.get(1).unwrap().as_str().parse::<u32>() {
                 Self::update_timer(channel, Some(duration), state, app_handle);
                 return true;

@@ -245,15 +245,21 @@ fn handle_incoming_message(
 
                 // Emit event based on room state
                 if is_active {
-                    let _ = app_handle.emit("active-room-message", serde_json::json!({
-                        "roomId": room_id,
-                        "message": irc_message
-                    }));
+                    let _ = app_handle.emit(
+                        "active-room-message",
+                        serde_json::json!({
+                            "roomId": room_id,
+                            "message": irc_message
+                        }),
+                    );
                 } else {
-                    let _ = app_handle.emit("inactive-room-unread-updated", serde_json::json!({
-                        "roomId": room_id,
-                        "unreadCount": unread_count
-                    }));
+                    let _ = app_handle.emit(
+                        "inactive-room-unread-updated",
+                        serde_json::json!({
+                            "roomId": room_id,
+                            "unreadCount": unread_count
+                        }),
+                    );
                 }
             }
         }
@@ -313,7 +319,13 @@ fn handle_incoming_message(
 
                 let should_emit_list = {
                     let mut irc_state = state.lock().unwrap();
-                    if nick.to_lowercase() == irc_state.current_username.clone().unwrap_or_default().to_lowercase() {
+                    if nick.to_lowercase()
+                        == irc_state
+                            .current_username
+                            .clone()
+                            .unwrap_or_default()
+                            .to_lowercase()
+                    {
                         irc_state.rooms.remove(&channel);
                         // Only clear active_room_id if the removed room was active
                         if irc_state.active_room_id.as_deref() == Some(channel.as_str()) {
@@ -486,7 +498,7 @@ fn handle_incoming_message(
                 Response::ERR_PASSWDMISMATCH => {
                     println!("Password mismatch error from server");
 
-                    if let Err(e) = app_handle.emit( "is-authenticated",false) {
+                    if let Err(e) = app_handle.emit("is-authenticated", false) {
                         println!("Failed to emit authentication error: {}", e);
                     }
                 }

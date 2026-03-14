@@ -85,7 +85,10 @@ impl Room {
     pub fn get_messages_page(&self, offset: usize, limit: usize) -> MessagesPage {
         let total = self.messages.len();
         if offset >= total {
-            return MessagesPage { messages: vec![], has_more: false };
+            return MessagesPage {
+                messages: vec![],
+                has_more: false,
+            };
         }
         let end = total - offset;
         let start = end.saturating_sub(limit);
