@@ -2,7 +2,10 @@
   <AppModal
     v-model="modelValue"
   >
-    <div class="bg-gray-800 border border-gray-700 shadow-2xl rounded-2xl overflow-hidden w-full max-w-sm mx-auto">
+    <div
+      class="bg-gray-800 border border-gray-700 shadow-2xl rounded-2xl overflow-hidden w-full max-w-sm mx-auto"
+      @click.stop
+    >
       <!-- Loading -->
       <div
         v-if="loading"
@@ -16,7 +19,7 @@
         <div class="relative bg-gray-900 px-6 pt-6 pb-4">
           <CloseButton
             class="absolute top-3 right-3"
-            @click="emit('close')"
+            @click="modelValue = false"
           />
 
           <div class="flex items-center space-x-4">
@@ -137,10 +140,6 @@ import Loading from '@/components/UI/Loading.vue'
 
 const props = defineProps<{
   username: string
-}>()
-
-const emit = defineEmits<{
-  close: []
 }>()
 
 const modelValue = defineModel<boolean>({ default: false })

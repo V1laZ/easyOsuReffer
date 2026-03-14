@@ -1,6 +1,9 @@
 <template>
   <AppModal v-model="open">
-    <div class="bg-gray-800 rounded-lg w-full max-w-md mx-auto">
+    <div
+      class="bg-gray-800 rounded-lg max-w-md mx-auto"
+      @click.stop
+    >
       <!-- Header -->
       <div class="flex items-center justify-between p-4 border-b border-gray-700">
         <h2 class="text-lg font-semibold text-white">

@@ -25,7 +25,7 @@
           <div
             class="relative z-10 w-full"
             :inert="!modelValue || undefined"
-            @click.stop
+            @click="close"
           >
             <slot />
           </div>

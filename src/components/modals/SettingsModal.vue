@@ -1,7 +1,7 @@
 <template>
   <AppModal v-model="open">
     <div
-      class="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-700 shadow-2xl mx-auto"
+      class="bg-gray-800 rounded-2xl p-6 w-full mx-auto max-w-md border border-gray-700 shadow-2xl"
       @click.stop
     >
       <!-- Header -->

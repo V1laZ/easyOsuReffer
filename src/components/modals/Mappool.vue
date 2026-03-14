@@ -1,7 +1,8 @@
 <template>
   <AppModal v-model="isOpen">
     <div
-      class="bg-gray-900 flex flex-col rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg md:max-w-4xl max-h-[90vh] min-h-[70vh] border border-gray-700 shadow-2xl overflow-hidden mx-auto"
+      class="bg-gray-900 mx-auto flex flex-col rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg md:max-w-4xl max-h-[90vh] min-h-[70vh] border border-gray-700 shadow-2xl overflow-hidden"
+      @click.stop
     >
       <!-- Header -->
       <div class="flex items-center justify-between p-4 md:p-6 border-b border-gray-700">
@@ -38,7 +39,7 @@
           <!-- Create Button -->
           <div
             v-if="!showCreateForm"
-            class="p-4 border-t border-gray-700 absolute z-10 bottom-0 left-0 w-full"
+            class="p-4 border-t border-gray-700 z-10 left-0 w-full"
           >
             <button
               class="w-full bg-pink-600 hover:bg-pink-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"

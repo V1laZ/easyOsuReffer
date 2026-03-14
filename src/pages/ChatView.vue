@@ -66,7 +66,7 @@
         :active-channel-id="activeRoom.id"
         :has-more-messages="activeRoom.hasMoreMessages"
         class="flex-grow"
-        @click-username="selectedPlayerUsername = $event"
+        @click-username="handleClickUsername"
         @load-more="loadMoreMessages"
       />
 
@@ -112,9 +112,9 @@
     />
 
     <PlayerModal
-      v-if="selectedPlayerUsername"
+      v-if="playerModalOpen && selectedPlayerUsername"
+      v-model="playerModalOpen"
       :username="selectedPlayerUsername"
-      @close="selectedPlayerUsername = null"
     />
 
     <!-- Mobile Overlay -->
@@ -160,6 +160,7 @@ const settingsOpen = ref(false)
 const mappoolsOpen = ref(false)
 const createLobbyOpen = ref(false)
 const invitePlayerOpen = ref(false)
+const playerModalOpen = ref(false)
 const settingsForNewLobby = ref<CreateLobbySettings | null>(null)
 const selectedPlayerUsername = ref<string | null>(null)
 
@@ -372,5 +373,10 @@ const handleCreateLobby = async (settings: CreateLobbySettings) => {
     console.error('Failed to create lobby:', error)
     alert('Failed to create lobby. Make sure you are connected and try again.')
   }
+}
+
+const handleClickUsername = (username: string) => {
+  selectedPlayerUsername.value = username
+  playerModalOpen.value = true
 }
 </script>
