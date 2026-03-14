@@ -63,6 +63,7 @@
       <ChatMessages
         v-else
         :messages="activeRoom.messages"
+        :active-channel-id="activeRoom.id"
         class="flex-grow"
         @click-username="selectedPlayerUsername = $event"
       />

@@ -71,13 +71,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUpdated, nextTick, onUnmounted } from 'vue'
+import { ref, onMounted, onUpdated, nextTick, onUnmounted, watch } from 'vue'
 import Message from './Message.vue'
 import type { IrcMessage } from '@/types'
 
-defineProps<{
+const props = defineProps<{
   messages: IrcMessage[]
-  activeChannel?: string | null
+  activeChannelId: string
 }>()
 
 const emit = defineEmits<{
@@ -103,6 +103,8 @@ const checkIfAtBottom = () => {
 onMounted(() => {
   if (messagesContainer.value) {
     messagesContainer.value.addEventListener('scroll', checkIfAtBottom)
+    scrollToBottom()
+    checkIfAtBottom()
   }
 })
 
@@ -119,4 +121,9 @@ onUpdated(() => {
     }
   })
 })
+
+watch(() => props.activeChannelId, () => {
+  scrollToBottom()
+  checkIfAtBottom()
+}, { flush: 'post', immediate: true })
 </script>
