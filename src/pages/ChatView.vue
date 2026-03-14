@@ -1,5 +1,5 @@
 <template>
-  <div class="h-[100dvh] bg-gray-900 text-white flex overflow-hidden">
+  <div class="flex flex-grow bg-gray-900 text-white overflow-hidden">
     <!-- Left Drawer - Channels -->
     <RoomsDrawer
       :is-open="leftDrawerOpen"
@@ -14,7 +14,7 @@
     />
 
     <!-- Main Chat Area -->
-    <div class="relative flex-1 flex flex-col min-w-0">
+    <div class="relative flex-grow flex flex-col min-w-0">
       <SelectMap
         v-if="activeRoom && activeRoom.roomType === 'MultiplayerLobby'"
         :is-open="isOpenSelectMap"
@@ -43,7 +43,7 @@
 
       <div
         v-if="!activeRoom"
-        class="text-center mt-2 flex-1 py-4 text-gray-500"
+        class="text-center mt-2 flex-grow py-4 text-gray-500"
       >
         <svg
           class="size-12 mx-auto mb-2 text-gray-600"
@@ -63,7 +63,7 @@
       <ChatMessages
         v-else
         :messages="activeRoom.messages"
-        class="flex-1"
+        class="flex-grow"
         @click-username="selectedPlayerUsername = $event"
       />
 

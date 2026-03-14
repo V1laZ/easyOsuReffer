@@ -1,10 +1,10 @@
 <template>
   <div class="flex flex-col h-[100dvh] overflow-hidden">
     <TitleBar />
-    <main class="flex-1 overflow-hidden">
+    <main class="flex-grow flex flex-col overflow-hidden">
       <div
         v-if="loading"
-        class="h-full bg-gray-900 flex items-center justify-center"
+        class="flex-grow bg-gray-900 flex items-center justify-center"
       >
         <div class="text-center">
           <Spinner class="w-12 h-12 mx-auto text-pink-500 mb-4" />
@@ -26,7 +26,7 @@
 
       <div
         v-else-if="disconnected"
-        class="h-full bg-gray-900 flex items-center justify-center"
+        class="flex-grow bg-gray-900 flex items-center justify-center"
       >
         <div class="text-center">
           <h2 class="text-xl text-white mb-2">
@@ -164,10 +164,6 @@ function handleOfflineState() {
   disconnected.value = true
 }
 
-function setRealVh() {
-  document.documentElement.style.setProperty('--real-vh', `${window.innerHeight * 0.01}px`)
-}
-
 async function checkForUpdates() {
   try {
     const result = await invoke<UpdateInfo>('check_for_updates')
@@ -186,9 +182,6 @@ onMounted(async () => {
   unlistenIsAuthenticated = await listen<boolean>('is-authenticated', ({ payload }) => {
     handleIsAuthenticated(payload)
   })
-
-  window.addEventListener('resize', setRealVh)
-  setRealVh()
 
   loading.value = true
   try {
@@ -219,7 +212,6 @@ onMounted(async () => {
 onUnmounted(() => {
   if (unlistenDisconnect) unlistenDisconnect()
   if (unlistenIsAuthenticated) unlistenIsAuthenticated()
-  window.removeEventListener('resize', setRealVh)
 })
 </script>
 
