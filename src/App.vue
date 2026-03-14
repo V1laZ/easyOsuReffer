@@ -1,6 +1,7 @@
 <template>
-  <div>
-    <main class="h-[100dvh] overflow-hidden">
+  <div class="flex flex-col h-[100dvh] overflow-hidden">
+    <TitleBar />
+    <main class="flex-1 overflow-hidden">
       <div
         v-if="loading"
         class="h-full bg-gray-900 flex items-center justify-center"
@@ -81,6 +82,7 @@ import { type UnlistenFn, listen } from '@tauri-apps/api/event'
 import OAuthCallback from './components/modals/OAuthCallback.vue'
 import UpdateToast from './components/UI/UpdateToast.vue'
 import Spinner from './components/UI/Spinner.vue'
+import TitleBar from './components/UI/TitleBar.vue'
 import { modalsState } from './stores/global'
 import { UpdateInfo, UserCredentials } from '@/types'
 
@@ -222,10 +224,6 @@ onUnmounted(() => {
 </script>
 
 <style>
-main {
-  height: calc(var(--real-vh, 1vh) * 100);
-}
-
 ::-webkit-scrollbar {
   display: none;
 }
