@@ -403,12 +403,24 @@ impl BanchoBotParser {
             return true;
         }
 
-        // Countdown started
+        // Countdown with only seconds
         if let Some(captures) =
             static_regex!(r"^Countdown ends in (\d+) seconds$").captures(text)
         {
             if let Ok(duration) = captures.get(1).unwrap().as_str().parse::<u32>() {
                 Self::update_timer(channel, Some(duration), state, app_handle);
+                return true;
+            }
+        }
+
+        // Countdown with minutes and seconds
+        if let Some(captures) =
+            static_regex!(r"^Countdown ends in (\d+) minutes? and (\d+) seconds$").captures(text)
+        {
+            let mins = captures.get(1).unwrap().as_str().parse::<u32>();
+            let secs = captures.get(2).unwrap().as_str().parse::<u32>();
+            if let (Ok(m), Ok(s)) = (mins, secs) {
+                Self::update_timer(channel, Some(m * 60 + s), state, app_handle);
                 return true;
             }
         }
