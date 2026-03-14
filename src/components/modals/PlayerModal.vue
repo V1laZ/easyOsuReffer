@@ -1,13 +1,8 @@
 <template>
-  <dialog
-    id="playerModal"
-    ref="dialogRef"
-    class="bg-transparent backdrop:bg-black/80 p-0 rounded-2xl w-full max-w-sm border-0 outline-none overflow-hidden"
-    @click.self="dialogRef?.close()"
-    @close="emit('close')"
-    @cancel="dialogRef?.close()"
+  <AppModal
+    v-model="modelValue"
   >
-    <div class="bg-gray-800 border border-gray-700 shadow-2xl rounded-2xl overflow-hidden">
+    <div class="bg-gray-800 border border-gray-700 shadow-2xl rounded-2xl overflow-hidden w-full max-w-sm mx-auto">
       <!-- Loading -->
       <div
         v-if="loading"
@@ -21,7 +16,7 @@
         <div class="relative bg-gray-900 px-6 pt-6 pb-4">
           <CloseButton
             class="absolute top-3 right-3"
-            @click="dialogRef?.close()"
+            @click="emit('close')"
           />
 
           <div class="flex items-center space-x-4">
@@ -126,17 +121,17 @@
         </div>
       </template>
     </div>
-  </dialog>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, useTemplateRef } from 'vue'
+import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { openUrl } from '@tauri-apps/plugin-opener'
-import { useDialog } from '@/composables/useDialog'
 import { dbService } from '@/services/database'
 import { globalState } from '@/stores/global'
 import type { UserData } from '@/types'
+import AppModal from '@/components/UI/AppModal.vue'
 import CloseButton from '@/components/UI/CloseButton.vue'
 import Loading from '@/components/UI/Loading.vue'
 
@@ -148,8 +143,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const dialogRef = useTemplateRef('dialogRef')
-useDialog(dialogRef)
+const modelValue = defineModel<boolean>({ default: false })
 
 const loading = ref(true)
 const player = ref<UserData | null>(null)
@@ -162,8 +156,6 @@ const openInBrowser = () =>
   openUrl(`https://osu.ppy.sh/users/${encodeURIComponent(props.username)}`)
 
 onMounted(async () => {
-  dialogRef.value?.showModal()
-
   try {
     const accessToken = await dbService.getAccessToken(globalState.user ?? '')
     if (!accessToken) {

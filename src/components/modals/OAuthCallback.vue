@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex fixed top-0 left-0 z-50 w-full bg-black flex-col items-center justify-center h-screen space-y-4"
+    class="flex fixed top-8 left-0 z-100 w-full bg-black flex-col items-center justify-center h-screen space-y-4"
   >
     <CloseButton
       class="absolute top-3 right-3"

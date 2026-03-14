@@ -1,10 +1,7 @@
 <template>
-  <div
-    class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50"
-    @click="$emit('close')"
-  >
+  <AppModal v-model="open">
     <div
-      class="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-700 shadow-2xl"
+      class="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-700 shadow-2xl mx-auto"
       @click.stop
     >
       <!-- Header -->
@@ -12,7 +9,7 @@
         <h2 class="text-xl font-semibold text-white">
           Settings
         </h2>
-        <CloseButton @click="emit('close')" />
+        <CloseButton @click="open = false" />
       </div>
 
       <!-- Settings Content -->
@@ -105,7 +102,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
@@ -115,9 +112,11 @@ import { globalState } from '@/stores/global'
 import ConnectOsuBtn from '../ConnectOsuBtn.vue'
 import { dbService } from '@/services/database'
 import CloseButton from '../UI/CloseButton.vue'
+import AppModal from '../UI/AppModal.vue'
+
+const open = defineModel<boolean>({ required: true })
 
 const emit = defineEmits<{
-  close: []
   logout: []
 }>()
 

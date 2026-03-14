@@ -1,6 +1,6 @@
 <template>
   <div
-    class="fixed max-w-full inset-y-0 right-0 z-40 min-w-80 bg-gray-800 border-l border-gray-700 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col h-full"
+    class="fixed top-8 bottom-0 right-0 z-40 max-w-full min-w-80 bg-gray-800 border-l border-gray-700 transform transition-transform duration-300 ease-in-out lg:relative lg:top-auto lg:translate-x-0 flex flex-col"
     :class="isOpen ? 'translate-x-0' : 'translate-x-full'"
   >
     <!-- Header -->
@@ -18,7 +18,7 @@
         <button
           class="p-2 rounded-lg hover:bg-gray-700 transition-colors"
           title="Invite Player"
-          @click="invitePlayerDialog?.showModal()"
+          @click="emit('openInvitePlayer')"
         >
           <svg
             class="size-5"
@@ -48,7 +48,7 @@
           v-for="(slot, idx) in lobbyState.slots"
           :key="slot.id"
           :slot-info="slot"
-          @player-move="emit('move', { playerName: $event, to: idx + 1})"
+          @player-move="emit('move', { playerName: $event, to: idx + 1 })"
           @team-change="emit('teamChange', $event)"
           @host="emit('host', $event)"
         />
@@ -61,7 +61,6 @@
 import { computed } from 'vue'
 import PlayerSlot from './PlayerSlot.vue'
 import type { LobbyState, PlayerMoveEvent, PlayerTeamChangeEvent } from '@/types'
-import { useDialog } from '@/composables/useDialog'
 import CloseButton from '../../UI/CloseButton.vue'
 
 const props = defineProps<{
@@ -76,8 +75,6 @@ const emit = defineEmits<{
   host: [host: string | null]
   openInvitePlayer: []
 }>()
-
-const invitePlayerDialog = useDialog('invitePlayerDialog')
 
 const occupiedSlots = computed(() =>
   props.lobbyState.slots.filter(slot => slot.player !== null).length || 0,

@@ -6,7 +6,6 @@ import './assets/css/main.css'
 
 import LoginView from './pages/LoginView.vue'
 import ChatView from './pages/ChatView.vue'
-export const dialogRegistry = new Map<string, HTMLDialogElement>()
 export const avatarCache = new Map<string, string>()
 
 const routes = [

@@ -1,27 +1,7 @@
 <template>
-  <div
-    class="fixed inset-0 z-50 sm:flex items-center justify-center sm:p-4"
-    :class="{
-      'pointer-events-none sm:hidden': !isOpen,
-      'pointer-events-auto': isOpen,
-    }"
-    @click="emit('close')"
-  >
+  <AppModal v-model="isOpen">
     <div
-      class="fixed inset-0 transition-opacity bg-black/80"
-      :class="{
-        'sm:hidden opacity-0 pointer-events-none delay-150': !isOpen,
-        'opacity-100': isOpen,
-      }"
-      @click="emit('close')"
-    />
-    <div
-      class="bg-gray-900 flex flex-col z-10 transition-transform duration-500 ease-in-out rounded-2xl absolute sm:relative w-full max-w-lg md:max-w-4xl max-h-[90vh] min-h-[70vh] bottom-0 border border-gray-700 shadow-2xl overflow-hidden"
-      :class="{
-        'translate-y-full sm:translate-y-0': !isOpen,
-        'translate-y-0': isOpen,
-      }"
-      @click.stop
+      class="bg-gray-900 flex flex-col rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg md:max-w-4xl max-h-[90vh] min-h-[70vh] border border-gray-700 shadow-2xl overflow-hidden mx-auto"
     >
       <!-- Header -->
       <div class="flex items-center justify-between p-4 md:p-6 border-b border-gray-700">
@@ -33,7 +13,7 @@
             Manage your tournament mappools
           </p>
         </div>
-        <CloseButton @click="emit('close')" />
+        <CloseButton @click="isOpen = false" />
       </div>
 
       <!-- Content -->
@@ -187,7 +167,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
@@ -201,10 +181,7 @@ import BeatmapList from '../Mappool/Beatmap/List.vue'
 import ConnectOsuBtn from '../ConnectOsuBtn.vue'
 import { Mappool, BeatmapEntry } from '@/types'
 import CloseButton from '../UI/CloseButton.vue'
-
-const emit = defineEmits<{
-  close: []
-}>()
+import AppModal from '../UI/AppModal.vue'
 
 const isOpen = defineModel<boolean>({ default: false })
 

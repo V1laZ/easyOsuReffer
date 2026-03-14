@@ -90,28 +90,24 @@
         }
       }"
       @close="rightDrawerOpen = false"
+      @open-invite-player="invitePlayerOpen = true"
     />
 
     <SettingsModal
-      v-if="settingsOpen"
-      :current-user="globalState.user"
-      :is-connected="globalState.isConnected"
-      @close="settingsOpen = false"
+      v-model="settingsOpen"
       @logout="handleLogout"
     />
 
-    <MappoolModal
-      v-model="mappoolsOpen"
-      @close="mappoolsOpen = false"
-    />
+    <MappoolModal v-model="mappoolsOpen" />
 
     <CreateLobbyModal
       v-if="createLobbyOpen"
-      @close="createLobbyOpen = false"
+      v-model="createLobbyOpen"
       @create-lobby="handleCreateLobby"
     />
 
     <InvitePlayerModal
+      v-model="invitePlayerOpen"
       @invite="sendMessage(`!mp invite ${$event}`)"
     />
 
@@ -123,7 +119,7 @@
 
     <!-- Mobile Overlay -->
     <div
-      class="fixed transition-colors inset-0 bg-black/80 z-30 lg:hidden"
+      class="fixed transition-colors inset-x-0 top-8 bottom-0 bg-black/80 z-30 lg:hidden"
       :class="{
         'pointer-events-none bg-transparent': !leftDrawerOpen && !rightDrawerOpen
       }"
@@ -163,6 +159,7 @@ const rightDrawerOpen = ref(false)
 const settingsOpen = ref(false)
 const mappoolsOpen = ref(false)
 const createLobbyOpen = ref(false)
+const invitePlayerOpen = ref(false)
 const settingsForNewLobby = ref<CreateLobbySettings | null>(null)
 const selectedPlayerUsername = ref<string | null>(null)
 

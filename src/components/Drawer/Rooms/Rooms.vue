@@ -1,6 +1,6 @@
 <template>
   <div
-    class="fixed inset-y-0 left-0 z-40 w-80 bg-gray-800 border-r border-gray-700 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col"
+    class="fixed top-8 bottom-0 left-0 z-40 w-80 bg-gray-800 border-r border-gray-700 transform transition-transform duration-300 ease-in-out lg:relative lg:top-auto lg:translate-x-0 flex flex-col"
     :class="isOpen ? 'translate-x-0' : '-translate-x-full'"
   >
     <!-- Header -->
