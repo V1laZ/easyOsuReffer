@@ -47,6 +47,8 @@ export type LobbyState = {
   currentMappoolId: number | null
   matchStartTime: number | null
   mapDrainTime: number | null
+  timerStartTime: number | null
+  timerDuration: number | null
 }
 
 export type CreateLobbySettings = {

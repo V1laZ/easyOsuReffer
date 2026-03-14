@@ -147,6 +147,8 @@ pub struct LobbyState {
     pub current_mappool_id: Option<u64>,
     pub match_start_time: Option<u64>,
     pub map_drain_time: Option<u32>,
+    pub timer_start_time: Option<u64>,
+    pub timer_duration: Option<u32>,
 }
 
 impl LobbyState {
@@ -164,6 +166,8 @@ impl LobbyState {
             selected_mods: Vec::new(),
             match_start_time: None,
             map_drain_time: None,
+            timer_start_time: None,
+            timer_duration: None,
         }
     }
 }

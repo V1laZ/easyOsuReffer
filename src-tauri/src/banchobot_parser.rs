@@ -403,6 +403,22 @@ impl BanchoBotParser {
             return true;
         }
 
+        // Countdown started
+        if let Some(captures) =
+            static_regex!(r"^Countdown ends in (\d+) seconds$").captures(text)
+        {
+            if let Ok(duration) = captures.get(1).unwrap().as_str().parse::<u32>() {
+                Self::update_timer(channel, Some(duration), state, app_handle);
+                return true;
+            }
+        }
+
+        // Countdown finished or aborted
+        if text == "Countdown finished" || text == "Countdown aborted" {
+            Self::update_timer(channel, None, state, app_handle);
+            return true;
+        }
+
         false
     }
 
@@ -683,6 +699,38 @@ impl BanchoBotParser {
             if let Some(lobby) = &mut room.lobby_state {
                 lobby.selected_mods = mods;
                 lobby.freemod = freemod;
+                Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
+            }
+        }
+    }
+
+    /// Sets or clears the lobby countdown timer.
+    /// Pass `Some(duration_secs)` to start, `None` to clear.
+    fn update_timer(
+        channel: &str,
+        duration: Option<u32>,
+        state: &IrcState,
+        app_handle: &tauri::AppHandle,
+    ) {
+        let mut irc_state = state.lock().unwrap();
+        let active_room_id = irc_state.active_room_id.clone();
+        if let Some(room) = irc_state.rooms.get_mut(channel) {
+            if let Some(lobby) = &mut room.lobby_state {
+                match duration {
+                    Some(secs) => {
+                        lobby.timer_start_time = Some(
+                            SystemTime::now()
+                                .duration_since(UNIX_EPOCH)
+                                .unwrap_or_default()
+                                .as_secs(),
+                        );
+                        lobby.timer_duration = Some(secs);
+                    }
+                    None => {
+                        lobby.timer_start_time = None;
+                        lobby.timer_duration = None;
+                    }
+                }
                 Self::emit_lobby_update(channel, lobby, active_room_id.as_deref(), app_handle);
             }
         }

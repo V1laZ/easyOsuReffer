@@ -17,10 +17,16 @@
             {{ matchStatusText }}
           </span>
           <span
-            v-if="formattedTime"
+            v-if="formattedMatchTime"
             class="text-sm font-mono text-yellow-400"
           >
-            {{ formattedTime }}
+            {{ formattedMatchTime }}
+          </span>
+          <span
+            v-if="timerIsActive"
+            class="text-sm font-mono text-pink-400"
+          >
+            {{ formattedTimerTime }}
           </span>
         </div>
       </div>
@@ -50,6 +56,87 @@
             >
               Change Map
             </button>
+            <div class="relative">
+              <button
+                :class="timerIsActive
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-gray-500/20 hover:bg-gray-500/30 text-white border border-gray-500/40'"
+                class="p-1.5 rounded-lg transition-colors"
+                :title="timerIsActive ? 'Abort countdown' : 'Start countdown timer'"
+                @click="handleTimerButtonClick"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-4 h-4"
+                >
+                  <circle
+                    cx="12"
+                    cy="13"
+                    r="8"
+                  />
+                  <polyline points="12 9 12 13 14.5 15.5" />
+                  <line
+                    x1="10"
+                    y1="2"
+                    x2="14"
+                    y2="2"
+                  />
+                  <line
+                    x1="12"
+                    y1="2"
+                    x2="12"
+                    y2="5"
+                  />
+                </svg>
+              </button>
+
+              <!-- Timer popup -->
+              <div
+                v-if="showTimerPopup"
+                class="absolute right-0 top-full mt-2 z-50 w-56 bg-gray-800 border border-gray-500/30 rounded-xl shadow-xl p-4"
+                @click.self="showTimerPopup = false"
+              >
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                  Countdown Timer
+                </p>
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="flex-1">
+                    <label class="block text-xs text-gray-400 mb-1">Minutes</label>
+                    <input
+                      v-model.number="timerMinutes"
+                      type="number"
+                      min="0"
+                      max="59"
+                      class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg px-2 py-1.5 focus:outline-none focus:border-pink-500 text-center"
+                    >
+                  </div>
+                  <span class="text-gray-400 text-lg font-bold mt-4">:</span>
+                  <div class="flex-1">
+                    <label class="block text-xs text-gray-400 mb-1">Seconds</label>
+                    <input
+                      v-model.number="timerSeconds"
+                      type="number"
+                      min="0"
+                      max="59"
+                      class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg px-2 py-1.5 focus:outline-none focus:border-pink-500 text-center"
+                    >
+                  </div>
+                </div>
+                <button
+                  :disabled="timerTotalSeconds <= 0"
+                  class="w-full py-1.5 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+                  @click="startTimer"
+                >
+                  Start Timer
+                </button>
+              </div>
+            </div>
           </template>
         </div>
       </div>
@@ -101,9 +188,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import Mod from '../Mod.vue'
 import { useMatchCountdown } from '@/composables/useMatchCountdown'
+import { useTimerCountdown } from '@/composables/useTimerCountdown'
 import type { MultiplayerRoom } from '@/types'
 
 const props = defineProps<{
@@ -119,7 +207,31 @@ const currentMap = computed(() => props.room.lobbyState.currentMap || null)
 const lobbyState = computed(() => props.room.lobbyState)
 const roomId = computed(() => props.room.id)
 
-const { formattedTime } = useMatchCountdown(lobbyState, roomId)
+const { formattedTime: formattedMatchTime } = useMatchCountdown(lobbyState, roomId)
+const { formattedTime: formattedTimerTime, isActive: timerIsActive } = useTimerCountdown(lobbyState)
+
+// Timer popup state
+const showTimerPopup = ref(false)
+const timerMinutes = ref(0)
+const timerSeconds = ref(30)
+const timerTotalSeconds = computed(() => timerMinutes.value * 60 + timerSeconds.value)
+
+function handleTimerButtonClick() {
+  if (timerIsActive.value) {
+    if (confirm('Are you sure you want to abort the countdown?')) {
+      emit('sendMessage', '!mp aborttimer')
+    }
+  }
+  else {
+    showTimerPopup.value = !showTimerPopup.value
+  }
+}
+
+function startTimer() {
+  if (timerTotalSeconds.value <= 0) return
+  emit('sendMessage', `!mp timer ${timerTotalSeconds.value}`)
+  showTimerPopup.value = false
+}
 
 function handleAbort() {
   if (confirm('Are you sure you want to abort the match?')) {
