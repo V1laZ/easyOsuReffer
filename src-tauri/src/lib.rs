@@ -58,6 +58,7 @@ pub fn run() {
             set_mappool,
             set_map_drain_time,
             get_room_state,
+            get_room_messages_page,
             check_for_updates,
             install_update,
         ])

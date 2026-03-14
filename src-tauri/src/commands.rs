@@ -283,10 +283,10 @@ pub async fn get_rooms_list(state: State<'_, IrcState>) -> Result<RoomsListRespo
 pub async fn get_room_state(
     room_id: String,
     state: State<'_, IrcState>,
-) -> Result<Option<Room>, String> {
+) -> Result<Option<RoomPage>, String> {
     let irc_state = state.lock().unwrap();
     if let Some(room) = irc_state.rooms.get(&room_id) {
-        Ok(Some(room.clone()))
+        Ok(Some(room.to_room_page(MESSAGE_PAGE_SIZE)))
     } else {
         Ok(None)
     }
@@ -295,9 +295,9 @@ pub async fn get_room_state(
 #[tauri::command]
 pub async fn set_active_room(
     room_id: String,
-    state: State<'_, IrcState>
-) -> Result<Room, String> {
-    let room_clone = {
+    state: State<'_, IrcState>,
+) -> Result<RoomPage, String> {
+    let room_page = {
         let mut irc_state = state.lock().unwrap();
 
         if !irc_state.rooms.contains_key(&room_id) {
@@ -308,13 +308,28 @@ pub async fn set_active_room(
 
         if let Some(room) = irc_state.rooms.get_mut(&room_id) {
             room.mark_as_read();
-            room.clone()
+            room.to_room_page(MESSAGE_PAGE_SIZE)
         } else {
             return Err("Room not found".to_string());
         }
     };
 
-    Ok(room_clone)
+    Ok(room_page)
+}
+
+#[tauri::command]
+pub async fn get_room_messages_page(
+    room_id: String,
+    offset: usize,
+    limit: usize,
+    state: State<'_, IrcState>,
+) -> Result<MessagesPage, String> {
+    let irc_state = state.lock().unwrap();
+    if let Some(room) = irc_state.rooms.get(&room_id) {
+        Ok(room.get_messages_page(offset, limit))
+    } else {
+        Err("Room not found".to_string())
+    }
 }
 
 #[tauri::command]

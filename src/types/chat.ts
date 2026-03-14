@@ -12,6 +12,12 @@ export type RoomBase = {
   displayName: string
   messages: IrcMessage[]
   unreadCount: number
+  hasMoreMessages: boolean
+}
+
+export type MessagesPage = {
+  messages: IrcMessage[]
+  hasMore: boolean
 }
 
 export type MultiplayerRoom = RoomBase & {

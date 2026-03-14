@@ -67,6 +67,54 @@ impl Room {
     pub fn mark_as_read(&mut self) {
         self.unread_count = 0;
     }
+
+    pub fn to_room_page(&self, limit: usize) -> RoomPage {
+        let total = self.messages.len();
+        let start = total.saturating_sub(limit);
+        RoomPage {
+            id: self.id.clone(),
+            display_name: self.display_name.clone(),
+            room_type: self.room_type.clone(),
+            messages: self.messages[start..].to_vec(),
+            unread_count: self.unread_count,
+            lobby_state: self.lobby_state.clone(),
+            has_more_messages: start > 0,
+        }
+    }
+
+    pub fn get_messages_page(&self, offset: usize, limit: usize) -> MessagesPage {
+        let total = self.messages.len();
+        if offset >= total {
+            return MessagesPage { messages: vec![], has_more: false };
+        }
+        let end = total - offset;
+        let start = end.saturating_sub(limit);
+        MessagesPage {
+            messages: self.messages[start..end].to_vec(),
+            has_more: start > 0,
+        }
+    }
+}
+
+pub const MESSAGE_PAGE_SIZE: usize = 20;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RoomPage {
+    pub id: String,
+    pub display_name: String,
+    pub room_type: RoomType,
+    pub messages: Vec<IrcMessage>,
+    pub unread_count: u32,
+    pub lobby_state: Option<LobbyState>,
+    pub has_more_messages: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MessagesPage {
+    pub messages: Vec<IrcMessage>,
+    pub has_more: bool,
 }
 
 // Lightweight room list item without messages

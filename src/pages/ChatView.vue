@@ -64,8 +64,10 @@
         v-else
         :messages="activeRoom.messages"
         :active-channel-id="activeRoom.id"
+        :has-more-messages="activeRoom.hasMoreMessages"
         class="flex-grow"
         @click-username="selectedPlayerUsername = $event"
+        @load-more="loadMoreMessages"
       />
 
       <MessageInput
@@ -153,7 +155,7 @@ import type { CreateLobbySettings, BeatmapEntry, UserJoinEvent } from '@/types'
 
 const router = useRouter()
 
-const { roomsMap, activeRoom, roomsList, selectRoom } = useIrcRooms()
+const { roomsMap, activeRoom, roomsList, selectRoom, loadMoreMessages } = useIrcRooms()
 
 const isOpenSelectMap = ref(false)
 const leftDrawerOpen = ref(false)

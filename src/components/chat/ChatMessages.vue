@@ -78,14 +78,18 @@ import type { IrcMessage } from '@/types'
 const props = defineProps<{
   messages: IrcMessage[]
   activeChannelId: string
+  hasMoreMessages: boolean
 }>()
 
 const emit = defineEmits<{
   clickUsername: [username: string]
+  loadMore: []
 }>()
 
 const messagesContainer = ref<HTMLElement | null>(null)
 const isAtBottom = ref(true)
+
+let savedScrollHeight = 0
 
 const scrollToBottom = () => {
   if (messagesContainer.value) {
@@ -97,6 +101,10 @@ const checkIfAtBottom = () => {
   if (messagesContainer.value) {
     const { scrollTop, scrollHeight, clientHeight } = messagesContainer.value
     isAtBottom.value = scrollTop + clientHeight >= scrollHeight - 5
+
+    if (scrollTop < 50 && props.hasMoreMessages) {
+      emit('loadMore')
+    }
   }
 }
 
@@ -108,22 +116,36 @@ onMounted(() => {
   }
 })
 
-onUnmounted(() => {
-  if (messagesContainer.value) {
-    messagesContainer.value.removeEventListener('scroll', checkIfAtBottom)
-  }
-})
-
 onUpdated(() => {
   nextTick(() => {
-    if (isAtBottom.value) {
+    if (!messagesContainer.value) return
+    const newScrollHeight = messagesContainer.value.scrollHeight
+
+    if (savedScrollHeight > 0 && newScrollHeight > savedScrollHeight) {
+      messagesContainer.value.scrollTop += newScrollHeight - savedScrollHeight
+      savedScrollHeight = 0
+    }
+    else if (isAtBottom.value) {
       scrollToBottom()
     }
   })
 })
 
 watch(() => props.activeChannelId, () => {
+  savedScrollHeight = 0
   scrollToBottom()
   checkIfAtBottom()
 }, { flush: 'post', immediate: true })
+
+watch(() => props.messages, (newMessages, oldMessages) => {
+  if (newMessages !== oldMessages && messagesContainer.value) {
+    savedScrollHeight = messagesContainer.value.scrollHeight
+  }
+}, { flush: 'sync' })
+
+onUnmounted(() => {
+  if (messagesContainer.value) {
+    messagesContainer.value.removeEventListener('scroll', checkIfAtBottom)
+  }
+})
 </script>

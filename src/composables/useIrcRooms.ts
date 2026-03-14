@@ -9,12 +9,16 @@ import type {
   ActiveRoomLobbyStateUpdateEvent,
   RoomsListUpdatedEvent,
   RoomError,
+  MessagesPage,
 } from '@/types'
+
+const MESSAGE_PAGE_SIZE = 20
 
 export function useIrcRooms() {
   const roomsMap = ref<RoomsMap>(new Map())
   const activeRoom = ref<RoomUnion | null>(null)
   const roomsList = computed(() => Array.from(roomsMap.value.values()))
+  let loadingMore = false
 
   const unlisteners: UnlistenFn[] = []
 
@@ -33,6 +37,10 @@ export function useIrcRooms() {
 
     if (!response.activeRoomId) {
       activeRoom.value = null
+      return
+    }
+
+    if (activeRoom.value?.id === response.activeRoomId) {
       return
     }
 
@@ -60,6 +68,34 @@ export function useIrcRooms() {
     }
     catch (error) {
       console.error('Failed to select room:', error)
+    }
+  }
+
+  async function loadMoreMessages() {
+    if (!activeRoom.value || loadingMore || !activeRoom.value.hasMoreMessages) return
+
+    loadingMore = true
+    try {
+      const offset = activeRoom.value.messages.length
+      const result = await invoke<MessagesPage>('get_room_messages_page', {
+        roomId: activeRoom.value.id,
+        offset,
+        limit: MESSAGE_PAGE_SIZE,
+      })
+
+      if (result.messages.length > 0 && activeRoom.value) {
+        activeRoom.value.messages = [...result.messages, ...activeRoom.value.messages]
+        activeRoom.value.hasMoreMessages = result.hasMore
+      }
+      else if (activeRoom.value) {
+        activeRoom.value.hasMoreMessages = false
+      }
+    }
+    catch (error) {
+      console.error('Failed to load more messages:', error)
+    }
+    finally {
+      loadingMore = false
     }
   }
 
@@ -103,5 +139,5 @@ export function useIrcRooms() {
     unlisteners.forEach(fn => fn())
   })
 
-  return { roomsMap, activeRoom, roomsList, selectRoom, loadRoomsList }
+  return { roomsMap, activeRoom, roomsList, selectRoom, loadRoomsList, loadMoreMessages }
 }
