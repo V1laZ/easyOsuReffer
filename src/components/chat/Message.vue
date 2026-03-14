@@ -48,7 +48,10 @@
         <!-- Header -->
         <div class="flex items-baseline space-x-2">
           <button
-            class="font-semibold text-white hover:underline cursor-pointer"
+            class="font-semibold text-white"
+            :class="{
+              'hover:underline cursor-pointer': message.username !== 'BanchoBot',
+            }"
             @click="handleUsernameClick"
           >
             {{ message.username }}
