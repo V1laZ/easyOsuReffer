@@ -1,96 +1,60 @@
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { avatarCache, pendingRequests } from '@/main'
+import { avatarCache } from '@/main'
 import { dbService } from '@/services/database'
 import { globalState } from '@/stores/global'
 
-export function useUserAvatar(username: string) {
-  const avatarUrl = ref<string | null>(null)
+const inflightRequests = new Map<string, Promise<string>>()
 
-  const fetchAvatar = async () => {
-    if (!username || username === 'BanchoBot') {
-      avatarUrl.value = null
-      return
-    }
+function loadAvatar(username: string): Promise<string> {
+  const cached = avatarCache.get(username)
+  if (cached !== undefined) return Promise.resolve(cached)
 
-    if (avatarCache.has(username)) {
-      avatarUrl.value = avatarCache.get(username)!
-      return
-    }
+  const inflight = inflightRequests.get(username)
+  if (inflight) return inflight
 
-    const accessToken = await dbService.getAccessToken(globalState.user || '')
-    if (!accessToken) {
-      avatarUrl.value = null
-      return
-    }
+  const promise = (async () => {
+    const accessToken = await dbService.getAccessToken(globalState.user ?? '')
+    if (!accessToken) throw new Error('No access token')
 
-    if (pendingRequests.has(username)) {
-      try {
-        const url = await pendingRequests.get(username)!.promise
-        avatarUrl.value = url
-      }
-      catch (err) {
-        console.error(`Failed to load avatar for ${username}:`, err)
-      }
-      return
-    }
+    const cachedAfterToken = avatarCache.get(username)
+    if (cachedAfterToken !== undefined) return cachedAfterToken
 
-    let resolveRequest: (url: string) => void
-    let rejectRequest: (error: unknown) => void
-
-    const promise = new Promise<string>((resolve, reject) => {
-      resolveRequest = resolve
-      rejectRequest = reject
+    const userData = await invoke<{ avatar_url?: string }>('fetch_user_data', {
+      username,
+      accessToken,
     })
 
-    // Double-checked locking: check again before setting
-    if (pendingRequests.has(username)) {
-      try {
-        const url = await pendingRequests.get(username)!.promise
-        avatarUrl.value = url
-      }
-      catch (err) {
-        console.error(`Failed to load avatar for ${username}:`, err)
-      }
-      return
-    }
-    else {
-      pendingRequests.set(username, {
-        promise,
-        resolve: resolveRequest!,
-        reject: rejectRequest!,
-      })
-    }
+    const url = userData.avatar_url
+    if (!url) throw new Error(`No avatar URL returned for ${username}`)
+
+    avatarCache.set(username, url)
+    return url
+  })().finally(() => inflightRequests.delete(username))
+
+  inflightRequests.set(username, promise)
+  return promise
+}
+
+export function useUserAvatar(username: string) {
+  const avatarUrl = ref<string | null>(null)
+  let cancelled = false
+
+  const fetchAvatar = async () => {
+    if (!username || username === 'BanchoBot') return
+
     try {
-      const userData = await invoke<{ avatar_url?: string }>('fetch_user_data', {
-        username,
-        accessToken,
-      })
-
-      const url = userData.avatar_url
-
-      if (url) {
-        avatarCache.set(username, url)
-        avatarUrl.value = url
-
-        pendingRequests.get(username)?.resolve(url)
-      }
-      else {
-        throw new Error('No avatar URL in response')
-      }
+      const url = await loadAvatar(username)
+      if (!cancelled) avatarUrl.value = url
     }
     catch (err) {
       console.error(`Failed to load avatar for ${username}:`, err)
-
-      pendingRequests.get(username)?.reject(err)
-    }
-    finally {
-      pendingRequests.delete(username)
     }
   }
 
-  return {
-    avatarUrl,
-    fetchAvatar,
-  }
+  onUnmounted(() => {
+    cancelled = true
+  })
+
+  return { avatarUrl, fetchAvatar }
 }
