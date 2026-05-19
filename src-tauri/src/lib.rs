@@ -93,7 +93,9 @@ pub fn run() {
 
             #[cfg(desktop)]
             {
-                app.deep_link().register("osureffer")?;
+                if let Err(err) = app.deep_link().register("osureffer") {
+                    eprintln!("Failed to register deep link: {}", err);
+                }
             }
 
             #[cfg(any(target_os = "linux", all(debug_assertions, windows)))]
