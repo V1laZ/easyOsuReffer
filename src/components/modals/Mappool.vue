@@ -120,51 +120,52 @@
             </div>
           </template>
 
-          <div
-            v-else
-            class="flex-1 flex flex-col overflow-auto"
-          >
-            <!-- Add Beatmap Form -->
-            <AddBeatmapCard
-              v-if="showAddBeatmap"
-              :selected-mappool-id="selectedMappool.id"
-              @add="refreshBeatmaps(selectedMappool.id); showAddBeatmap = false"
-              @cancel="showAddBeatmap = false"
-            />
-
-            <!-- Beatmap List -->
-            <BeatmapList
-              :beatmaps="selectedMappoolBeatmaps"
-              @remove="refreshBeatmaps(selectedMappool.id)"
-            />
-          </div>
-
-          <!-- Add Button -->
-          <div
-            v-if="!showAddBeatmap"
-            class="p-4 border-t border-gray-700"
-          >
-            <button
-              :disabled="!globalState.isConnectedOsu"
-              class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-              @click="showAddBeatmap = true"
+          <template v-else>
+            <div
+              class="flex-1 flex flex-col overflow-auto"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <!-- Add Beatmap Form -->
+              <AddBeatmapCard
+                v-if="showAddBeatmap"
+                :selected-mappool-id="selectedMappool.id"
+                @add="refreshBeatmaps(selectedMappool.id); showAddBeatmap = false"
+                @cancel="showAddBeatmap = false"
+              />
+
+              <!-- Beatmap List -->
+              <BeatmapList
+                :beatmaps="selectedMappoolBeatmaps"
+                @remove="refreshBeatmaps(selectedMappool.id)"
+              />
+            </div>
+
+            <!-- Add Button -->
+            <div
+              v-if="!showAddBeatmap"
+              class="p-4 border-t border-gray-700"
+            >
+              <button
+                :disabled="!globalState.isConnectedOsu"
+                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                @click="showAddBeatmap = true"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-              <span>{{ globalState.isConnectedOsu ? 'Add Beatmap' : 'Connect osu! to add maps' }}</span>
-            </button>
-          </div>
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                <span>Add Beatmap</span>
+              </button>
+            </div>
+          </template>
         </div>
       </div>
     </div>
