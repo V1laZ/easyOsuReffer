@@ -8,7 +8,7 @@
     ],
     "editor.tabSize": 2,
     "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": "explicit"
+        "source.fixAll.eslint": "always"
     },
     "editor.formatOnSave": false,
     "eslint.format.enable": true,
@@ -22,9 +22,6 @@
     "[typescript]": {
         "editor.defaultFormatter": "dbaeumer.vscode-eslint"
     },
-    "volar.format.initialIndent": false,
-    "typescript.preferences.importModuleSpecifier": "non-relative",
-    "javascript.preferences.importModuleSpecifier": "non-relative",
-    "javascript.format.semicolons": "remove",
-    "typescript.format.semicolons": "remove"
+    "js/ts.preferences.importModuleSpecifier": "non-relative",
+    "js/ts.format.semicolons": "remove",
 }

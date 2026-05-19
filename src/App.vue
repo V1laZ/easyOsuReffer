@@ -1,10 +1,10 @@
 <template>
   <div class="flex flex-col h-[100dvh] overflow-hidden">
     <TitleBar v-if="currentPlatform !== 'ios' && currentPlatform !== 'android'" />
-    <main class="flex-grow flex flex-col overflow-hidden">
+    <main class="grow flex flex-col overflow-hidden">
       <div
         v-if="loading"
-        class="flex-grow bg-gray-900 flex items-center justify-center"
+        class="grow bg-gray-900 flex items-center justify-center"
       >
         <div class="text-center">
           <Spinner class="w-12 h-12 mx-auto text-pink-500 mb-4" />
@@ -26,7 +26,7 @@
 
       <div
         v-else-if="disconnected"
-        class="flex-grow bg-gray-900 flex items-center justify-center"
+        class="grow bg-gray-900 flex items-center justify-center"
       >
         <div class="text-center">
           <h2 class="text-xl text-white mb-2">
