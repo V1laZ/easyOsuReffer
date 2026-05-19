@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-[100dvh] overflow-hidden">
+  <div class="flex flex-col h-dvh overflow-hidden">
     <TitleBar v-if="currentPlatform !== 'ios' && currentPlatform !== 'android'" />
     <main class="grow flex flex-col overflow-hidden">
       <div

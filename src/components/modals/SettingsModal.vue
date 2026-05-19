@@ -23,7 +23,7 @@
             <!-- Current User Info -->
             <div class="p-4 bg-gray-700 rounded-lg">
               <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                <div class="w-12 h-12 shrink-0 bg-linear-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
                   <img
                     v-if="avatarUrl"
                     :src="avatarUrl"
