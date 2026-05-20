@@ -65,14 +65,19 @@ async function handleOAuthTokenCallback(payload: { payload: OauthTokenCallback }
 }
 
 async function handleTokenData(data: OauthTokenCallback) {
-  if (!data) {
-    console.error('No OAuth token data received')
+  if (!data || !data.access_token || !data.refresh_token) {
+    console.error('Invalid OAuth token data received', data)
+    return
+  }
+
+  if (!globalState.user) {
+    console.error('Cannot save OAuth token: no IRC user is set. Reconnect to Bancho and try again.')
     return
   }
 
   try {
     await dbService.saveOAuthToken(
-      globalState.user || '',
+      globalState.user,
       data.access_token,
       data.refresh_token,
       data.expires_in,

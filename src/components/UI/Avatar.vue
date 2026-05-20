@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useUserAvatar } from '@/composables/useUserAvatar'
 import { globalState } from '@/stores/global'
 
@@ -71,10 +71,17 @@ const backgroundClass = computed(() => {
 
 const initial = computed(() => props.username.charAt(0).toUpperCase() || '?')
 
-onMounted(() => {
+function tryFetch() {
   if (isBancho.value) return
   if (!globalState.isConnectedOsu) return
   if (!props.username) return
+  if (avatarUrl.value) return
   fetchAvatar()
+}
+
+onMounted(tryFetch)
+
+watch(() => globalState.isConnectedOsu, (connected) => {
+  if (connected) tryFetch()
 })
 </script>
