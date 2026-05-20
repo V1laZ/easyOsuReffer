@@ -1,12 +1,12 @@
 <template>
-  <div class="fixed bottom-0 right-0 z-50 w-full max-w-sm p-4">
+  <div class="fixed bottom-0 right-0 z-1000 w-full max-w-sm p-4">
     <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-2xl">
       <div
         v-if="!isDownloading && !updateComplete"
         class="p-4"
       >
         <div class="flex items-start gap-3">
-          <div class="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-pink-500/15 text-pink-200 ring-1 ring-inset ring-pink-400/30">
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-500/15 text-pink-200 ring-1 ring-inset ring-pink-400/30">
             <Icon
               name="download"
               size="sm"
@@ -44,7 +44,7 @@
         class="p-4"
       >
         <div class="flex items-center gap-3">
-          <div class="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-pink-500/15 text-pink-200 ring-1 ring-inset ring-pink-400/30">
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-500/15 text-pink-200 ring-1 ring-inset ring-pink-400/30">
             <Spinner class="size-5" />
           </div>
           <div class="min-w-0 flex-1">
@@ -69,7 +69,7 @@
         class="p-4"
       >
         <div class="flex items-start gap-3">
-          <div class="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-200 ring-1 ring-inset ring-emerald-400/30">
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-200 ring-1 ring-inset ring-emerald-400/30">
             <Icon
               name="check"
               size="sm"

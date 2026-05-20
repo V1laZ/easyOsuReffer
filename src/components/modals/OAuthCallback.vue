@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-x-0 bottom-0 top-8 z-50 flex flex-col items-center justify-center bg-slate-950/95 px-6 backdrop-blur">
+  <div class="fixed inset-x-0 bottom-0 top-8 z-1000 flex flex-col items-center justify-center bg-slate-950/95 px-6 backdrop-blur">
     <IconBtn
       icon="close"
       size="sm"
