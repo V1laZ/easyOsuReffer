@@ -23,20 +23,10 @@
             <!-- Current User Info -->
             <div class="p-4 bg-gray-700 rounded-lg">
               <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 shrink-0 bg-linear-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
-                  <img
-                    v-if="avatarUrl"
-                    :src="avatarUrl"
-                    class="w-full h-full object-cover"
-                    alt="User avatar"
-                  >
-                  <span
-                    v-else
-                    class="text-lg font-medium text-white"
-                  >
-                    {{ globalState.user?.charAt(0).toUpperCase() || '?' }}
-                  </span>
-                </div>
+                <Avatar
+                  :username="globalState.user ?? ''"
+                  size="lg"
+                />
                 <div>
                   <div class="font-medium text-white">
                     {{ globalState.user || 'Not logged in' }}
@@ -122,7 +112,7 @@ import ConnectOsuBtn from '../ConnectOsuBtn.vue'
 import { dbService } from '@/services/database'
 import CloseButton from '../UI/CloseButton.vue'
 import AppModal from '../UI/AppModal.vue'
-import { useUserAvatar } from '@/composables/useUserAvatar'
+import Avatar from '../UI/Avatar.vue'
 
 const open = defineModel<boolean>({ required: true })
 
@@ -131,7 +121,6 @@ const emit = defineEmits<{
 }>()
 
 const appVersion = ref('')
-const { avatarUrl, fetchAvatar } = useUserAvatar(globalState.user ?? '')
 
 onMounted(async () => {
   try {
@@ -139,10 +128,6 @@ onMounted(async () => {
   }
   catch (error) {
     console.error('Failed to get app version:', error)
-  }
-
-  if (globalState.isConnectedOsu) {
-    fetchAvatar()
   }
 })
 
