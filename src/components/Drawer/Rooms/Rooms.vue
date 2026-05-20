@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="fixed bottom-0 left-0 top-8 z-40 flex w-80 max-w-full transform flex-col border-r border-slate-800 bg-slate-900 transition-transform duration-300 ease-in-out lg:relative lg:top-auto lg:translate-x-0"
+    class="fixed bottom-safe left-safe top-safe z-40 flex w-80 max-w-full transform flex-col border-r border-slate-800 bg-slate-900 transition-transform duration-300 ease-in-out lg:relative lg:top-auto lg:translate-x-0"
     :class="isOpen ? 'translate-x-0' : '-translate-x-full'"
   >
     <header class="flex items-center justify-between border-b border-slate-800 px-4 py-3">

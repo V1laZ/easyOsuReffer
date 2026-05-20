@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed bottom-0 right-0 z-1000 w-full max-w-sm p-4">
+  <div class="fixed bottom-safe right-safe z-1000 w-full max-w-sm p-4">
     <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-2xl">
       <div
         v-if="!isDownloading && !updateComplete"

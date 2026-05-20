@@ -1,6 +1,9 @@
 <template>
-  <div class="flex h-dvh flex-col overflow-hidden bg-slate-950 text-slate-100">
-    <TitleBar v-if="currentPlatform !== 'ios' && currentPlatform !== 'android'" />
+  <div
+    class="flex h-dvh flex-col overflow-hidden bg-slate-950 text-slate-100"
+    style="padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);"
+  >
+    <TitleBar v-if="showTitleBar" />
 
     <main class="flex grow flex-col overflow-hidden">
       <div
@@ -97,6 +100,11 @@ import { platform } from '@tauri-apps/plugin-os'
 
 const router = useRouter()
 const currentPlatform = platform()
+const showTitleBar = currentPlatform !== 'ios' && currentPlatform !== 'android'
+
+if (typeof document !== 'undefined') {
+  document.documentElement.style.setProperty('--title-bar-h', showTitleBar ? '2rem' : '0px')
+}
 
 const loading = ref(true)
 const disconnected = ref(false)

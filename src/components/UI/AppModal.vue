@@ -12,7 +12,7 @@
       <div
         v-if="modelValue"
         :style="{ zIndex }"
-        class="fixed inset-x-0 top-8 bottom-0 flex items-center justify-center p-4"
+        class="fixed inset-safe flex items-center justify-center p-4"
       >
         <div
           class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"

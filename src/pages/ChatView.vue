@@ -113,7 +113,7 @@
 
     <!-- Mobile Overlay -->
     <div
-      class="fixed inset-x-0 bottom-0 top-8 z-30 transition-colors lg:hidden"
+      class="fixed inset-safe z-30 transition-colors lg:hidden"
       :class="leftDrawerOpen || rightDrawerOpen
         ? 'bg-slate-950/70 backdrop-blur-sm'
         : 'pointer-events-none'"
