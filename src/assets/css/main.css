@@ -1,5 +1,50 @@
 @import "tailwindcss";
 
+/*
+ * Design system conventions
+ * ------------------------
+ * Surfaces:  slate-950 (page) / slate-900 (panels) / slate-800 (cards) / slate-700 (fields)
+ * Borders:   slate-800 (subtle) / slate-700 (default)
+ * Text:      slate-100 (primary) / slate-300 (secondary) / slate-400 (muted) / slate-500 (subtle)
+ * Accent:    pink-300/400 (text+icons), pink-500/15 (tinted bg), pink-400/30 (ring)
+ * Semantic:  emerald (success), amber (warning), rose (danger), sky (info) — all -300/400 on dark
+ * Radii:     md (inputs/buttons) / lg (cards/panels) / xl (modals) / full (badges/avatars)
+ */
+
+@layer base {
+  html,
+  body,
+  #app {
+    height: 100%;
+    background-color: var(--color-slate-950);
+    color: var(--color-slate-100);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  *:focus {
+    outline: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--color-slate-600) 50%, transparent);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--color-slate-500) 70%, transparent);
+  }
+}
+
 dialog {
   opacity: 1;
   inset: 0;
@@ -7,9 +52,5 @@ dialog {
 }
 
 dialog::backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-dialog:open {
-  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.6);
 }

@@ -21,7 +21,7 @@
     /></svg>
     <span
       v-else
-      class="font-medium text-white"
+      class="font-medium"
       :class="textSizeClass"
     >
       {{ initial }}
@@ -64,9 +64,9 @@ const textSizeClass = computed(() => ({
 }[props.size]))
 
 const backgroundClass = computed(() => {
-  if (isBancho.value) return 'bg-gray-600'
+  if (isBancho.value) return 'bg-slate-700 text-slate-300'
   if (avatarUrl.value) return ''
-  return 'bg-linear-to-br from-pink-500 to-purple-600'
+  return 'bg-pink-500/20 text-pink-200 ring-1 ring-inset ring-pink-400/30'
 })
 
 const initial = computed(() => props.username.charAt(0).toUpperCase() || '?')

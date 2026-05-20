@@ -1,55 +1,48 @@
 <template>
-  <div class="bg-gray-800 border-t border-gray-700 p-4">
-    <!-- Message Input Container -->
-    <div class="flex-1 relative">
-      <!-- Input Field -->
-      <div class="relative">
-        <input
-          v-model="messageText"
-          :disabled="disabled"
-          placeholder="Type a message..."
-          class="w-full px-4 py-3 pr-12 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          :class="{ 'border-red-500': hasError }"
-          @keydown.enter="sendMessage"
-        >
+  <div class="border-t border-slate-800 bg-slate-900 p-3">
+    <div class="relative">
+      <input
+        v-model="messageText"
+        :disabled="disabled"
+        placeholder="Type a message..."
+        :class="[
+          'w-full rounded-lg bg-slate-800 py-3 pl-4 pr-14 text-sm text-slate-100 placeholder:text-slate-500',
+          'ring-1 ring-inset ring-slate-700',
+          'focus:outline-none focus:ring-2 focus:ring-pink-400/60',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+          hasError ? 'ring-rose-400/60' : '',
+        ]"
+        @keydown.enter="sendMessage"
+      >
 
-        <!-- Character Count -->
-        <div
-          v-if="messageText.length > 400"
-          class="absolute bottom-2 right-12 text-xs"
-          :class="messageText.length > 500 ? 'text-red-400' : 'text-gray-400'"
-        >
-          {{ messageText.length }}/500
-        </div>
-
-        <!-- Send Button -->
-        <button
-          :disabled="disabled || !canSend"
-          class="absolute right-2 top-[0.55rem] p-2 bg-pink-500 hover:bg-pink-600 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-          title="Send message (Ctrl+Enter)"
-          @click="sendMessage"
-        >
-          <svg
-            class="size-4 rotate-90"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-            />
-          </svg>
-        </button>
+      <div
+        v-if="messageText.length > 400"
+        class="pointer-events-none absolute bottom-1 right-14 text-[10px]"
+        :class="messageText.length > 500 ? 'text-rose-300' : 'text-slate-500'"
+      >
+        {{ messageText.length }}/500
       </div>
+
+      <button
+        type="button"
+        :disabled="disabled || !canSend"
+        class="absolute right-1.5 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-md bg-pink-500/15 text-pink-200 ring-1 ring-inset ring-pink-400/30 transition-colors hover:bg-pink-500/25 hover:text-pink-100 disabled:cursor-not-allowed disabled:opacity-50"
+        title="Send"
+        @click="sendMessage"
+      >
+        <Icon
+          name="send"
+          size="sm"
+          class="rotate-90"
+        />
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import Icon from '@/components/UI/Icon.vue'
 
 const { disabled = false } = defineProps<{
   disabled?: boolean
@@ -67,14 +60,10 @@ const canSend = computed(() => {
 })
 
 const sendMessage = () => {
-  if (!canSend.value || disabled) {
-    return
-  }
+  if (!canSend.value || disabled) return
 
   const message = messageText.value.trim()
-  if (!message) {
-    return
-  }
+  if (!message) return
 
   emit('sendMessage', message)
   messageText.value = ''

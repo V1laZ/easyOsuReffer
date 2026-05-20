@@ -1,107 +1,73 @@
 <template>
-  <AppModal v-model="open">
-    <div
-      class="bg-gray-800 rounded-2xl p-6 w-full mx-auto max-w-md border border-gray-700 shadow-2xl"
-      @click.stop
-    >
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-semibold text-white">
-          Settings
-        </h2>
-        <CloseButton @click="open = false" />
-      </div>
-
-      <!-- Settings Content -->
-      <div class="space-y-6">
-        <!-- Account Section -->
-        <div>
-          <h3 class="text-lg font-medium text-white mb-4">
-            Account
-          </h3>
-          <div class="space-y-2">
-            <!-- Current User Info -->
-            <div class="p-4 bg-gray-700 rounded-lg">
-              <div class="flex items-center space-x-3">
-                <Avatar
-                  :username="globalState.user ?? ''"
-                  size="lg"
-                />
-                <div>
-                  <div class="font-medium text-white">
-                    {{ globalState.user || 'Not logged in' }}
-                  </div>
-                  <div class="flex items-center space-x-2">
-                    <span
-                      class="rounded-full size-2"
-                      :class="{
-                        'bg-green-500': globalState.isConnected,
-                        'bg-red-500': !globalState.isConnected
-                      }"
-                    />
-                    <div class="text-sm text-gray-400">
-                      {{ globalState.isConnected ? "Connected to Bancho" : "Offline" }}
-                    </div>
-                  </div>
-
-                  <div class="flex items-center space-x-2">
-                    <span
-                      class="rounded-full size-2"
-                      :class="{
-                        'bg-green-500': globalState.isConnectedOsu,
-                        'bg-red-500': !globalState.isConnectedOsu
-                      }"
-                    />
-                    <div
-                      class="text-sm text-gray-400"
-                      :class="{
-                        'cursor-pointer hover:text-red-500': globalState.isConnectedOsu
-                      }"
-                      @click="removeOsuConnect"
-                    >
-                      {{ globalState.isConnectedOsu ? "osu! Account Connected" : "osu! Account Not Connected" }}
-                    </div>
-                  </div>
+  <Modal
+    v-model="open"
+    title="Settings"
+    size="md"
+  >
+    <div class="space-y-6">
+      <section>
+        <h3 class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
+          Account
+        </h3>
+        <div class="space-y-3">
+          <div class="rounded-lg border border-slate-800 bg-slate-800/50 p-4">
+            <div class="flex items-center gap-3">
+              <Avatar
+                :username="globalState.user ?? ''"
+                size="lg"
+              />
+              <div class="min-w-0 flex-1">
+                <div class="truncate font-medium text-slate-100">
+                  {{ globalState.user || 'Not logged in' }}
                 </div>
+                <div class="mt-1 flex items-center gap-2">
+                  <StatusDot :tone="globalState.isConnected ? 'success' : 'danger'" />
+                  <span class="text-sm text-slate-400">
+                    {{ globalState.isConnected ? 'Connected to Bancho' : 'Offline' }}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  :class="[
+                    'mt-1 flex items-center gap-2 text-sm transition-colors',
+                    globalState.isConnectedOsu ? 'cursor-pointer text-slate-400 hover:text-rose-300' : 'cursor-default text-slate-400',
+                  ]"
+                  @click="removeOsuConnect"
+                >
+                  <StatusDot :tone="globalState.isConnectedOsu ? 'success' : 'danger'" />
+                  <span>
+                    {{ globalState.isConnectedOsu ? 'osu! account connected' : 'osu! account not connected' }}
+                  </span>
+                </button>
               </div>
             </div>
+          </div>
 
-            <!-- Account Actions -->
-            <div class="space-y-2">
-              <ConnectOsuBtn v-if="!globalState.isConnectedOsu" />
+          <div class="space-y-2">
+            <ConnectOsuBtn v-if="!globalState.isConnectedOsu" />
 
-              <button
-                class="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                @click="emit('logout')"
-              >
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-                <span>Logout</span>
-              </button>
-            </div>
+            <Btn
+              variant="danger"
+              block
+              @click="emit('logout')"
+            >
+              <template #icon>
+                <Icon
+                  name="logout"
+                  size="sm"
+                />
+              </template>
+              Logout
+            </Btn>
           </div>
         </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="mt-8 pt-6 border-t border-gray-700">
-        <div class="flex items-center justify-between text-sm text-gray-400">
-          <span>osu!Reffer v{{ appVersion }}</span>
-        </div>
-      </div>
+      </section>
     </div>
-  </AppModal>
+
+    <template #footer>
+      <span class="text-xs text-slate-500">osu!Reffer v{{ appVersion }}</span>
+    </template>
+  </Modal>
 </template>
 
 <script setup lang="ts">
@@ -110,9 +76,12 @@ import { getVersion } from '@tauri-apps/api/app'
 import { globalState } from '@/stores/global'
 import ConnectOsuBtn from '../ConnectOsuBtn.vue'
 import { dbService } from '@/services/database'
-import CloseButton from '../UI/CloseButton.vue'
-import AppModal from '../UI/AppModal.vue'
-import Avatar from '../UI/Avatar.vue'
+import Modal from '@/components/UI/Modal.vue'
+import Btn from '@/components/UI/Btn.vue'
+import Icon from '@/components/UI/Icon.vue'
+import StatusDot from '@/components/UI/StatusDot.vue'
+import Avatar from '@/components/UI/Avatar.vue'
+import { confirm } from '@/composables/useConfirm'
 
 const open = defineModel<boolean>({ required: true })
 
@@ -131,13 +100,18 @@ onMounted(async () => {
   }
 })
 
-const removeOsuConnect = () => {
+const removeOsuConnect = async () => {
   if (!globalState.user || !globalState.isConnectedOsu) return
   try {
-    if (confirm('Are you sure you want to disconnect your osu! account?')) {
-      dbService.deleteOauthToken(globalState.user)
-      globalState.isConnectedOsu = false
-    }
+    const ok = await confirm({
+      title: 'Disconnect osu! account?',
+      message: 'You will need to reconnect to fetch beatmap and player data.',
+      confirmText: 'Disconnect',
+      tone: 'danger',
+    })
+    if (!ok) return
+    dbService.deleteOauthToken(globalState.user)
+    globalState.isConnectedOsu = false
   }
   catch (error) {
     console.error('Error removing osu! connection:', error)

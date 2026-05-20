@@ -1,49 +1,36 @@
 <template>
-  <div
-    class="fixed top-8 bottom-0 right-0 z-40 max-w-full min-w-80 bg-gray-800 border-l border-gray-700 transform transition-transform duration-300 ease-in-out lg:relative lg:top-auto lg:translate-x-0 flex flex-col"
+  <aside
+    class="fixed bottom-0 right-0 top-8 z-40 flex w-80 max-w-full transform flex-col border-l border-slate-800 bg-slate-900 transition-transform duration-300 ease-in-out lg:relative lg:top-auto lg:translate-x-0"
     :class="isOpen ? 'translate-x-0' : 'translate-x-full'"
   >
-    <!-- Header -->
-    <div class="flex items-start justify-between p-4 pb-3 border-b border-gray-700">
+    <header class="flex items-start justify-between gap-2 border-b border-slate-800 px-4 py-3">
       <div>
-        <h2 class="text-lg font-semibold text-white">
-          Player Slots
+        <h2 class="text-base font-semibold text-slate-100">
+          Player slots
         </h2>
-        <div class="text-xs text-gray-400">
-          <span>Ready: </span>
-          <span>{{ readyPlayers }}/{{ occupiedSlots }}</span>
+        <div class="text-xs text-slate-400">
+          <span>Ready </span>
+          <span class="text-slate-200">{{ readyPlayers }}/{{ occupiedSlots }}</span>
         </div>
       </div>
-      <div class="flex items-center space-x-2">
-        <button
-          class="p-2 rounded-lg hover:bg-gray-700 transition-colors"
-          title="Invite Player"
+      <div class="flex items-center gap-1">
+        <IconBtn
+          icon="userPlus"
+          size="sm"
+          title="Invite player"
           @click="emit('openInvitePlayer')"
-        >
-          <svg
-            class="size-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-            />
-          </svg>
-        </button>
-        <CloseButton
+        />
+        <IconBtn
+          icon="close"
+          size="sm"
           class="lg:hidden"
           @click="emit('close')"
         />
       </div>
-    </div>
+    </header>
 
-    <!-- Player Slots -->
-    <div class="flex-1 flex flex-col p-3 min-h-0">
-      <div class="space-y-2 flex-1 overflow-y-auto min-h-0">
+    <div class="flex min-h-0 flex-1 flex-col p-3">
+      <div class="min-h-0 flex-1 space-y-1.5 overflow-y-auto">
         <PlayerSlot
           v-for="(slot, idx) in lobbyState.slots"
           :key="slot.id"
@@ -54,14 +41,14 @@
         />
       </div>
     </div>
-  </div>
+  </aside>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import PlayerSlot from './PlayerSlot.vue'
+import IconBtn from '@/components/UI/IconBtn.vue'
 import type { LobbyState, PlayerMoveEvent, PlayerTeamChangeEvent } from '@/types'
-import CloseButton from '../../UI/CloseButton.vue'
 
 const props = defineProps<{
   isOpen: boolean

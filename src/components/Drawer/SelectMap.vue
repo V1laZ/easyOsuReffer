@@ -1,72 +1,62 @@
 <template>
   <div
-    class="absolute h-[70vh] left-0 z-20 w-full bottom-0 bg-gray-900/80 overflow-hidden shadow-xl shadow-pink-50 border border-gray-700 rounded-t-2xl transform transition-transform ease-in-out duration-500 flex flex-col"
+    class="absolute bottom-0 left-0 z-20 flex h-[70vh] w-full transform flex-col overflow-hidden rounded-t-xl border border-slate-800 bg-slate-900/95 shadow-2xl backdrop-blur transition-transform duration-300 ease-in-out"
     :class="{
       'translate-y-0': isOpen,
       'translate-y-full': !isOpen,
     }"
     :aria-hidden="!isOpen"
     :inert="!isOpen"
-    style="backdrop-filter: blur(8px);"
   >
-    <div class="flex items-start justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">
-      <h2 class="text-lg font-semibold text-white">
-        Select Beatmap
+    <header class="flex items-center justify-between border-b border-slate-800 px-5 py-3">
+      <h2 class="text-base font-semibold text-slate-100">
+        Select beatmap
       </h2>
-      <CloseButton @click="$emit('close')" />
-    </div>
+      <IconBtn
+        icon="close"
+        size="sm"
+        @click="$emit('close')"
+      />
+    </header>
 
     <div class="flex-1 overflow-y-auto p-4 sm:p-6">
       <template v-if="!lobbyState.currentMappoolId">
         <div class="flex flex-col items-center justify-center">
-          <svg
-            class="w-16 h-16 mb-4 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-            />
-          </svg>
-          <p class="text-lg text-gray-200 font-medium mb-2">
+          <Icon
+            name="musicCollection"
+            size="xl"
+            class="mb-3 text-slate-600"
+          />
+          <p class="text-base font-medium text-slate-200">
             No active mappool selected
           </p>
-          <p class="text-gray-400 mb-4">
-            Please choose a mappool to continue
+          <p class="mb-5 mt-1 text-sm text-slate-400">
+            Choose a mappool to continue
           </p>
-          <div class="w-full max-w-xs">
-            <div class="relative flex items-center">
-              <select
-                v-model="selectedMappoolId"
-                class="appearance-none w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+          <div class="w-full max-w-xs space-y-3">
+            <Select v-model="selectedMappoolId">
+              <option
+                disabled
+                :value="null"
               >
-                <option
-                  disabled
-                  value="null"
-                >
-                  Select a mappool
-                </option>
-                <option
-                  v-for="pool in mappools"
-                  :key="pool.id"
-                  :value="pool.id"
-                >
-                  {{ pool.name }}
-                </option>
-              </select>
-              <span class="select-arrow" />
-            </div>
-            <button
-              class="mt-4 w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-700 disabled:cursor-not-allowed"
+                Select a mappool
+              </option>
+              <option
+                v-for="pool in mappools"
+                :key="pool.id"
+                :value="pool.id"
+              >
+                {{ pool.name }}
+              </option>
+            </Select>
+            <Btn
+              block
+              variant="success"
               :disabled="!selectedMappoolId"
               @click="setActiveMappool"
             >
-              Set as Active
-            </button>
+              Set as active
+            </Btn>
           </div>
         </div>
       </template>
@@ -83,10 +73,13 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import List from '../Mappool/Beatmap/List.vue'
+import List from '@/components/Mappool/Beatmap/List.vue'
 import { dbService } from '@/services/database'
 import type { LobbyState, BeatmapEntry, Mappool } from '@/types'
-import CloseButton from '../UI/CloseButton.vue'
+import IconBtn from '@/components/UI/IconBtn.vue'
+import Icon from '@/components/UI/Icon.vue'
+import Btn from '@/components/UI/Btn.vue'
+import Select from '@/components/UI/Select.vue'
 
 const props = defineProps<{
   isOpen: boolean

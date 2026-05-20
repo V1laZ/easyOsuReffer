@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-grow bg-gray-900 text-white overflow-hidden">
+  <div class="flex flex-grow overflow-hidden bg-slate-950 text-slate-100">
     <!-- Left Drawer - Channels -->
     <RoomsDrawer
       :is-open="leftDrawerOpen"
@@ -43,22 +43,16 @@
 
       <div
         v-if="!activeRoom"
-        class="text-center mt-2 flex-grow py-4 text-gray-500"
+        class="flex flex-grow flex-col items-center justify-center px-6 text-center text-slate-500"
       >
-        <svg
-          class="size-12 mx-auto mb-2 text-gray-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 9v3m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        Select or join a channel to start chatting
+        <Icon
+          name="chat"
+          size="xl"
+          class="mb-3 text-slate-600"
+        />
+        <p class="text-sm">
+          Select or join a channel to start chatting
+        </p>
       </div>
       <ChatMessages
         v-else
@@ -119,10 +113,10 @@
 
     <!-- Mobile Overlay -->
     <div
-      class="fixed transition-colors inset-x-0 top-8 bottom-0 bg-black/80 z-30 lg:hidden"
-      :class="{
-        'pointer-events-none bg-transparent': !leftDrawerOpen && !rightDrawerOpen
-      }"
+      class="fixed inset-x-0 bottom-0 top-8 z-30 transition-colors lg:hidden"
+      :class="leftDrawerOpen || rightDrawerOpen
+        ? 'bg-slate-950/70 backdrop-blur-sm'
+        : 'pointer-events-none'"
       @click="closeDrawers"
     />
   </div>
@@ -146,6 +140,7 @@ import PlayerModal from '@/components/modals/PlayerModal.vue'
 import { globalState } from '@/stores/global'
 import SelectMap from '@/components/Drawer/SelectMap.vue'
 import InvitePlayerModal from '@/components/modals/InvitePlayerModal.vue'
+import Icon from '@/components/UI/Icon.vue'
 import { useIrcRooms } from '@/composables/useIrcRooms'
 import type { CreateLobbySettings, BeatmapEntry, UserJoinEvent } from '@/types'
 

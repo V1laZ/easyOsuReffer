@@ -1,42 +1,28 @@
 <template>
-  <div
-    class="fixed top-8 bottom-0 left-0 z-40 w-80 bg-gray-800 border-r border-gray-700 transform transition-transform duration-300 ease-in-out lg:relative lg:top-auto lg:translate-x-0 flex flex-col"
+  <aside
+    class="fixed bottom-0 left-0 top-8 z-40 flex w-80 max-w-full transform flex-col border-r border-slate-800 bg-slate-900 transition-transform duration-300 ease-in-out lg:relative lg:top-auto lg:translate-x-0"
     :class="isOpen ? 'translate-x-0' : '-translate-x-full'"
   >
-    <!-- Header -->
-    <div class="flex items-center justify-between p-4 border-b border-gray-700">
-      <h2 class="text-lg font-semibold text-white">
+    <header class="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+      <h2 class="text-base font-semibold text-slate-100">
         Rooms
       </h2>
-      <button
-        class="lg:hidden p-2 rounded-lg hover:bg-gray-700 transition-colors"
+      <IconBtn
+        icon="close"
+        size="sm"
+        class="lg:hidden"
         @click="emit('close')"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
-    </div>
+      />
+    </header>
 
-    <!-- Room List + Multiplayer Lobbies -->
-    <div class="flex-1 overflow-y-auto flex flex-col">
-      <div class="p-4 space-y-3">
-        <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">
+    <div class="flex flex-1 flex-col overflow-y-auto">
+      <section class="px-3 py-4">
+        <h3 class="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-slate-500">
           Chat
         </h3>
         <div
           v-if="chatRooms.length > 0"
-          class="space-y-1"
+          class="space-y-0.5"
         >
           <RoomItem
             v-for="room in chatRooms"
@@ -48,98 +34,76 @@
           />
         </div>
 
-        <div
+        <p
           v-else
-          class="text-gray-500 text-sm"
+          class="px-1 text-sm text-slate-500"
         >
-          No opened chat.
-        </div>
-      </div>
+          No open chats.
+        </p>
+      </section>
 
-      <!-- Multiplayer Lobbies section -->
-      <div class="p-4 mb-auto border-t border-gray-700">
-        <div class="flex flex-col space-y-3">
-          <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">
-            Multiplayer
-          </h3>
-          <div
-            v-if="mutiplayerLobbies.length > 0"
-            class="space-y-1"
-          >
-            <RoomItem
-              v-for="room in mutiplayerLobbies"
-              :key="room.id"
-              :room="room"
-              :is-active="room.id === activeRoomId"
-              @select="emit('selectRoom', room.id)"
-              @leave="handleLeaveRoom(room)"
-            />
-          </div>
-          <button
-            class="w-full px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors flex items-center justify-center space-x-2"
-            @click="emit('openCreateLobby')"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-            <span>Create Lobby</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Join Room -->
-    <div class="p-4 border-t bg-gray-800 border-gray-700">
-      <div class="space-y-3">
-        <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">
-          Join Room
+      <section class="mb-auto border-t border-slate-800 px-3 py-4">
+        <h3 class="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-slate-500">
+          Multiplayer
         </h3>
-        <div class="flex space-x-2">
-          <input
-            v-model="newRoomName"
-            type="text"
-            placeholder="#channel or username"
-            class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            @keyup.enter="handleJoinOrMessage"
-          >
-          <button
-            :disabled="!newRoomName.trim()"
-            class="px-3 py-2 bg-pink-500 hover:bg-pink-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-            @click="handleJoinOrMessage"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-          </button>
+        <div
+          v-if="mutiplayerLobbies.length > 0"
+          class="mb-2 space-y-0.5"
+        >
+          <RoomItem
+            v-for="room in mutiplayerLobbies"
+            :key="room.id"
+            :room="room"
+            :is-active="room.id === activeRoomId"
+            @select="emit('selectRoom', room.id)"
+            @leave="handleLeaveRoom(room)"
+          />
         </div>
-      </div>
+        <Btn
+          block
+          @click="emit('openCreateLobby')"
+        >
+          <template #icon>
+            <Icon
+              name="plus"
+              size="sm"
+            />
+          </template>
+          Create lobby
+        </Btn>
+      </section>
     </div>
-  </div>
+
+    <footer class="border-t border-slate-800 bg-slate-900 px-3 py-4">
+      <h3 class="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-slate-500">
+        Join room
+      </h3>
+      <div class="flex gap-2">
+        <Input
+          v-model="newRoomName"
+          placeholder="#channel or username"
+          @keyup.enter="handleJoinOrMessage"
+        />
+        <IconBtn
+          icon="plus"
+          variant="accent"
+          :disabled="!newRoomName.trim()"
+          title="Join"
+          @click="handleJoinOrMessage"
+        />
+      </div>
+    </footer>
+  </aside>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import RoomItem from './RoomItem.vue'
+import Btn from '@/components/UI/Btn.vue'
+import IconBtn from '@/components/UI/IconBtn.vue'
+import Icon from '@/components/UI/Icon.vue'
+import Input from '@/components/UI/Input.vue'
+import { confirm } from '@/composables/useConfirm'
 import type { RoomListItem } from '@/types'
 
 const props = defineProps<{
@@ -205,15 +169,27 @@ const handleJoinOrMessage = () => {
   newRoomName.value = ''
 }
 
-const handleLeaveRoom = (room: RoomListItem) => {
-  const confirmMessage = room.roomType === 'MultiplayerLobby'
-    ? `Are you sure you want to leave the multiplayer room ${room.displayName}? You will stop receiving messages from this room.`
-    : room.roomType === 'Channel'
-      ? `Are you sure you want to leave ${room.displayName}? You will stop receiving messages from this channel.`
-      : `Are you sure you want to close the conversation with ${room.displayName}?`
+const handleLeaveRoom = async (room: RoomListItem) => {
+  const isLobby = room.roomType === 'MultiplayerLobby'
+  const isChannel = room.roomType === 'Channel'
 
-  if (confirm(confirmMessage)) {
-    emit('leaveRoom', room.id)
-  }
+  const title = isLobby
+    ? `Leave ${room.displayName}?`
+    : isChannel
+      ? `Leave ${room.displayName}?`
+      : `Close conversation with ${room.displayName}?`
+
+  const message = isLobby || isChannel
+    ? 'You will stop receiving messages from this room.'
+    : 'You can re-open this conversation later by messaging the user again.'
+
+  const ok = await confirm({
+    title,
+    message,
+    confirmText: isLobby || isChannel ? 'Leave' : 'Close',
+    tone: 'danger',
+  })
+
+  if (ok) emit('leaveRoom', room.id)
 }
 </script>

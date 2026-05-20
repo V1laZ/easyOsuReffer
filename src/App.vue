@@ -1,49 +1,52 @@
 <template>
-  <div class="flex flex-col h-dvh overflow-hidden">
+  <div class="flex h-dvh flex-col overflow-hidden bg-slate-950 text-slate-100">
     <TitleBar v-if="currentPlatform !== 'ios' && currentPlatform !== 'android'" />
-    <main class="grow flex flex-col overflow-hidden">
+
+    <main class="flex grow flex-col overflow-hidden">
       <div
         v-if="loading"
-        class="grow bg-gray-900 flex items-center justify-center"
+        class="flex grow items-center justify-center px-6"
       >
-        <div class="text-center">
-          <Spinner class="w-12 h-12 mx-auto text-pink-500 mb-4" />
-
-          <h2 class="text-xl text-white mb-2">
-            osu! Reffer
+        <div class="flex max-w-sm flex-col items-center text-center">
+          <Spinner class="mb-5 size-10 text-pink-300" />
+          <h2 class="mb-1 text-xl font-semibold text-slate-100">
+            osu!Reffer
           </h2>
+          <p class="text-sm text-slate-400">
+            {{ loadingMessage }}
+          </p>
           <p
             v-if="errorMessage"
-            class="text-red-400 mb-2"
+            class="mt-3 text-sm text-rose-300"
           >
             {{ errorMessage }}
-          </p>
-          <p class="text-gray-400">
-            {{ loadingMessage }}
           </p>
         </div>
       </div>
 
       <div
         v-else-if="disconnected"
-        class="grow bg-gray-900 flex items-center justify-center"
+        class="flex grow items-center justify-center px-6"
       >
-        <div class="text-center">
-          <h2 class="text-xl text-white mb-2">
+        <div class="flex max-w-sm flex-col items-center text-center">
+          <div class="mb-4 flex size-12 items-center justify-center rounded-full bg-rose-500/15 text-rose-300 ring-1 ring-inset ring-rose-400/30">
+            <Icon
+              name="alert"
+              size="lg"
+            />
+          </div>
+          <h2 class="mb-2 text-xl font-semibold text-slate-100">
             Disconnected from Bancho
           </h2>
-          <p class="text-gray-400 mb-4">
-            You have been disconnected from Bancho. Please check your connection and try to reconnect.
+          <p class="mb-5 text-sm text-slate-400">
+            You have been disconnected. Check your connection and try again.
           </p>
-          <button
-            class="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600"
-            @click="reconnectToBancho"
-          >
+          <Btn @click="reconnectToBancho">
             Reconnect
-          </button>
+          </Btn>
           <p
             v-if="errorMessage"
-            class="text-red-400 mt-2"
+            class="mt-3 text-sm text-rose-300"
           >
             {{ errorMessage }}
           </p>
@@ -54,6 +57,8 @@
     </main>
 
     <OAuthCallback v-if="modalsState.showOAuthCallback" />
+
+    <ConfirmDialog />
 
     <Transition
       enter-active-class="transition-all duration-300 ease-out"
@@ -83,6 +88,9 @@ import OAuthCallback from './components/modals/OAuthCallback.vue'
 import UpdateToast from './components/UI/UpdateToast.vue'
 import Spinner from './components/UI/Spinner.vue'
 import TitleBar from './components/UI/TitleBar.vue'
+import Btn from './components/UI/Btn.vue'
+import Icon from './components/UI/Icon.vue'
+import ConfirmDialog from './components/UI/ConfirmDialog.vue'
 import { modalsState } from './stores/global'
 import { UpdateInfo, UserCredentials } from '@/types'
 import { platform } from '@tauri-apps/plugin-os'
@@ -216,31 +224,3 @@ onUnmounted(() => {
   if (unlistenIsAuthenticated) unlistenIsAuthenticated()
 })
 </script>
-
-<style>
-::-webkit-scrollbar {
-  display: none;
-}
-
-.select-arrow {
-  pointer-events: none;
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0.8em;
-  height: 0.5em;
-  background: none;
-  display: inline-block;
-}
-
-.select-arrow::after {
-  content: "";
-  display: block;
-  width: 100%;
-  height: 100%;
-  background-color: #fff;
-  clip-path: polygon(100% 0%, 0 0%, 50% 100%);
-  opacity: 0.6;
-}
-</style>

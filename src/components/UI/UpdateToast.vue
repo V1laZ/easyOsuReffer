@@ -1,121 +1,102 @@
 <template>
-  <div class="fixed bottom-0 right-0 p-4 z-50 w-full shadow max-w-md">
-    <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
-      <!-- Update Available -->
+  <div class="fixed bottom-0 right-0 z-50 w-full max-w-sm p-4">
+    <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-2xl">
       <div
         v-if="!isDownloading && !updateComplete"
         class="p-4"
       >
         <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-            <svg
-              class="w-5 h-5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-              />
-            </svg>
+          <div class="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-pink-500/15 text-pink-200 ring-1 ring-inset ring-pink-400/30">
+            <Icon
+              name="download"
+              size="sm"
+            />
           </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="text-white font-medium mb-1">
-              Update Available
+          <div class="min-w-0 flex-1">
+            <h3 class="mb-1 font-medium text-slate-100">
+              Update available
             </h3>
-            <p class="text-sm text-gray-400 mb-3">
+            <p class="mb-3 text-sm text-slate-400">
               Version {{ updateInfo.latest_version }} is available. You're on {{ updateInfo.current_version }}.
             </p>
             <div class="flex gap-2">
-              <button
-                class="flex-1 px-3 py-2 bg-gradient-to-br from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white text-sm font-medium rounded-lg transition-all"
+              <Btn
+                size="sm"
+                block
                 @click="installUpdate"
               >
-                Update Now
-              </button>
-              <button
-                class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium rounded-lg transition-colors"
+                Update now
+              </Btn>
+              <Btn
+                size="sm"
+                variant="ghost"
                 @click="emit('close')"
               >
                 Later
-              </button>
+              </Btn>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Downloading -->
       <div
         v-else-if="isDownloading"
         class="p-4"
       >
         <div class="flex items-center gap-3">
-          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-            <Spinner class="w-5 h-5 text-white" />
+          <div class="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-pink-500/15 text-pink-200 ring-1 ring-inset ring-pink-400/30">
+            <Spinner class="size-5" />
           </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="text-white font-medium mb-1">
-              Downloading Update
+          <div class="min-w-0 flex-1">
+            <h3 class="mb-2 font-medium text-slate-100">
+              Downloading update
             </h3>
-            <div class="mb-2">
-              <div class="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  class="h-full bg-gradient-to-r from-pink-500 to-purple-600 transition-all duration-300"
-                  :style="{ width: `${downloadProgress}%` }"
-                />
-              </div>
+            <div class="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+              <div
+                class="h-full bg-pink-400 transition-all duration-300"
+                :style="{ width: `${downloadProgress}%` }"
+              />
             </div>
-            <p class="text-sm text-gray-400">
+            <p class="text-xs text-slate-400">
               {{ downloadProgress.toFixed(0) }}% complete
             </p>
           </div>
         </div>
       </div>
 
-      <!-- Update Complete -->
       <div
         v-else-if="updateComplete"
         class="p-4"
       >
         <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-            <svg
-              class="w-5 h-5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+          <div class="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-200 ring-1 ring-inset ring-emerald-400/30">
+            <Icon
+              name="check"
+              size="sm"
+            />
           </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="text-white font-medium mb-1">
-              Update Ready
+          <div class="min-w-0 flex-1">
+            <h3 class="mb-1 font-medium text-slate-100">
+              Update ready
             </h3>
-            <p class="text-sm text-gray-400 mb-3">
+            <p class="mb-3 text-sm text-slate-400">
               The app needs to restart to complete the update.
             </p>
             <div class="flex gap-2">
-              <button
-                class="flex-1 px-3 py-2 bg-gradient-to-br from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white text-sm font-medium rounded-lg transition-all"
+              <Btn
+                size="sm"
+                block
                 @click="restartApp"
               >
-                Restart Now
-              </button>
-              <button
-                class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium rounded-lg transition-colors"
+                Restart now
+              </Btn>
+              <Btn
+                size="sm"
+                variant="ghost"
                 @click="emit('close')"
               >
                 Later
-              </button>
+              </Btn>
             </div>
           </div>
         </div>
@@ -131,6 +112,8 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { relaunch } from '@tauri-apps/plugin-process'
 import Spinner from './Spinner.vue'
+import Btn from './Btn.vue'
+import Icon from './Icon.vue'
 
 defineProps<{
   updateInfo: UpdateInfo

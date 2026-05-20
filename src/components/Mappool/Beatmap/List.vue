@@ -1,31 +1,25 @@
 <template>
-  <div class="flex-1 flex flex-col overflow-y-auto">
+  <div class="flex flex-1 flex-col overflow-y-auto">
     <div
       v-if="beatmaps.length === 0"
-      class="flex flex-col items-center justify-center h-full text-gray-500 p-8"
+      class="flex h-full flex-col items-center justify-center p-8 text-slate-500"
     >
-      <svg
-        class="w-16 h-16 mb-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-        />
-      </svg>
-      <p>No beatmaps in this pool</p>
-      <p class="text-sm text-gray-600 mt-1">
+      <Icon
+        name="musicCollection"
+        size="xl"
+        class="mb-3 text-slate-600"
+      />
+      <p class="text-sm">
+        No beatmaps in this pool
+      </p>
+      <p class="mt-1 text-xs text-slate-600">
         Add some maps to get started
       </p>
     </div>
 
     <div
       v-else
-      class="space-y-3 md:space-y-1 p-2"
+      class="space-y-2 p-3"
     >
       <Item
         v-for="beatmap in groupedBeatmaps"
@@ -42,7 +36,9 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import Item from './Item.vue'
+import Icon from '@/components/UI/Icon.vue'
 import { dbService } from '@/services/database'
+import { confirm } from '@/composables/useConfirm'
 import type { BeatmapEntry } from '@/types'
 
 const { beatmaps = [], canRemove = true } = defineProps<{
@@ -77,7 +73,13 @@ const groupedBeatmaps = computed(() => {
 })
 
 const removeBeatmap = async (beatmapId: number) => {
-  if (!confirm('Are you sure you want to remove this beatmap?')) return
+  const ok = await confirm({
+    title: 'Remove beatmap?',
+    message: 'The beatmap will be removed from this mappool.',
+    confirmText: 'Remove',
+    tone: 'danger',
+  })
+  if (!ok) return
 
   try {
     await dbService.deleteBeatmapFromPool(beatmapId)

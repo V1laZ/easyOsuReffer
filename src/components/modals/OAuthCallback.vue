@@ -1,28 +1,26 @@
 <template>
-  <div
-    class="flex fixed top-8 left-0 z-100 w-full bg-black flex-col items-center justify-center h-screen space-y-4"
-  >
-    <CloseButton
-      class="absolute top-3 right-3"
+  <div class="fixed inset-x-0 bottom-0 top-8 z-50 flex flex-col items-center justify-center bg-slate-950/95 px-6 backdrop-blur">
+    <IconBtn
+      icon="close"
+      size="sm"
+      class="absolute right-3 top-3"
       @click="modalsState.showOAuthCallback = false"
     />
-    <div class="p-4">
+    <div class="w-full max-w-sm space-y-4">
       <LoadingText
-        class="mb-4 text-center text-gray-200"
+        class="text-center text-sm text-slate-300"
         text="Waiting for OAuth callback"
       />
-      <input
+      <Input
         v-model="manualConnectionString"
-        type="text"
         placeholder="Paste token string here"
-        class="w-full bg-white px-4 py-2 border rounded-lg"
-      >
-      <button
-        class="w-full px-4 py-2 bg-pink-600 text-white rounded-lg mt-2 hover:bg-pink-700 transition-colors"
+      />
+      <Btn
+        block
         @click="submitManualConnection"
       >
-        Connect Manually
-      </button>
+        Connect manually
+      </Btn>
     </div>
   </div>
 </template>
@@ -32,8 +30,10 @@ import { onMounted, ref } from 'vue'
 import { once } from '@tauri-apps/api/event'
 import { dbService } from '@/services/database'
 import { globalState, modalsState } from '@/stores/global'
-import LoadingText from '../UI/LoadingText.vue'
-import CloseButton from '../UI/CloseButton.vue'
+import LoadingText from '@/components/UI/LoadingText.vue'
+import IconBtn from '@/components/UI/IconBtn.vue'
+import Btn from '@/components/UI/Btn.vue'
+import Input from '@/components/UI/Input.vue'
 import { OauthTokenCallback } from '@/types'
 
 const manualConnectionString = ref('')

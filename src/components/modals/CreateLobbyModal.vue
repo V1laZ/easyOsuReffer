@@ -1,114 +1,89 @@
 <template>
-  <AppModal v-model="open">
-    <div
-      class="bg-gray-800 rounded-lg max-w-md mx-auto"
-      @click.stop
+  <Modal
+    v-model="open"
+    title="Create multiplayer lobby"
+    size="md"
+  >
+    <form
+      id="createLobbyForm"
+      class="space-y-4"
+      @submit.prevent="handleCreateLobby"
     >
-      <!-- Header -->
-      <div class="flex items-center justify-between p-4 border-b border-gray-700">
-        <h2 class="text-lg font-semibold text-white">
-          Create Multiplayer Lobby
-        </h2>
-        <CloseButton @click="open = false" />
-      </div>
-
-      <!-- Form -->
-      <form
-        id="createLobbyForm"
-        class="p-4 space-y-4"
-        @submit.prevent="handleCreateLobby"
+      <Field
+        label="Lobby name"
+        required
       >
-        <!-- Lobby Name Input -->
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Lobby Name</label>
-          <input
-            ref="lobbyNameInputRef"
-            v-model="lobbyName"
-            type="text"
-            autofocus
-            placeholder="Enter lobby name"
-            maxlength="50"
-            class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-          >
-        </div>
+        <Input
+          ref="lobbyNameInputRef"
+          v-model="lobbyName"
+          placeholder="Enter lobby name"
+          :maxlength="50"
+          autofocus
+        />
+      </Field>
 
-        <!-- Team Mode Select -->
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Team Mode</label>
-          <div class="relative flex items-center">
-            <select
-              v-model="teamMode"
-              class="appearance-none w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            >
-              <option value="0">
-                Head To Head
-              </option>
-              <option value="1">
-                Tag Coop
-              </option>
-              <option value="2">
-                Team Vs
-              </option>
-              <option value="3">
-                Tag Team Vs
-              </option>
-            </select>
-            <span class="select-arrow" />
-          </div>
-        </div>
+      <Field label="Team mode">
+        <Select v-model="teamMode">
+          <option value="0">
+            Head to head
+          </option>
+          <option value="1">
+            Tag coop
+          </option>
+          <option value="2">
+            Team vs
+          </option>
+          <option value="3">
+            Tag team vs
+          </option>
+        </Select>
+      </Field>
 
-        <!-- Score Mode Select -->
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Score Mode</label>
-          <div class="relative flex items-center">
-            <select
-              v-model="scoreMode"
-              class="appearance-none w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            >
-              <option value="0">
-                Score
-              </option>
-              <option value="1">
-                Accuracy
-              </option>
-              <option value="2">
-                Combo
-              </option>
-              <option value="3">
-                Score V2
-              </option>
-            </select>
-            <span class="select-arrow" />
-          </div>
-        </div>
-      </form>
+      <Field label="Score mode">
+        <Select v-model="scoreMode">
+          <option value="0">
+            Score
+          </option>
+          <option value="1">
+            Accuracy
+          </option>
+          <option value="2">
+            Combo
+          </option>
+          <option value="3">
+            Score V2
+          </option>
+        </Select>
+      </Field>
+    </form>
 
-      <!-- Footer -->
-      <div class="flex items-center justify-end space-x-3 p-4 border-t border-gray-700">
-        <button
-          class="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-          @click="open = false"
-        >
-          Cancel
-        </button>
-        <button
-          form="createLobbyForm"
-          type="submit"
-          :disabled="!lobbyName.trim() || loading"
-          class="px-6 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-        >
-          Create Lobby
-        </button>
-      </div>
-    </div>
-  </AppModal>
+    <template #footer>
+      <Btn
+        variant="ghost"
+        @click="open = false"
+      >
+        Cancel
+      </Btn>
+      <Btn
+        form="createLobbyForm"
+        type="submit"
+        :disabled="!lobbyName.trim() || loading"
+        :loading="loading"
+      >
+        Create lobby
+      </Btn>
+    </template>
+  </Modal>
 </template>
 
 <script setup lang="ts">
 import { nextTick, ref, useTemplateRef, watch } from 'vue'
 import { CreateLobbySettings } from '@/types'
-import AppModal from '../UI/AppModal.vue'
-import CloseButton from '../UI/CloseButton.vue'
+import Modal from '@/components/UI/Modal.vue'
+import Btn from '@/components/UI/Btn.vue'
+import Input from '@/components/UI/Input.vue'
+import Select from '@/components/UI/Select.vue'
+import Field from '@/components/UI/Field.vue'
 
 const open = defineModel<boolean>({ required: true })
 
@@ -120,7 +95,7 @@ const loading = ref(false)
 const lobbyName = ref('')
 const teamMode = ref<CreateLobbySettings['teamMode']>('2')
 const scoreMode = ref<CreateLobbySettings['scoreMode']>('3')
-const lobbyNameInputRef = useTemplateRef('lobbyNameInputRef')
+const lobbyNameInputRef = useTemplateRef<{ focus: () => void }>('lobbyNameInputRef')
 
 const handleCreateLobby = () => {
   const name = lobbyName.value.trim()
@@ -146,11 +121,7 @@ const handleCreateLobby = () => {
 
 watch(open, (newValue) => {
   if (newValue) {
-    nextTick(() => {
-      console.log('CreateLobbyModal opened, focusing input')
-      console.log('lobbyNameInputRef:', lobbyNameInputRef.value)
-      lobbyNameInputRef.value?.focus()
-    })
+    nextTick(() => lobbyNameInputRef.value?.focus())
   }
 }, { immediate: true, flush: 'post' })
 </script>

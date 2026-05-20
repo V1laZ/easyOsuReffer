@@ -1,40 +1,38 @@
 <template>
-  <div class="p-4 border-b border-gray-700 bg-gray-800">
-    <h3 class="text-base font-medium text-white mb-3">
-      Create New Mappool
+  <div class="border-b border-slate-800 bg-slate-900/60 p-4">
+    <h3 class="mb-3 text-sm font-medium text-slate-100">
+      Create new mappool
     </h3>
     <form
       class="space-y-3"
       @submit.prevent="createMappool"
     >
-      <input
+      <Input
         v-model="newMappool.name"
-        type="text"
         placeholder="Mappool name (e.g. OWC 2024 Finals)"
-        class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
         required
-      >
+      />
       <textarea
         v-model="newMappool.description"
         placeholder="Optional description"
-        class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
         rows="2"
+        class="w-full resize-none rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 ring-1 ring-inset ring-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-400/60"
       />
       <div class="flex gap-2">
-        <button
-          type="button"
-          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+        <Btn
+          variant="ghost"
+          block
           @click="emit('cancel')"
         >
           Cancel
-        </button>
-        <button
-          :disabled="loading"
+        </Btn>
+        <Btn
           type="submit"
-          class="flex-1 bg-pink-600 hover:bg-pink-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+          block
+          :loading="loading"
         >
           Create
-        </button>
+        </Btn>
       </div>
     </form>
   </div>
@@ -44,6 +42,8 @@
 import { ref } from 'vue'
 import { dbService } from '@/services/database'
 import { NewMappoolForm } from '@/types'
+import Input from '@/components/UI/Input.vue'
+import Btn from '@/components/UI/Btn.vue'
 
 const emit = defineEmits<{
   create: [mappool: NewMappoolForm]

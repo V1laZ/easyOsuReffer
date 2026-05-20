@@ -1,21 +1,22 @@
 <template>
-  <div
-    class="p-4 bg-gray-800 rounded-lg cursor-pointer border border-gray-700 hover:scale-[1.02] duration-300 transition-transform"
+  <button
+    type="button"
+    class="block w-full rounded-lg border border-slate-800 bg-slate-800/40 p-4 text-left transition-colors hover:border-slate-700 hover:bg-slate-800/80"
     @click="emit('select', mappool)"
   >
-    <h3 class="text-white font-medium">
+    <h3 class="font-medium text-slate-100">
       {{ mappool.name }}
     </h3>
     <p
       v-if="mappool.description"
-      class="text-sm text-gray-400 mt-1"
+      class="mt-1 text-sm text-slate-400"
     >
       {{ mappool.description }}
     </p>
-    <div class="flex items-center justify-between mt-2">
-      <span class="text-xs text-gray-500">{{ formattedDate }}</span>
+    <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+      <span>{{ formattedDate }}</span>
     </div>
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">

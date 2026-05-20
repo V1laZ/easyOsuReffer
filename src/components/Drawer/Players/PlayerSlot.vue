@@ -1,82 +1,63 @@
 <template>
   <div
-    class="flex items-center mx-1 p-2 px-3 rounded-lg border transition-colors"
-    :class="[slotClasses, highlight ? 'ring-2 ring-pink-400' : '']"
+    :class="[
+      'flex items-center rounded-lg px-3 py-2 ring-1 ring-inset transition-colors',
+      slotClasses,
+      highlight ? 'ring-pink-400/60' : '',
+    ]"
     @dragenter="onDragEnter"
     @dragleave="onDragLeave"
     @dragend="highlight = false"
     @dragover.prevent="onDragOver"
     @drop.prevent="onDropEvent"
   >
-    <div class="flex-1 min-w-0">
-      <div class="flex items-center justify-between">
-        <!-- Player -->
-        <div
-          v-if="slotInfo.player"
-          class="flex items-center space-x-2 flex-1 min-w-0"
-          draggable="true"
-          @dragstart="onDragStart($event, slotInfo.player?.username || 'Unknown')"
-        >
-          <button
-            v-if="slotInfo.player.isHost"
-            class="cursor-pointer"
-            @click="emit('host', null)"
-          >
-            <svg
-              class="size-6 text-yellow-400"
-              xmlns="http://www.w3.org/2000/svg"
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-            ><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path
-              fill="currentColor"
-              d="M5 20v-2h14v2zm0-3.5L3.725 8.475q-.05 0-.113.013T3.5 8.5q-.625 0-1.062-.438T2 7t.438-1.062T3.5 5.5t1.063.438T5 7q0 .175-.038.325t-.087.275L8 9l3.125-4.275q-.275-.2-.45-.525t-.175-.7q0-.625.438-1.063T12 2t1.063.438T13.5 3.5q0 .375-.175.7t-.45.525L16 9l3.125-1.4q-.05-.125-.088-.275T19 7q0-.625.438-1.063T20.5 5.5t1.063.438T22 7t-.437 1.063T20.5 8.5q-.05 0-.112-.012t-.113-.013L19 16.5z"
-            /></svg>
-          </button>
-          <button
-            v-else
-            class="cursor-pointer"
-            @click="emit('host', slotInfo.player.username)"
-          >
-            <svg
-              class="size-6 text-gray-400/80"
-              xmlns="http://www.w3.org/2000/svg"
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-            ><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path
-              fill="currentColor"
-              d="M5 20v-2h14v2zm0-3.5L3.725 8.475q-.05 0-.113.013T3.5 8.5q-.625 0-1.062-.438T2 7t.438-1.062T3.5 5.5t1.063.438T5 7q0 .175-.038.325t-.087.275L8 9l3.125-4.275q-.275-.2-.45-.525t-.175-.7q0-.625.438-1.063T12 2t1.063.438T13.5 3.5q0 .375-.175.7t-.45.525L16 9l3.125-1.4q-.05-.125-.088-.275T19 7q0-.625.438-1.063T20.5 5.5t1.063.438T22 7t-.437 1.063T20.5 8.5q-.05 0-.112-.012t-.113-.013L19 16.5zm1.7-2h10.6l.65-4.175l-2.625 1.15L12 6.9l-3.325 4.575l-2.625-1.15zm5.3 0"
-            /></svg>
-          </button>
-          <span class="font-medium text-white truncate flex-1 min-w-0">{{ slotInfo.player.username }}</span>
-        </div>
-
-        <div
-          v-else
-          class="text-gray-500 italic flex-1 min-w-0"
-        >
-          Empty
-        </div>
-
-        <!-- Team -->
+    <div class="flex min-w-0 flex-1 items-center justify-between">
+      <div
+        v-if="slotInfo.player"
+        class="flex min-w-0 flex-1 items-center gap-2"
+        draggable="true"
+        @dragstart="onDragStart($event, slotInfo.player?.username || 'Unknown')"
+      >
         <button
-          v-if="slotInfo.player && slotInfo.player.team"
-          class="size-4 rounded border-2 flex-shrink-0 cursor-pointer border-gray-600 ml-2"
-          :class="teamColor"
-          :title="`Team ${slotInfo.player.team}`"
-          @click.stop="emit('teamChange', {
-            playerName: slotInfo.player.username,
-            team: slotInfo.player.team === 'red' ? 'blue' : 'red'
-          })"
-        />
+          class="flex-shrink-0 cursor-pointer transition-colors"
+          :class="slotInfo.player.isHost ? 'text-amber-300 hover:text-amber-200' : 'text-slate-500 hover:text-slate-300'"
+          :title="slotInfo.player.isHost ? 'Clear host' : 'Make host'"
+          @click="emit('host', slotInfo.player.isHost ? null : slotInfo.player.username)"
+        >
+          <Icon
+            :name="slotInfo.player.isHost ? 'crown' : 'crownOutline'"
+            size="md"
+          />
+        </button>
+        <span class="min-w-0 flex-1 truncate text-sm font-medium text-slate-100">
+          {{ slotInfo.player.username }}
+        </span>
       </div>
+
+      <div
+        v-else
+        class="min-w-0 flex-1 text-sm italic text-slate-500"
+      >
+        Empty
+      </div>
+
+      <button
+        v-if="slotInfo.player && slotInfo.player.team"
+        class="ml-2 size-4 flex-shrink-0 cursor-pointer rounded ring-2 ring-inset"
+        :class="teamColor"
+        :title="`Team ${slotInfo.player.team}`"
+        @click.stop="emit('teamChange', {
+          playerName: slotInfo.player.username,
+          team: slotInfo.player.team === 'red' ? 'blue' : 'red'
+        })"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import Icon from '@/components/UI/Icon.vue'
 import type { PlayerSlot, PlayerTeamChangeEvent } from '@/types'
 
 const { slotInfo } = defineProps<{
@@ -94,14 +75,14 @@ let dragCounter = 0
 const slotClasses = computed(() => {
   if (slotInfo.player) {
     if (slotInfo.player.isReady) {
-      return 'bg-green-900/30 border-green-600'
+      return 'bg-emerald-500/10 ring-emerald-400/30'
     }
-    else if (slotInfo.player.isPlaying) {
-      return 'bg-blue-900/30 border-blue-600'
+    if (slotInfo.player.isPlaying) {
+      return 'bg-sky-500/10 ring-sky-400/30'
     }
-    return 'bg-gray-900/30 border-gray-500'
+    return 'bg-slate-800/80 ring-slate-700'
   }
-  return 'bg-gray-800 border-gray-600'
+  return 'bg-slate-800/40 ring-slate-800'
 })
 
 const onDragStart = (e: DragEvent, playerName: string) => {
@@ -167,7 +148,9 @@ const onDragLeave = () => {
 }
 
 const teamColor = computed(() => {
-  if (!slotInfo.player) return 'bg-gray-600'
-  return slotInfo.player.team === 'red' ? 'bg-red-500' : 'bg-blue-500'
+  if (!slotInfo.player) return 'bg-slate-600 ring-slate-500'
+  return slotInfo.player.team === 'red'
+    ? 'bg-rose-400 ring-rose-300/50'
+    : 'bg-sky-400 ring-sky-300/50'
 })
 </script>

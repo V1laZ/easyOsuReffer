@@ -5,20 +5,21 @@
       enter-active-class="transition-opacity duration-150 ease-out"
       enter-from-class="opacity-0"
       enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-150 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
     >
       <div
         v-if="modelValue"
         class="fixed inset-x-0 top-8 bottom-0 z-50 flex items-center justify-center p-4"
       >
-        <!-- Backdrop -->
         <div
-          class="absolute inset-0 bg-black/80"
+          class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
           @click="close"
         />
-        <!-- Content -->
         <Transition
           appear
-          enter-active-class="transition-all duration-150 ease-out"
+          enter-active-class="transition duration-150 ease-out"
           enter-from-class="opacity-0 scale-95"
           enter-to-class="opacity-100 scale-100"
         >

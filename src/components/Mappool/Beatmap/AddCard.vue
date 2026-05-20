@@ -1,73 +1,62 @@
 <template>
-  <div class="p-4 border-b border-gray-700 bg-gray-800">
+  <div class="border-b border-slate-800 bg-slate-900/60 p-4">
     <div class="space-y-3">
       <div
         v-if="!beatmapPreview"
-        class="flex items-center space-x-2"
+        class="flex items-center gap-2"
       >
-        <input
+        <Input
+          ref="beatmapInputRef"
           v-model="beatmapInput"
-          type="text"
           placeholder="Beatmap ID or osu.ppy.sh link"
-          class="flex-1 bg-gray-700 border border-gray-600 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
           @keyup.enter="fetchBeatmapData"
-        >
-        <button
+        />
+        <Btn
           :disabled="!beatmapInput || isLoading"
-          class="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+          :loading="isLoading"
           @click="fetchBeatmapData"
         >
-          <Spinner
-            v-if="isLoading"
-            class="w-4 h-4"
-          />
-          <span v-else>Fetch</span>
-        </button>
+          Fetch
+        </Btn>
       </div>
 
-      <!-- Beatmap Preview -->
       <div
         v-if="beatmapPreview"
-        class="p-4 bg-gray-700 rounded-xl border border-gray-600 backdrop-blur-sm"
+        class="rounded-lg border border-slate-800 bg-slate-800/50 p-4"
       >
-        <div class="flex items-center space-x-3 mb-4">
-          <div class="relative">
-            <img
-              :src="`https://assets.ppy.sh/beatmaps/${beatmapPreview.beatmapset_id}/covers/cover.jpg`"
-              :alt="beatmapPreview.title"
-              class="w-16 h-16 rounded-lg object-cover shadow-lg"
-            >
-            <div class="absolute inset-0 bg-gradient-to-br from-transparent to-black/20 rounded-lg" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-white font-semibold truncate text-base">
+        <div class="mb-4 flex items-center gap-3">
+          <img
+            :src="`https://assets.ppy.sh/beatmaps/${beatmapPreview.beatmapset_id}/covers/cover.jpg`"
+            :alt="beatmapPreview.title"
+            class="size-16 rounded-md object-cover ring-1 ring-inset ring-slate-700"
+          >
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-semibold text-slate-100">
               {{ beatmapPreview.artist }} - {{ beatmapPreview.title }}
             </p>
-            <p class="text-sm text-gray-300 truncate">
+            <p class="truncate text-sm text-slate-300">
               [{{ beatmapPreview.difficulty }}] by {{ beatmapPreview.mapper }}
             </p>
-            <div class="flex items-center space-x-3 mt-1">
-              <span class="text-xs text-gray-400">★{{ beatmapPreview.difficulty_rating?.toFixed(2) }}</span>
-              <span class="text-xs text-gray-400">{{ Math.floor(beatmapPreview.total_length / 60) }}:{{ String(beatmapPreview.total_length % 60).padStart(2, '0') }}</span>
-              <span class="text-xs text-gray-400">{{ beatmapPreview.bpm }}&nbsp;BPM</span>
+            <div class="mt-1 flex items-center gap-3 text-xs text-slate-400">
+              <span>★{{ beatmapPreview.difficulty_rating?.toFixed(2) }}</span>
+              <span>{{ Math.floor(beatmapPreview.total_length / 60) }}:{{ String(beatmapPreview.total_length % 60).padStart(2, '0') }}</span>
+              <span>{{ beatmapPreview.bpm }}&nbsp;BPM</span>
             </div>
           </div>
         </div>
 
-        <!-- Category and Mod Selection -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2">Category *</label>
-            <input
+        <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <Field
+            label="Category"
+            required
+          >
+            <Input
               v-model="beatmapMeta.category"
-              type="text"
               placeholder="e.g. NM2, HD1"
-              class="w-full bg-gray-600 border border-gray-500 rounded-lg p-3 text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            >
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2">Mod Combination</label>
-            <div class="flex items-center gap-2 flex-wrap">
+            />
+          </Field>
+          <Field label="Mod combination">
+            <div class="flex flex-wrap items-center gap-2 pt-1">
               <Mod
                 v-for="mod in mods"
                 :key="mod"
@@ -77,62 +66,56 @@
                 @click="handleModSelect(mod)"
               />
             </div>
-          </div>
+          </Field>
         </div>
 
-        <div class="flex gap-3">
-          <button
-            class="bg-gray-600 w-full hover:bg-gray-700 text-white text-sm font-medium py-3 px-4 rounded-lg transition-colors"
+        <div class="flex gap-2">
+          <Btn
+            variant="ghost"
+            block
             @click="emit('cancel')"
           >
             Cancel
-          </button>
-          <button
+          </Btn>
+          <Btn
+            variant="success"
+            block
             :disabled="!beatmapMeta.category"
-            class="w-full disabled:bg-gray-600 bg-green-500 hover:bg-green-600 text-white text-sm font-medium py-3 px-4 rounded-lg transition-colors"
             @click="addBeatmap"
           >
-            Add to Pool
-          </button>
+            Add to pool
+          </Btn>
         </div>
       </div>
 
-      <!-- Error State -->
       <div
         v-if="fetchError"
-        class="p-4 bg-red-900/30 border border-red-800 rounded-lg"
+        class="flex items-start gap-2 rounded-lg bg-rose-500/10 p-3 ring-1 ring-inset ring-rose-400/30"
       >
-        <div class="flex items-center space-x-2">
-          <svg
-            class="w-5 h-5 text-red-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <p class="text-red-200 text-sm">
-            {{ fetchError }}
-          </p>
-        </div>
+        <Icon
+          name="alert"
+          size="sm"
+          class="mt-0.5 flex-shrink-0 text-rose-300"
+        />
+        <p class="text-sm text-rose-200">
+          {{ fetchError }}
+        </p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { dbService } from '@/services/database'
 import { globalState } from '@/stores/global'
-import Mod from '../../Mod.vue'
+import Mod from '@/components/Mod.vue'
+import Btn from '@/components/UI/Btn.vue'
+import Input from '@/components/UI/Input.vue'
+import Field from '@/components/UI/Field.vue'
+import Icon from '@/components/UI/Icon.vue'
 import { BeatmapData } from '@/types'
-import Spinner from '../../UI/Spinner.vue'
 
 const props = defineProps<{
   selectedMappoolId: number
@@ -142,6 +125,12 @@ const emit = defineEmits<{
   cancel: []
   add: []
 }>()
+
+const beatmapInputRef = useTemplateRef<{ focus: () => void }>('beatmapInputRef')
+
+onMounted(() => {
+  nextTick(() => beatmapInputRef.value?.focus())
+})
 
 const mods = ['NF', 'HD', 'HR', 'DT', 'EZ', 'FL', 'HT', 'FM']
 const selectedMods = ref<string[]>(['NF'])
@@ -222,7 +211,6 @@ const extractBeatmapId = (input: string): string | null => {
     if (match) return match[1]
   }
 
-  // Check if it's just a number
   if (/^\d+$/.test(input.trim())) {
     return input.trim()
   }

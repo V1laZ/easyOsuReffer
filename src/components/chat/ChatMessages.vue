@@ -1,38 +1,28 @@
 <template>
   <div
     ref="messagesContainer"
-    class="flex-1 overflow-y-auto bg-gray-900 p-4"
+    class="flex-1 overflow-y-auto bg-slate-950 px-2 py-3"
   >
-    <!-- Empty State -->
     <div
       v-if="messages.length === 0"
-      class="flex flex-col items-center justify-center h-32 text-gray-500"
+      class="flex h-32 flex-col items-center justify-center text-slate-500"
     >
-      <svg
-        class="w-12 h-12 mb-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-        />
-      </svg>
-      <p class="text-center">
+      <Icon
+        name="chat"
+        size="xl"
+        class="mb-2 text-slate-600"
+      />
+      <p class="text-sm">
         No messages yet
       </p>
-      <p class="text-sm text-gray-600 mt-1">
+      <p class="mt-1 text-xs text-slate-600">
         Start chatting or wait for messages to appear
       </p>
     </div>
 
-    <!-- Messages -->
     <div
       v-else
-      class="space-y-1"
+      class="space-y-0.5"
     >
       <Message
         v-for="(message, index) in messages"
@@ -42,37 +32,33 @@
       />
     </div>
 
-    <!-- Scroll to bottom indicator -->
-    <div
-      v-if="!isAtBottom && messages.length > 0"
-      class="fixed bottom-28 right-6 z-10"
+    <Transition
+      enter-active-class="transition duration-150 ease-out"
+      enter-from-class="translate-y-2 opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition duration-100 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
     >
       <button
-        class="flex items-center space-x-2 px-3 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-full shadow-lg transition-colors"
+        v-if="!isAtBottom && messages.length > 0"
+        class="fixed bottom-24 right-4 z-10 inline-flex items-center gap-2 rounded-full bg-pink-500/15 px-3 py-2 text-xs font-medium text-pink-200 shadow-lg ring-1 ring-inset ring-pink-400/30 transition-colors hover:bg-pink-500/25 hover:text-pink-100"
         @click="scrollToBottom"
       >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 14l-7 7m0 0l-7-7m7 7V3"
-          />
-        </svg>
-        <span class="text-sm">New messages</span>
+        <Icon
+          name="arrowDown"
+          size="xs"
+        />
+        <span>New messages</span>
       </button>
-    </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUpdated, nextTick, onUnmounted, watch } from 'vue'
 import Message from './Message.vue'
+import Icon from '@/components/UI/Icon.vue'
 import type { IrcMessage } from '@/types'
 
 const props = defineProps<{

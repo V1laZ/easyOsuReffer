@@ -1,141 +1,112 @@
 <template>
-  <AppModal
+  <Modal
     v-model="modelValue"
+    size="sm"
+    body-padding="none"
   >
+    <template #header>
+      <div class="sr-only">
+        Player info
+      </div>
+    </template>
+
     <div
-      class="bg-gray-800 border border-gray-700 shadow-2xl rounded-2xl overflow-hidden w-full max-w-sm mx-auto"
-      @click.stop
+      v-if="loading"
+      class="p-8"
     >
-      <!-- Loading -->
-      <div
-        v-if="loading"
-        class="p-8"
-      >
-        <Loading text="Loading player info…" />
+      <Loading text="Loading player info" />
+    </div>
+
+    <template v-else>
+      <div class="border-b border-slate-800 px-5 py-5">
+        <div class="flex items-center gap-4">
+          <div class="size-16 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-inset ring-pink-400/30">
+            <img
+              v-if="player?.avatar_url"
+              :src="player.avatar_url"
+              :alt="username"
+              class="size-full object-cover"
+            >
+            <div
+              v-else
+              class="flex size-full items-center justify-center bg-pink-500/20 text-pink-200"
+            >
+              <span class="text-2xl font-bold">{{ username.charAt(0).toUpperCase() }}</span>
+            </div>
+          </div>
+
+          <div class="min-w-0">
+            <h2 class="truncate text-lg font-semibold text-slate-100">
+              {{ player?.username ?? username }}
+            </h2>
+            <div
+              v-if="player"
+              class="mt-0.5 flex items-center gap-1.5"
+            >
+              <span class="leading-none">{{ flagEmoji(player.country) }}</span>
+              <span class="text-sm text-slate-400">{{ player.country }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <template v-else>
-        <!-- Header with avatar -->
-        <div class="relative bg-gray-900 px-6 pt-6 pb-4">
-          <CloseButton
-            class="absolute top-3 right-3"
-            @click="modelValue = false"
+      <div
+        v-if="error"
+        class="px-5 py-4 text-center text-sm text-slate-400"
+      >
+        {{ error }}
+      </div>
+
+      <div
+        v-if="player"
+        class="grid grid-cols-2 gap-3 p-5"
+      >
+        <div
+          v-for="stat in stats"
+          :key="stat.label"
+          class="rounded-lg border border-slate-800 bg-slate-800/50 p-3"
+        >
+          <div class="text-xs text-slate-400">
+            {{ stat.label }}
+          </div>
+          <div class="mt-0.5 font-semibold text-slate-100">
+            {{ stat.value }}
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template
+      v-if="!loading"
+      #footer
+    >
+      <Btn
+        variant="ghost"
+        size="sm"
+        @click="openInBrowser"
+      >
+        <template #icon>
+          <Icon
+            name="external"
+            size="sm"
           />
-
-          <div class="flex items-center space-x-4">
-            <div class="size-16 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-pink-500/50">
-              <img
-                v-if="player?.avatar_url"
-                :src="player.avatar_url"
-                :alt="username"
-                class="size-full object-cover"
-              >
-              <div
-                v-else
-                class="size-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center"
-              >
-                <span class="text-2xl font-bold text-white">{{ username.charAt(0).toUpperCase() }}</span>
-              </div>
-            </div>
-
-            <div class="min-w-0">
-              <h2 class="text-xl font-bold text-white truncate">
-                {{ player?.username ?? username }}
-              </h2>
-              <div
-                v-if="player"
-                class="flex items-center space-x-1.5 mt-0.5"
-              >
-                <span class="text-lg leading-none">{{ flagEmoji(player.country) }}</span>
-                <span class="text-sm text-gray-400">{{ player.country }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Error -->
-        <div
-          v-if="error"
-          class="px-6 py-4 text-center text-gray-400 text-sm"
-        >
-          {{ error }}
-        </div>
-
-        <!-- Stats -->
-        <div
-          v-if="player"
-          class="px-6 py-4 grid grid-cols-2 gap-3"
-        >
-          <div class="bg-gray-700/50 rounded-xl p-3">
-            <div class="text-xs text-gray-400 mb-0.5">
-              Global Rank
-            </div>
-            <div class="text-white font-semibold">
-              {{ player.rank != null ? `#${player.rank.toLocaleString()}` : '—' }}
-            </div>
-          </div>
-          <div class="bg-gray-700/50 rounded-xl p-3">
-            <div class="text-xs text-gray-400 mb-0.5">
-              Country Rank
-            </div>
-            <div class="text-white font-semibold">
-              {{ player.country_rank != null ? `#${player.country_rank.toLocaleString()}` : '—' }}
-            </div>
-          </div>
-          <div class="bg-gray-700/50 rounded-xl p-3">
-            <div class="text-xs text-gray-400 mb-0.5">
-              Performance
-            </div>
-            <div class="text-white font-semibold">
-              {{ Math.round(player.pp).toLocaleString() }}pp
-            </div>
-          </div>
-          <div class="bg-gray-700/50 rounded-xl p-3">
-            <div class="text-xs text-gray-400 mb-0.5">
-              Accuracy
-            </div>
-            <div class="text-white font-semibold">
-              {{ player.accuracy.toFixed(2) }}%
-            </div>
-          </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="px-6 pb-5 flex justify-end">
-          <button
-            class="flex items-center space-x-1.5 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-            @click="openInBrowser"
-          >
-            <span>Open in browser</span>
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-              />
-            </svg>
-          </button>
-        </div>
-      </template>
-    </div>
-  </AppModal>
+        </template>
+        Open in browser
+      </Btn>
+    </template>
+  </Modal>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { dbService } from '@/services/database'
 import { globalState } from '@/stores/global'
 import type { UserData } from '@/types'
-import AppModal from '@/components/UI/AppModal.vue'
-import CloseButton from '@/components/UI/CloseButton.vue'
+import Modal from '@/components/UI/Modal.vue'
+import Btn from '@/components/UI/Btn.vue'
+import Icon from '@/components/UI/Icon.vue'
 import Loading from '@/components/UI/Loading.vue'
 
 const props = defineProps<{
@@ -147,6 +118,17 @@ const modelValue = defineModel<boolean>({ default: false })
 const loading = ref(true)
 const player = ref<UserData | null>(null)
 const error = ref<string | null>(null)
+
+const stats = computed(() => {
+  if (!player.value) return []
+  const p = player.value
+  return [
+    { label: 'Global rank', value: p.rank != null ? `#${p.rank.toLocaleString()}` : '—' },
+    { label: 'Country rank', value: p.country_rank != null ? `#${p.country_rank.toLocaleString()}` : '—' },
+    { label: 'Performance', value: `${Math.round(p.pp).toLocaleString()}pp` },
+    { label: 'Accuracy', value: `${p.accuracy.toFixed(2)}%` },
+  ]
+})
 
 const flagEmoji = (code: string) =>
   code.toUpperCase().split('').map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('')

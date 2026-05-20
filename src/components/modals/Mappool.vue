@@ -1,175 +1,141 @@
 <template>
-  <AppModal v-model="isOpen">
-    <div
-      class="bg-gray-900 mx-auto flex flex-col rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg md:max-w-4xl max-h-[90vh] min-h-[70vh] border border-gray-700 shadow-2xl overflow-hidden"
-      @click.stop
-    >
-      <!-- Header -->
-      <div class="flex items-center justify-between p-4 md:p-6 border-b border-gray-700">
-        <div>
-          <h2 class="text-lg md:text-xl font-semibold text-white">
-            Mappools
-          </h2>
-          <p class="text-xs md:text-sm text-gray-400 mt-1">
-            Manage your tournament mappools
-          </p>
+  <Modal
+    v-model="isOpen"
+    size="xl"
+    body-padding="none"
+    wrapper-class="max-h-[90vh] min-h-[70vh]"
+  >
+    <template #header>
+      <h2 class="text-lg font-semibold text-slate-100">
+        Mappools
+      </h2>
+      <p class="mt-0.5 text-xs text-slate-400">
+        Manage your tournament mappools
+      </p>
+    </template>
+
+    <div class="flex h-full flex-1 flex-col overflow-hidden">
+      <div
+        v-if="!selectedMappool"
+        class="relative flex flex-1 flex-col overflow-hidden"
+      >
+        <CreateForm
+          v-if="showCreateForm"
+          @create="refreshMappools(); showCreateForm = false"
+          @cancel="showCreateForm = false"
+        />
+
+        <MappoolList
+          v-else
+          :mappools="mappools"
+          @select="selectMappool"
+        />
+
+        <div
+          v-if="!showCreateForm"
+          class="border-t border-slate-800 p-4"
+        >
+          <Btn
+            block
+            @click="showCreateForm = true"
+          >
+            <template #icon>
+              <Icon
+                name="plus"
+                size="sm"
+              />
+            </template>
+            New mappool
+          </Btn>
         </div>
-        <CloseButton @click="isOpen = false" />
       </div>
 
-      <!-- Content -->
-      <div class="flex flex-1 flex-col overflow-hidden">
-        <!-- Mappool List View -->
-        <div
-          v-if="!selectedMappool"
-          class="flex-1 flex flex-col relative"
-        >
-          <CreateForm
-            v-if="showCreateForm"
-            @create="refreshMappools(); showCreateForm = false"
-            @cancel="showCreateForm = false"
-          />
-
-          <MappoolList
-            v-else
-            :mappools="mappools"
-            @select="selectMappool"
-          />
-
-          <!-- Create Button -->
-          <div
-            v-if="!showCreateForm"
-            class="p-4 border-t border-gray-700 z-10 left-0 w-full"
+      <div
+        v-else
+        class="flex flex-1 flex-col overflow-hidden"
+      >
+        <div class="border-b border-slate-800 bg-slate-900/60 p-4">
+          <button
+            type="button"
+            class="mb-3 inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-100"
+            @click="backToList"
           >
+            <Icon
+              name="back"
+              size="sm"
+            />
+            <span>Back to mappools</span>
+          </button>
+
+          <h3 class="text-base font-medium text-slate-100">
+            {{ selectedMappool?.name }}
+          </h3>
+          <p
+            v-if="selectedMappool?.description"
+            class="mt-0.5 text-sm text-slate-400"
+          >
+            {{ selectedMappool.description }}
+          </p>
+
+          <div class="mt-3 flex items-center justify-between">
+            <span class="text-xs text-slate-500">{{ selectedMappoolBeatmaps.length }} maps</span>
             <button
-              class="w-full bg-pink-600 hover:bg-pink-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-              @click="showCreateForm = true"
+              type="button"
+              class="text-xs text-rose-300 transition-colors hover:text-rose-200"
+              @click="deleteMappool(selectedMappool!.id)"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-              <span>New Mappool</span>
+              Delete mappool
             </button>
           </div>
         </div>
 
-        <!-- Mappool Detail View -->
-        <div
-          v-else-if="selectedMappool"
-          class="flex flex-col flex-1 overflow-hidden"
-        >
-          <!-- Header with back button -->
-          <div class="p-4 border-b border-gray-700 bg-gray-800">
-            <button
-              class="flex items-center space-x-2 text-gray-400 hover:text-white mb-3 transition-colors"
-              @click="backToList"
-            >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              <span class="text-sm">Back to mappools</span>
-            </button>
-
-            <h3 class="text-lg font-medium text-white">
-              {{ selectedMappool?.name }}
-            </h3>
-            <p
-              v-if="selectedMappool?.description"
-              class="text-sm text-gray-400 mt-1"
-            >
-              {{ selectedMappool.description }}
+        <template v-if="!globalState.isConnectedOsu">
+          <div class="p-6 text-center text-slate-400">
+            <p class="mb-3 text-sm">
+              Connect osu! to manage beatmaps
             </p>
+            <ConnectOsuBtn />
+          </div>
+        </template>
 
-            <div class="flex items-center justify-between mt-3">
-              <span class="text-xs text-gray-500">{{ selectedMappoolBeatmaps.length }} maps</span>
-              <button
-                class="text-xs text-red-400 hover:text-red-300"
-                @click="deleteMappool(selectedMappool!.id)"
-              >
-                Delete mappool
-              </button>
-            </div>
+        <template v-else>
+          <div class="flex flex-1 flex-col overflow-auto">
+            <AddBeatmapCard
+              v-if="showAddBeatmap"
+              :selected-mappool-id="selectedMappool.id"
+              @add="refreshBeatmaps(selectedMappool.id); showAddBeatmap = false"
+              @cancel="showAddBeatmap = false"
+            />
+
+            <BeatmapList
+              :beatmaps="selectedMappoolBeatmaps"
+              @remove="refreshBeatmaps(selectedMappool.id)"
+            />
           </div>
 
-          <template v-if="!globalState.isConnectedOsu">
-            <div class="p-4 text-center text-gray-400">
-              <p class="text-sm mb-2">
-                Connect osu! to manage beatmaps
-              </p>
-              <ConnectOsuBtn class="mb-auto" />
-            </div>
-          </template>
-
-          <template v-else>
-            <div
-              class="flex-1 flex flex-col overflow-auto"
+          <div
+            v-if="!showAddBeatmap"
+            class="border-t border-slate-800 p-4"
+          >
+            <Btn
+              block
+              variant="success"
+              :disabled="!globalState.isConnectedOsu"
+              @click="showAddBeatmap = true"
             >
-              <!-- Add Beatmap Form -->
-              <AddBeatmapCard
-                v-if="showAddBeatmap"
-                :selected-mappool-id="selectedMappool.id"
-                @add="refreshBeatmaps(selectedMappool.id); showAddBeatmap = false"
-                @cancel="showAddBeatmap = false"
-              />
-
-              <!-- Beatmap List -->
-              <BeatmapList
-                :beatmaps="selectedMappoolBeatmaps"
-                @remove="refreshBeatmaps(selectedMappool.id)"
-              />
-            </div>
-
-            <!-- Add Button -->
-            <div
-              v-if="!showAddBeatmap"
-              class="p-4 border-t border-gray-700"
-            >
-              <button
-                :disabled="!globalState.isConnectedOsu"
-                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-                @click="showAddBeatmap = true"
-              >
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                <span>Add Beatmap</span>
-              </button>
-            </div>
-          </template>
-        </div>
+              <template #icon>
+                <Icon
+                  name="plus"
+                  size="sm"
+                />
+              </template>
+              Add beatmap
+            </Btn>
+          </div>
+        </template>
       </div>
     </div>
-  </AppModal>
+  </Modal>
 </template>
 
 <script setup lang="ts">
@@ -182,8 +148,10 @@ import AddBeatmapCard from '../Mappool/Beatmap/AddCard.vue'
 import BeatmapList from '../Mappool/Beatmap/List.vue'
 import ConnectOsuBtn from '../ConnectOsuBtn.vue'
 import { Mappool, BeatmapEntry } from '@/types'
-import CloseButton from '../UI/CloseButton.vue'
-import AppModal from '../UI/AppModal.vue'
+import Modal from '@/components/UI/Modal.vue'
+import Btn from '@/components/UI/Btn.vue'
+import Icon from '@/components/UI/Icon.vue'
+import { confirm } from '@/composables/useConfirm'
 
 const isOpen = defineModel<boolean>({ default: false })
 
@@ -245,7 +213,13 @@ const backToList = () => {
 }
 
 const deleteMappool = async (mappoolId: number) => {
-  if (!confirm('Are you sure you want to delete this mappool? This action cannot be undone.')) return
+  const ok = await confirm({
+    title: 'Delete mappool?',
+    message: 'This action cannot be undone.',
+    confirmText: 'Delete',
+    tone: 'danger',
+  })
+  if (!ok) return
 
   try {
     await dbService.deleteMappool(mappoolId)

@@ -1,17 +1,15 @@
 <template>
-  <div class="flex items-center h-8 bg-gray-900 border-b border-gray-700/50 select-none flex-shrink-0">
-    <!-- Draggable region -->
+  <div class="flex h-8 flex-shrink-0 select-none items-center border-b border-slate-800 bg-slate-950">
     <div
       data-tauri-drag-region
-      class="flex-1 flex items-center px-3 h-full gap-2 cursor-default overflow-hidden"
+      class="flex h-full flex-1 items-center gap-2 px-3"
     >
-      <span class="text-xs text-gray-400 font-medium truncate">osu!Reffer</span>
+      <span class="text-xs font-medium text-slate-400">osu!Reffer</span>
     </div>
 
-    <!-- Window controls -->
     <div class="flex h-full">
       <button
-        class="w-10 h-full flex items-center justify-center text-gray-500 hover:text-white hover:bg-gray-700 transition-colors"
+        class="flex h-full w-10 items-center justify-center text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-100"
         @click="minimize"
       >
         <svg
@@ -28,10 +26,9 @@
       </button>
 
       <button
-        class="w-10 h-full flex items-center justify-center text-gray-500 hover:text-white hover:bg-gray-700 transition-colors"
+        class="flex h-full w-10 items-center justify-center text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-100"
         @click="toggleMaximize"
       >
-        <!-- Restore icon -->
         <svg
           v-if="isMaximized"
           width="10"
@@ -49,7 +46,6 @@
             height="7"
           />
         </svg>
-        <!-- Maximize icon -->
         <svg
           v-else
           width="10"
@@ -69,7 +65,7 @@
       </button>
 
       <button
-        class="w-10 h-full flex items-center justify-center text-gray-500 hover:text-white hover:bg-red-500 transition-colors"
+        class="flex h-full w-10 items-center justify-center text-slate-500 transition-colors hover:bg-rose-500 hover:text-white"
         @click="close"
       >
         <svg

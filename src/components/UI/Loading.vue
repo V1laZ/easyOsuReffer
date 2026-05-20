@@ -1,8 +1,8 @@
 <template>
-  <div class="flex flex-col items-center justify-center space-y-3">
-    <Spinner class="w-8 h-8 text-pink-500" />
+  <div class="flex flex-col items-center justify-center gap-3">
+    <Spinner class="size-8 text-pink-300" />
     <LoadingText
-      class="text-gray-400 text-sm"
+      class="text-sm text-slate-400"
       :text="text"
     />
   </div>
