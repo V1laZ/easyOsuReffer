@@ -184,6 +184,7 @@ const handleLogin = async () => {
 
     globalState.user = config.username
     globalState.isConnected = true
+    globalState.isLoggingOut = false
 
     router.replace('/')
   }

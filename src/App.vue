@@ -111,6 +111,7 @@ let unlistenIsAuthenticated: UnlistenFn | null = null
 async function connectWithCredentials(saved: UserCredentials) {
   globalState.user = saved.username
   globalState.userId = saved.id
+  globalState.isLoggingOut = false
   globalState.isConnectedOsu = await dbService.getOsuConnectedStatus(saved.username)
   try {
     loadingMessage.value = 'Connecting...'
@@ -169,7 +170,10 @@ function handleOfflineState() {
   loadingMessage.value = ''
   errorMessage.value = ''
 
-  if (!isAuthenticated.value) return
+  if (!isAuthenticated.value || globalState.isLoggingOut) {
+    disconnected.value = false
+    return
+  }
 
   disconnected.value = true
 }

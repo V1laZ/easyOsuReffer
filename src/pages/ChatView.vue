@@ -324,6 +324,7 @@ const closeDrawers = () => {
 }
 
 const handleLogout = async () => {
+  globalState.isLoggingOut = true
   try {
     await invoke('disconnect_from_bancho')
     globalState.user = null
@@ -332,6 +333,7 @@ const handleLogout = async () => {
   }
   catch (error) {
     console.error('Failed to logout:', error)
+    globalState.isLoggingOut = false
   }
 }
 

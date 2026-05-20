@@ -5,6 +5,7 @@ export const globalState = reactive({
   userId: null as number | null,
   isConnected: false,
   isConnectedOsu: false,
+  isLoggingOut: false,
 })
 
 export const modalsState = reactive({
