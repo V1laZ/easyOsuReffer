@@ -66,28 +66,54 @@ pub fn run() {
         .setup(|app| {
             let app_handle = app.handle().clone();
             app.deep_link().on_open_url(move |event| {
-                if let Some(url) = event.urls().first() {
-                    println!("Received deep link: {}", url);
-                    let query = url
-                        .query_pairs()
-                        .map(|(k, v)| (k.to_string(), v.to_string()))
-                        .collect::<std::collections::HashMap<_, _>>();
+                let urls = event.urls();
+                let Some(url) = urls.first() else {
+                    eprintln!("Deep link fired with no URL");
+                    return;
+                };
+                println!("Received deep link: {}", url);
 
-                    if let Some(base64_data) = query.get("data") {
-                        if let Ok(decoded_bytes) =
-                            base64::engine::general_purpose::STANDARD.decode(base64_data)
-                        {
-                            if let Ok(decoded_string) = String::from_utf8(decoded_bytes) {
-                                if let Ok(token_data) =
-                                    serde_json::from_str::<serde_json::Value>(&decoded_string)
-                                {
-                                    app_handle
-                                        .emit("oauth-token-callback", token_data)
-                                        .expect("Failed to emit oauth-token-callback event");
-                                }
-                            }
-                        }
+                let query = url
+                    .query_pairs()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect::<std::collections::HashMap<_, _>>();
+
+                let Some(base64_data) = query.get("data") else {
+                    eprintln!(
+                        "Deep link missing `data` query param (got keys: {:?}). \
+                         If this is the OAuth /callback URL it means Android intercepted \
+                         it before the worker could exchange the code for a token.",
+                        query.keys().collect::<Vec<_>>()
+                    );
+                    return;
+                };
+
+                let decoded_bytes = match base64::engine::general_purpose::STANDARD
+                    .decode(base64_data)
+                {
+                    Ok(b) => b,
+                    Err(e) => {
+                        eprintln!("Deep link `data` is not valid base64: {}", e);
+                        return;
                     }
+                };
+                let decoded_string = match String::from_utf8(decoded_bytes) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        eprintln!("Deep link `data` is not valid UTF-8: {}", e);
+                        return;
+                    }
+                };
+                let token_data = match serde_json::from_str::<serde_json::Value>(&decoded_string) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Deep link `data` is not valid JSON: {}", e);
+                        return;
+                    }
+                };
+
+                if let Err(e) = app_handle.emit("oauth-token-callback", token_data) {
+                    eprintln!("Failed to emit oauth-token-callback event: {}", e);
                 }
             });
 

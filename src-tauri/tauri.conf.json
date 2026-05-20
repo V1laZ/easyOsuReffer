@@ -40,7 +40,7 @@
         {
           "host": "osureffer.vilaz.dev",
           "pathPrefix": [
-            "/callback"
+            "/app-link"
           ]
         }
       ],
