@@ -42,24 +42,26 @@
     >
       <button
         v-if="!isAtBottom && messages.length > 0"
-        class="fixed bottom-24 right-4 z-10 inline-flex items-center gap-2 rounded-full bg-pink-500/15 px-3 py-2 text-xs font-medium text-pink-200 shadow-lg ring-1 ring-inset ring-pink-400/30 transition-colors hover:bg-pink-500/25 hover:text-pink-100"
+        class="fixed bottom-22 z-10 inline-flex items-center gap-2 rounded-full bg-pink-500/15 px-3 py-2 text-xs font-medium text-pink-200 shadow-lg ring-1 ring-inset ring-pink-400/30 transition-colors hover:bg-pink-500/25 hover:text-pink-100"
+        :style="{ right: `${left + 22}px` }"
         @click="scrollToBottom"
       >
         <Icon
           name="arrowDown"
           size="xs"
         />
-        <span>New messages</span>
+        <span class="hidden sm:block">New messages</span>
       </button>
     </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUpdated, nextTick, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUpdated, nextTick, onUnmounted, watch, useTemplateRef } from 'vue'
 import Message from './Message.vue'
 import Icon from '@/components/UI/Icon.vue'
 import type { IrcMessage } from '@/types'
+import { useElementBounding } from '@vueuse/core'
 
 const props = defineProps<{
   messages: IrcMessage[]
@@ -72,8 +74,10 @@ const emit = defineEmits<{
   loadMore: []
 }>()
 
-const messagesContainer = ref<HTMLElement | null>(null)
+const messagesContainer = useTemplateRef('messagesContainer')
 const isAtBottom = ref(true)
+
+const { left } = useElementBounding(messagesContainer)
 
 let savedScrollHeight = 0
 
