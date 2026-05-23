@@ -13,6 +13,21 @@ use tauri_plugin_deep_link::DeepLinkExt;
 use crate::migrations::get_migrations;
 use crate::types::IrcState;
 
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub extern "system" fn Java_dev_vilaz_osureffer_RustInit_initVerifier<'local>(
+    mut unowned_env: jni::EnvUnowned<'local>,
+    _class: jni::objects::JClass<'local>,
+    context: jni::objects::JObject<'local>,
+) {
+    unowned_env
+        .with_env(|env| -> jni::errors::Result<()> {
+            rustls_platform_verifier::android::init_with_env(env, context)?;
+            Ok(())
+        })
+        .resolve::<jni::errors::ThrowRuntimeExAndDefault>();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let migrations = get_migrations();
