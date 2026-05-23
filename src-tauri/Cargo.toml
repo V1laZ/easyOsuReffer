@@ -22,14 +22,14 @@ tauri = { version = "2.11.2", features = [] }
 tauri-plugin-opener = "2.5.4"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-irc = { version = "1.1.0", default-features = false, features = ["ctcp", "tls-rust"] }
+irc = "1.1.0"
 tokio = { version = "1.52.3", features = ["full"] }
 anyhow = "1.0.102"
 futures = "0.3.32"
 tauri-plugin-sql = { version = "2.4.0", features = ["sqlite"] }
 regex = "1.12.3"
 tauri-plugin-deep-link = "2.4.9"
-reqwest = { version = "0.13.3", default-features = false, features = ["json", "rustls", "http2", "charset"] }
+reqwest = { version = "0.13.3", features = ["json"] }
 tauri-plugin-http = "2.5.9"
 base64 = "0.22.1"
 tauri-plugin-os = "2.3.2"
