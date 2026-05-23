@@ -42,7 +42,7 @@
     >
       <button
         v-if="!isAtBottom && messages.length > 0"
-        class="fixed bottom-22 z-10 inline-flex items-center gap-2 rounded-full bg-pink-500/15 px-3 py-2 text-xs font-medium text-pink-200 shadow-lg ring-1 ring-inset ring-pink-400/30 transition-colors hover:bg-pink-500/25 hover:text-pink-100"
+        class="fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)]  z-10 inline-flex items-center gap-2 rounded-full bg-pink-500/15 px-3 py-2 text-xs font-medium text-pink-200 shadow-lg ring-1 ring-inset ring-pink-400/30 transition-colors hover:bg-pink-500/25 hover:text-pink-100"
         :style="{ right: `${left + 22}px` }"
         @click="scrollToBottom"
       >
