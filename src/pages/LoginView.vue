@@ -1,25 +1,6 @@
 <template>
   <div class="flex min-h-full items-center justify-center bg-slate-950 px-4 py-8">
     <div class="w-full max-w-sm">
-      <div class="mb-8 flex flex-col items-center text-center">
-        <div class="mb-4 flex size-16 items-center justify-center rounded-full bg-pink-500/15 text-pink-200 ring-1 ring-inset ring-pink-400/30">
-          <svg
-            class="size-8"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-          </svg>
-        </div>
-        <h1 class="text-2xl font-semibold text-slate-100">
-          osu!Reffer
-        </h1>
-        <p class="mt-1 text-sm text-slate-400">
-          Ref osu! matches or just chat with others.
-        </p>
-      </div>
-
       <div class="rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
         <form
           class="space-y-5"
@@ -91,7 +72,7 @@
           <Icon
             :name="connectionStatus.type === 'error' ? 'alert' : 'check'"
             size="sm"
-            class="mt-0.5 flex-shrink-0"
+            class="mt-0.5 shrink-0"
           />
           <span>{{ connectionStatus.message }}</span>
         </div>
