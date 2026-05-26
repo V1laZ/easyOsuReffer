@@ -4,6 +4,7 @@
     size="xl"
     body-padding="none"
     wrapper-class="max-h-[90vh] min-h-[70vh]"
+    scroll
   >
     <template #header>
       <h2 class="text-lg font-semibold text-slate-100">
