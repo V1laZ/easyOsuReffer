@@ -7,6 +7,7 @@ import './assets/css/main.css'
 import LoginView from './pages/LoginView.vue'
 import ChatView from './pages/ChatView.vue'
 import MappoolsView from './pages/MappoolsView.vue'
+import MappoolDetail from './pages/MappoolDetail.vue'
 export const avatarCache = new Map<string, string>()
 
 declare module 'vue-router' {
@@ -19,7 +20,14 @@ declare module 'vue-router' {
 const routes = [
   { path: '/login', component: LoginView, meta: { order: 0 } },
   { path: '/', component: ChatView, meta: { order: 1 } },
-  { path: '/mappools', component: MappoolsView, meta: { order: 2 } },
+  {
+    path: '/mappools',
+    component: MappoolsView,
+    meta: { order: 2 },
+    children: [
+      { path: ':id', component: MappoolDetail },
+    ],
+  },
 ]
 
 const router = createRouter({
