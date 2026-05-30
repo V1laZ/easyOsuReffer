@@ -6,7 +6,7 @@
         icon="back"
         size="sm"
         title="Back to chat"
-        @click="router.back()"
+        @click="router.replace('/')"
       />
       <div class="min-w-0">
         <h1 class="truncate text-base font-semibold text-slate-100">
