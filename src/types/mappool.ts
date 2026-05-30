@@ -17,6 +17,7 @@ export type BeatmapEntry = {
   mod_combination?: string
   category?: string
   created_at: string
+  position: number
 }
 
 export type BeatmapData = {

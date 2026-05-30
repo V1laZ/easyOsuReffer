@@ -112,9 +112,10 @@ class DatabaseService {
 
     await this.db.execute(
       `INSERT INTO beatmap_entries
-       (mappool_id, beatmap_id, artist, title, difficulty, mapper, mod_combination, category, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [mappoolId, beatmapId, artist, title, difficulty, mapper, modCombination || null, category || null, now],
+       (mappool_id, beatmap_id, artist, title, difficulty, mapper, mod_combination, category, created_at, position)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,
+         (SELECT COALESCE(MAX(position), -1) + 1 FROM beatmap_entries WHERE mappool_id = ?))`,
+      [mappoolId, beatmapId, artist, title, difficulty, mapper, modCombination || null, category || null, now, mappoolId],
     )
   }
 
@@ -122,12 +123,32 @@ class DatabaseService {
     if (!this.db) throw new Error('Database not initialized')
 
     return await this.db.select<BeatmapEntry[]>(
-      `SELECT id, mappool_id, beatmap_id, artist, title, difficulty, mapper, mod_combination, category, created_at
+      `SELECT id, mappool_id, beatmap_id, artist, title, difficulty, mapper, mod_combination, category, created_at, position
        FROM beatmap_entries
        WHERE mappool_id = ?
-       ORDER BY created_at`,
+       ORDER BY position ASC, created_at ASC, id ASC`,
       [mappoolId],
     )
+  }
+
+  async updateBeatmapInPool(id: number, category?: string, modCombination?: string): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized')
+
+    await this.db.execute(
+      `UPDATE beatmap_entries SET category = ?, mod_combination = ? WHERE id = ?`,
+      [category || null, modCombination || null, id],
+    )
+  }
+
+  async reorderBeatmaps(orderedIds: number[]): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized')
+
+    for (let i = 0; i < orderedIds.length; i++) {
+      await this.db.execute(
+        'UPDATE beatmap_entries SET position = ? WHERE id = ?',
+        [i, orderedIds[i]],
+      )
+    }
   }
 
   async deleteBeatmapFromPool(id: number): Promise<void> {

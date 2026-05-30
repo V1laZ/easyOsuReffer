@@ -25,6 +25,7 @@
         v-for="mappool in mappools"
         :key="mappool.id"
         :mappool="mappool"
+        :active="mappool.id === selectedId"
         @select="emit('select', mappool)"
       />
     </div>
@@ -38,6 +39,7 @@ import type { Mappool } from '@/types'
 
 defineProps<{
   mappools: Mappool[]
+  selectedId?: number
 }>()
 
 const emit = defineEmits<{

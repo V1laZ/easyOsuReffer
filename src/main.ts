@@ -6,11 +6,13 @@ import './assets/css/main.css'
 
 import LoginView from './pages/LoginView.vue'
 import ChatView from './pages/ChatView.vue'
+import MappoolsView from './pages/MappoolsView.vue'
 export const avatarCache = new Map<string, string>()
 
 const routes = [
   { path: '/login', component: LoginView },
   { path: '/', component: ChatView },
+  { path: '/mappools', component: MappoolsView },
 ]
 
 const router = createRouter({

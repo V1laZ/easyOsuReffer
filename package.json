@@ -23,6 +23,7 @@
     "@tauri-apps/plugin-sql": "~2.4.0",
     "@tauri-apps/plugin-updater": "^2.10.1",
     "@vueuse/core": "^14.3.0",
+    "sortablejs": "^1.15.7",
     "vue": "3.5.34",
     "vue-router": "^5.0.7"
   },
@@ -31,6 +32,7 @@
     "@stylistic/eslint-plugin": "^5.10.0",
     "@tailwindcss/vite": "^4.3.0",
     "@tauri-apps/cli": "2.11.2",
+    "@types/sortablejs": "^1.15.9",
     "@vitejs/plugin-vue": "6.0.7",
     "eslint": "^10.4.0",
     "eslint-plugin-vue": "^10.9.1",

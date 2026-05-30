@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-1 flex-col overflow-y-auto">
     <div
-      v-if="beatmaps.length === 0"
+      v-if="localBeatmaps.length === 0"
       class="flex h-full flex-col items-center justify-center p-8 text-slate-500"
     >
       <Icon
@@ -19,14 +19,18 @@
 
     <div
       v-else
+      ref="listEl"
       class="space-y-2 p-3"
     >
       <Item
-        v-for="beatmap in groupedBeatmaps"
+        v-for="beatmap in localBeatmaps"
         :key="beatmap.id"
+        :data-id="beatmap.id"
         :beatmap="beatmap"
         :can-remove="canRemove"
+        :editable="editable"
         @remove="removeBeatmap(beatmap.id)"
+        @edit="emit('edit', beatmap)"
         @select="emit('select', beatmap)"
       />
     </div>
@@ -34,43 +38,77 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import Sortable from 'sortablejs'
 import Item from './Item.vue'
 import Icon from '@/components/UI/Icon.vue'
 import { dbService } from '@/services/database'
 import { confirm } from '@/composables/useConfirm'
 import type { BeatmapEntry } from '@/types'
 
-const { beatmaps = [], canRemove = true } = defineProps<{
+const { beatmaps = [], canRemove = true, editable = false } = defineProps<{
   beatmaps?: BeatmapEntry[]
   canRemove?: boolean
+  editable?: boolean
 }>()
 
 const emit = defineEmits<{
-  remove: []
+  remove: [id: number]
   select: [beatmap: BeatmapEntry]
+  edit: [beatmap: BeatmapEntry]
+  reordered: [beatmaps: BeatmapEntry[]]
 }>()
 
-const categoryOrder = ['NM', 'HD', 'HR', 'DT', 'FM', 'TB']
+const localBeatmaps = ref<BeatmapEntry[]>([])
 
-const groupedBeatmaps = computed(() => {
-  return [...beatmaps].sort((a, b) => {
-    const getPrefix = (cat?: string) => (cat ? cat.slice(0, 2) : '')
-    const aPrefix = getPrefix(a.category)
-    const bPrefix = getPrefix(b.category)
+watch(
+  () => beatmaps,
+  value => localBeatmaps.value = [...value],
+  { immediate: true },
+)
 
-    const aIndex = categoryOrder.indexOf(aPrefix)
-    const bIndex = categoryOrder.indexOf(bPrefix)
+const listEl = useTemplateRef('listEl')
+let sortable: Sortable | null = null
 
-    const normAIndex = aIndex === -1 ? categoryOrder.length - 2 : aIndex
-    const normBIndex = bIndex === -1 ? categoryOrder.length - 2 : bIndex
+watch(listEl, (el) => {
+  sortable?.destroy()
+  sortable = null
 
-    if (normAIndex !== normBIndex) {
-      return normAIndex - normBIndex
-    }
-    return (a.category || '').localeCompare(b.category || '')
+  if (!el || !editable) return
+
+  sortable = Sortable.create(el, {
+    handle: '[data-drag-handle]',
+    animation: 150,
+    forceFallback: true,
+    fallbackTolerance: 4,
+    ghostClass: 'opacity-40',
+    chosenClass: 'ring-2',
+    onEnd: onDragEnd,
   })
+}, { flush: 'post' })
+
+onBeforeUnmount(() => {
+  sortable?.destroy()
+  sortable = null
 })
+
+const onDragEnd = async (event: Sortable.SortableEvent) => {
+  const { oldIndex, newIndex } = event
+  if (oldIndex == null || newIndex == null || oldIndex === newIndex) return
+
+  const reordered = [...localBeatmaps.value]
+  const [moved] = reordered.splice(oldIndex, 1)
+  reordered.splice(newIndex, 0, moved)
+  localBeatmaps.value = reordered
+
+  try {
+    await dbService.reorderBeatmaps(reordered.map(b => b.id))
+    emit('reordered', reordered)
+  }
+  catch (error) {
+    console.error('Failed to reorder beatmaps:', error)
+  }
+}
 
 const removeBeatmap = async (beatmapId: number) => {
   const ok = await confirm({
@@ -83,7 +121,7 @@ const removeBeatmap = async (beatmapId: number) => {
 
   try {
     await dbService.deleteBeatmapFromPool(beatmapId)
-    emit('remove')
+    emit('remove', beatmapId)
   }
   catch (error) {
     console.error('Failed to remove beatmap:', error)

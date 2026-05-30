@@ -30,7 +30,7 @@
         @toggle-left-drawer="leftDrawerOpen = !leftDrawerOpen"
         @toggle-right-drawer="rightDrawerOpen = !rightDrawerOpen"
         @open-settings="settingsOpen = true"
-        @open-mappools="mappoolsOpen = true"
+        @open-mappools="router.push('/mappools')"
         @refresh="refreshLobbyState"
       />
 
@@ -92,8 +92,6 @@
       @logout="handleLogout"
     />
 
-    <MappoolModal v-model="mappoolsOpen" />
-
     <CreateLobbyModal
       v-if="createLobbyOpen"
       v-model="createLobbyOpen"
@@ -129,7 +127,6 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import RoomsDrawer from '@/components/Drawer/Rooms/Rooms.vue'
 import PlayersDrawer from '@/components/Drawer/Players/Players.vue'
-import MappoolModal from '@/components/modals/Mappool.vue'
 import ChatHeader from '@/components/chat/ChatHeader.vue'
 import QuickActionBar from '@/components/chat/QuickActionBar.vue'
 import ChatMessages from '@/components/chat/ChatMessages.vue'
@@ -152,7 +149,6 @@ const isOpenSelectMap = ref(false)
 const leftDrawerOpen = ref(false)
 const rightDrawerOpen = ref(false)
 const settingsOpen = ref(false)
-const mappoolsOpen = ref(false)
 const createLobbyOpen = ref(false)
 const invitePlayerOpen = ref(false)
 const playerModalOpen = ref(false)
