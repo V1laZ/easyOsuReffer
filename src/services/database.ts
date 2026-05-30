@@ -119,6 +119,30 @@ class DatabaseService {
     )
   }
 
+  async importMappool(
+    name: string,
+    entries: { beatmapId: number, artist: string, title: string, difficulty: string, mapper: string, mods?: string, category?: string }[],
+  ): Promise<number> {
+    if (!this.db) throw new Error('Database not initialized')
+
+    const mappoolId = await this.createMappool(name)
+
+    for (const entry of entries) {
+      await this.addBeatmapToPool(
+        mappoolId,
+        entry.beatmapId,
+        entry.artist,
+        entry.title,
+        entry.difficulty,
+        entry.mapper,
+        entry.mods || undefined,
+        entry.category || undefined,
+      )
+    }
+
+    return mappoolId
+  }
+
   async getMappoolBeatmaps(mappoolId: number): Promise<BeatmapEntry[]> {
     if (!this.db) throw new Error('Database not initialized')
 

@@ -47,8 +47,7 @@
           <Btn
             block
             variant="secondary"
-            disabled
-            title="Coming soon"
+            @click="importOpen = true"
           >
             <template #icon>
               <Icon
@@ -177,6 +176,11 @@
       v-model="createOpen"
       @created="onCreated"
     />
+
+    <ImportSheetModal
+      v-model="importOpen"
+      @imported="onCreated"
+    />
   </div>
 </template>
 
@@ -189,6 +193,7 @@ import MappoolList from '@/components/Mappool/List.vue'
 import BeatmapList from '@/components/Mappool/Beatmap/List.vue'
 import BeatmapPanel from '@/components/Mappool/BeatmapPanel.vue'
 import CreateModal from '@/components/Mappool/CreateModal.vue'
+import ImportSheetModal from '@/components/Mappool/ImportSheetModal.vue'
 import BottomSheet from '@/components/UI/BottomSheet.vue'
 import SlideOver from '@/components/UI/SlideOver.vue'
 import IconBtn from '@/components/UI/IconBtn.vue'
@@ -202,6 +207,7 @@ const mappools = ref<Mappool[]>([])
 const selectedMappool = ref<Mappool | null>(null)
 const beatmaps = ref<BeatmapEntry[]>([])
 const createOpen = ref(false)
+const importOpen = ref(false)
 const panelOpen = ref(false)
 const panelBeatmap = ref<BeatmapEntry | null>(null)
 

@@ -34,3 +34,19 @@ export type BeatmapData = {
 }
 
 export type NewMappoolForm = Omit<Mappool, 'id' | 'created_at' | 'updated_at'>
+
+export type ExtractedEntry = {
+  category: string
+  mods: string
+  beatmapId: number
+  artist: string
+  title: string
+  difficulty: string
+  mapper: string
+  needsReview: boolean
+}
+
+export type ExtractedRound = {
+  name: string
+  entries: ExtractedEntry[]
+}

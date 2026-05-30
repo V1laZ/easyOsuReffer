@@ -23,7 +23,7 @@
       <div class="mb-2 flex items-center gap-2">
         <Badge
           v-if="beatmap.category"
-          :tone="categoryTone"
+          :tone="categoryTone(beatmap.category)"
         >
           {{ beatmap.category }}
         </Badge>
@@ -64,10 +64,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import Badge from '@/components/UI/Badge.vue'
 import Icon from '@/components/UI/Icon.vue'
 import IconBtn from '@/components/UI/IconBtn.vue'
+import { useCategoryTone } from '@/composables/useCategoryTone'
 import type { BeatmapEntry } from '@/types'
 
 const { beatmap, canRemove = true, editable = false } = defineProps<{
@@ -82,17 +82,5 @@ const emit = defineEmits<{
   edit: []
 }>()
 
-const categoryTone = computed(() => {
-  const cat = beatmap.category?.slice(0, 2) || ''
-  switch (cat) {
-    case 'NM': return 'neutral' as const
-    case 'HD': return 'warning' as const
-    case 'HR': return 'danger' as const
-    case 'DT': return 'info' as const
-    case 'FL': return 'neutral' as const
-    case 'FM': return 'success' as const
-    case 'TB': return 'accent' as const
-    default: return 'neutral' as const
-  }
-})
+const { categoryTone } = useCategoryTone()
 </script>
