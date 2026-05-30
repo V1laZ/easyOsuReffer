@@ -89,5 +89,13 @@ pub fn get_migrations() -> Vec<Migration> {
         ",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 6,
+            description: "add_position_to_beatmap_entries",
+            sql: "
+            ALTER TABLE beatmap_entries ADD COLUMN position INTEGER NOT NULL DEFAULT 0;
+        ",
+            kind: MigrationKind::Up,
+        },
     ]
 }
