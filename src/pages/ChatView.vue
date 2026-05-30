@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-grow overflow-hidden bg-slate-950 text-slate-100">
+  <div class="flex grow overflow-hidden bg-slate-950 text-slate-100">
     <!-- Left Drawer - Channels -->
     <RoomsDrawer
       :is-open="leftDrawerOpen"
@@ -14,7 +14,7 @@
     />
 
     <!-- Main Chat Area -->
-    <div class="relative flex-grow flex flex-col min-w-0">
+    <div class="relative grow flex flex-col min-w-0">
       <SelectMap
         v-if="activeRoom && activeRoom.roomType === 'MultiplayerLobby'"
         :is-open="isOpenSelectMap"
@@ -43,7 +43,7 @@
 
       <div
         v-if="!activeRoom"
-        class="flex flex-grow flex-col items-center justify-center px-6 text-center text-slate-500"
+        class="flex grow flex-col items-center justify-center px-6 text-center text-slate-500"
       >
         <Icon
           name="chat"
@@ -59,7 +59,7 @@
         :messages="activeRoom.messages"
         :active-channel-id="activeRoom.id"
         :has-more-messages="activeRoom.hasMoreMessages"
-        class="flex-grow"
+        class="grow"
         @click-username="handleClickUsername"
         @load-more="loadMoreMessages"
       />
