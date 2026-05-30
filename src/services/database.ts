@@ -90,6 +90,17 @@ class DatabaseService {
     )
   }
 
+  async updateMappool(id: number, name: string, description?: string): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized')
+
+    const now = new Date().toISOString()
+
+    await this.db.execute(
+      `UPDATE mappools SET name = ?, description = ?, updated_at = ? WHERE id = ?`,
+      [name, description || null, now, id],
+    )
+  }
+
   async deleteMappool(id: number): Promise<void> {
     if (!this.db) throw new Error('Database not initialized')
 

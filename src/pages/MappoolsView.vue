@@ -34,7 +34,7 @@
         <div class="space-y-2 border-t border-slate-800 p-3">
           <Btn
             block
-            @click="createOpen = true"
+            @click="openCreatePool"
           >
             <template #icon>
               <Icon
@@ -104,6 +104,13 @@
                 <span class="hidden sm:inline">Add beatmap</span>
               </Btn>
               <IconBtn
+                icon="edit"
+                variant="accent"
+                size="sm"
+                title="Edit mappool"
+                @click="openEditPool"
+              />
+              <IconBtn
                 icon="trash"
                 variant="danger"
                 size="sm"
@@ -172,9 +179,11 @@
       </BottomSheet>
     </div>
 
-    <CreateModal
-      v-model="createOpen"
+    <MappoolFormModal
+      v-model="poolFormOpen"
+      :mappool="editingPool"
       @created="onCreated"
+      @updated="onPoolUpdated"
     />
 
     <ImportSheetModal
@@ -192,7 +201,7 @@ import { confirm } from '@/composables/useConfirm'
 import MappoolList from '@/components/Mappool/List.vue'
 import BeatmapList from '@/components/Mappool/Beatmap/List.vue'
 import BeatmapPanel from '@/components/Mappool/BeatmapPanel.vue'
-import CreateModal from '@/components/Mappool/CreateModal.vue'
+import MappoolFormModal from '@/components/Mappool/MappoolFormModal.vue'
 import ImportSheetModal from '@/components/Mappool/ImportSheetModal.vue'
 import BottomSheet from '@/components/UI/BottomSheet.vue'
 import SlideOver from '@/components/UI/SlideOver.vue'
@@ -206,7 +215,8 @@ const router = useRouter()
 const mappools = ref<Mappool[]>([])
 const selectedMappool = ref<Mappool | null>(null)
 const beatmaps = ref<BeatmapEntry[]>([])
-const createOpen = ref(false)
+const poolFormOpen = ref(false)
+const editingPool = ref<Mappool | null>(null)
 const importOpen = ref(false)
 const panelOpen = ref(false)
 const panelBeatmap = ref<BeatmapEntry | null>(null)
@@ -264,10 +274,27 @@ function onRemove(id: number) {
   refreshBeatmaps()
 }
 
+function openCreatePool() {
+  editingPool.value = null
+  poolFormOpen.value = true
+}
+
+function openEditPool() {
+  editingPool.value = selectedMappool.value
+  poolFormOpen.value = true
+}
+
 async function onCreated(id: number) {
   await loadMappools()
   const created = mappools.value.find(pool => pool.id === id)
   if (created) await selectMappool(created)
+}
+
+async function onPoolUpdated() {
+  await loadMappools()
+  if (selectedMappool.value) {
+    selectedMappool.value = mappools.value.find(pool => pool.id === selectedMappool.value!.id) ?? selectedMappool.value
+  }
 }
 
 async function deleteMappool() {
