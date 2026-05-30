@@ -107,10 +107,13 @@ import ConfirmDialog from './components/UI/ConfirmDialog.vue'
 import { modalsState } from './stores/global'
 import { UpdateInfo, UserCredentials } from '@/types'
 import { platform } from '@tauri-apps/plugin-os'
+import { useAndroidBackButton } from './composables/useAndroidBackButton'
 
 const router = useRouter()
 const currentPlatform = platform()
 const showTitleBar = currentPlatform !== 'ios' && currentPlatform !== 'android'
+
+useAndroidBackButton()
 
 if (typeof document !== 'undefined') {
   document.documentElement.style.setProperty('--title-bar-h', showTitleBar ? '2rem' : '0px')

@@ -62,3 +62,12 @@ export function useModalLayer(
 
   return { zIndex, isTopmost }
 }
+
+export const modalLayerCount = computed(() => stack.value.length)
+
+export function closeTopModalLayer(): boolean {
+  const top = stack.value[stack.value.length - 1]
+  if (!top) return false
+  top.close()
+  return true
+}
