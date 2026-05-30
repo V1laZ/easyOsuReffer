@@ -27,6 +27,7 @@
 
       <ChatHeader
         :active-channel="activeRoom"
+        :has-unread="hasUnreadInOtherRooms"
         @toggle-left-drawer="leftDrawerOpen = !leftDrawerOpen"
         @toggle-right-drawer="rightDrawerOpen = !rightDrawerOpen"
         @open-settings="settingsOpen = true"
@@ -121,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
@@ -144,6 +145,10 @@ import type { CreateLobbySettings, BeatmapEntry, UserJoinEvent } from '@/types'
 const router = useRouter()
 
 const { roomsMap, activeRoom, roomsList, selectRoom, loadMoreMessages } = useIrcRooms()
+
+const hasUnreadInOtherRooms = computed(() =>
+  roomsList.value.some(room => room.id !== activeRoom.value?.id && room.unreadCount > 0),
+)
 
 const isOpenSelectMap = ref(false)
 const leftDrawerOpen = ref(false)

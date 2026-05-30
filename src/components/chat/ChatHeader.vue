@@ -1,12 +1,17 @@
 <template>
   <div class="flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-4 py-3">
     <div class="flex min-w-0 items-center gap-3">
-      <IconBtn
-        icon="menu"
-        size="sm"
-        class="lg:hidden"
-        @click="emit('toggleLeftDrawer')"
-      />
+      <div class="relative lg:hidden">
+        <IconBtn
+          icon="menu"
+          size="sm"
+          @click="emit('toggleLeftDrawer')"
+        />
+        <span
+          v-if="hasUnread"
+          class="pointer-events-none absolute right-1 top-1 size-2 rounded-full bg-pink-500 ring-2 ring-slate-900"
+        />
+      </div>
 
       <div class="min-w-0">
         <h1 class="truncate text-base font-semibold text-slate-100">
@@ -64,6 +69,7 @@ import type { RoomUnion } from '@/types'
 
 const props = defineProps<{
   activeChannel: RoomUnion | null
+  hasUnread?: boolean
 }>()
 
 const emit = defineEmits<{
