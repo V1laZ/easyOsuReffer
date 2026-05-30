@@ -12,7 +12,7 @@
       <p class="text-sm">
         No mappools yet
       </p>
-      <p class="mt-1 text-xs text-slate-600">
+      <p class="mt-1 text-xs text-center text-slate-600">
         Create your first mappool to get started
       </p>
     </div>
