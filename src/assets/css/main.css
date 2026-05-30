@@ -59,6 +59,38 @@ dialog::backdrop {
   background-color: rgba(0, 0, 0, 0.6);
 }
 
+.fade-enter-active,
+.fade-leave-active,
+.slide-left-enter-active,
+.slide-left-leave-active,
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(2rem);
+}
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-2rem);
+}
+
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-2rem);
+}
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(2rem);
+}
+
 @utility inset-safe {
   inset: calc(env(safe-area-inset-top) + var(--title-bar-h)) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
