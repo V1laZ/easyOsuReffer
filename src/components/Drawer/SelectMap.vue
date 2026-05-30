@@ -20,7 +20,7 @@
     </header>
 
     <div class="flex-1 overflow-y-auto p-4 sm:p-6">
-      <template v-if="!lobbyState.currentMappoolId">
+      <template v-if="!lobbyState.currentMappoolId || isChangingMappool">
         <div class="flex flex-col items-center justify-center">
           <Icon
             name="musicCollection"
@@ -28,10 +28,10 @@
             class="mb-3 text-slate-600"
           />
           <p class="text-base font-medium text-slate-200">
-            No active mappool selected
+            {{ isChangingMappool ? 'Change active mappool' : 'No active mappool selected' }}
           </p>
           <p class="mb-5 mt-1 text-sm text-slate-400">
-            Choose a mappool to continue
+            {{ isChangingMappool ? 'Pick a different mappool for this lobby' : 'Choose a mappool to continue' }}
           </p>
           <div class="w-full max-w-xs space-y-3">
             <Select v-model="selectedMappoolId">
@@ -57,21 +57,42 @@
             >
               Set as active
             </Btn>
+            <Btn
+              v-if="isChangingMappool"
+              block
+              variant="ghost"
+              @click="cancelChangingMappool"
+            >
+              Cancel
+            </Btn>
           </div>
         </div>
       </template>
-      <List
-        v-else
-        :beatmaps="beatmaps"
-        :can-remove="false"
-        @select="emit('selectBeatmap', $event)"
-      />
+      <template v-else>
+        <div class="mb-3 flex items-center justify-between gap-2">
+          <span class="truncate text-xs text-slate-500">
+            {{ currentMappoolName }}
+          </span>
+          <button
+            type="button"
+            class="shrink-0 text-xs text-slate-500 underline-offset-2 transition-colors hover:text-slate-300 hover:underline"
+            @click="startChangingMappool"
+          >
+            Change mappool
+          </button>
+        </div>
+        <List
+          :beatmaps="beatmaps"
+          :can-remove="false"
+          @select="emit('selectBeatmap', $event)"
+        />
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import List from '@/components/Mappool/Beatmap/List.vue'
 import { dbService } from '@/services/database'
@@ -96,6 +117,21 @@ const emit = defineEmits<{
 const mappools = ref<Mappool[]>([])
 const selectedMappoolId = ref<number | null>(null)
 const beatmaps = ref<BeatmapEntry[]>([])
+const isChangingMappool = ref(false)
+
+const currentMappoolName = computed(() => {
+  const current = mappools.value.find(pool => pool.id === props.lobbyState.currentMappoolId)
+  return current?.name ?? 'Active mappool'
+})
+
+const startChangingMappool = () => {
+  selectedMappoolId.value = props.lobbyState.currentMappoolId
+  isChangingMappool.value = true
+}
+
+const cancelChangingMappool = () => {
+  isChangingMappool.value = false
+}
 
 const fetchMappools = async () => {
   try {
@@ -126,6 +162,7 @@ const setActiveMappool = async () => {
       mappoolId: selectedMappoolId.value,
     })
     emit('setMappool', res)
+    isChangingMappool.value = false
   }
   catch {
     alert('Failed to set mappool')
@@ -143,4 +180,10 @@ watch(() => props.lobbyState.currentMappoolId, (newVal) => {
   }
   beatmaps.value = []
 }, { immediate: true })
+
+watch(() => props.isOpen, (open) => {
+  if (!open) {
+    isChangingMappool.value = false
+  }
+})
 </script>
