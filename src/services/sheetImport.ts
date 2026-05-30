@@ -1,20 +1,23 @@
 import { fetch } from '@tauri-apps/plugin-http'
-import type { ExtractedRound } from '@/types'
+import type { ExtractedRound, ExtractedSheet } from '@/types'
 
 const EXTRACT_URL = 'https://osureffer.vilaz.dev/extract-mappool'
 
-export async function extractMappoolFromSheet(url: string): Promise<ExtractedRound[]> {
+export async function extractMappoolFromSheet(url: string): Promise<ExtractedSheet> {
   const res = await fetch(EXTRACT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),
   })
 
-  const data = await res.json().catch(() => null) as { rounds?: ExtractedRound[], error?: string } | null
+  const data = await res.json().catch(() => null) as { rounds?: ExtractedRound[], sheetTitle?: string | null, error?: string } | null
 
   if (!res.ok) {
     throw new Error(data?.error || `Failed to read the sheet (${res.status})`)
   }
 
-  return data?.rounds ?? []
+  return {
+    sheetTitle: data?.sheetTitle ?? null,
+    rounds: data?.rounds ?? [],
+  }
 }

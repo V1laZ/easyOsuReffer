@@ -50,3 +50,8 @@ export type ExtractedRound = {
   name: string
   entries: ExtractedEntry[]
 }
+
+export type ExtractedSheet = {
+  sheetTitle: string | null
+  rounds: ExtractedRound[]
+}

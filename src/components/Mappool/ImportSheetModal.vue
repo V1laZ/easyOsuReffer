@@ -31,6 +31,13 @@
         />
       </Field>
 
+      <label class="flex items-center justify-between gap-3">
+        <span class="min-w-0">
+          <span class="block text-sm text-slate-200">Force <span class="font-medium">NF</span> on every map</span>
+        </span>
+        <Switch v-model="forceNf" />
+      </label>
+
       <div
         v-if="error"
         class="flex items-start gap-2 rounded-lg bg-rose-500/10 p-3 ring-1 ring-inset ring-rose-400/30"
@@ -103,7 +110,7 @@
 
       <div class="max-h-72 space-y-1.5 overflow-y-auto rounded-lg border border-slate-800 bg-slate-900/50 p-2">
         <div
-          v-for="(entry, index) in selectedRound.entries"
+          v-for="(entry, index) in previewEntries"
           :key="index"
           class="flex items-center gap-2 rounded-md px-2 py-1.5"
           :class="entry.needsReview ? 'bg-amber-500/5' : ''"
@@ -187,6 +194,7 @@ import Btn from '@/components/UI/Btn.vue'
 import Select from '@/components/UI/Select.vue'
 import Badge from '@/components/UI/Badge.vue'
 import Icon from '@/components/UI/Icon.vue'
+import Switch from '@/components/UI/Switch.vue'
 import { useCategoryTone } from '@/composables/useCategoryTone'
 import type { ExtractedRound } from '@/types'
 
@@ -203,24 +211,58 @@ const loading = ref(false)
 const importing = ref(false)
 const error = ref('')
 const rounds = ref<ExtractedRound[]>([])
+const sheetTitle = ref<string | null>(null)
 const selectedIndex = ref(0)
 const name = ref('')
+const forceNf = ref(true)
 
 const selectedRound = computed(() => rounds.value[selectedIndex.value] ?? { name: '', entries: [] })
 const reviewCount = computed(() => selectedRound.value.entries.filter(e => e.needsReview).length)
 
+const withNf = (mods: string) => {
+  if (!forceNf.value) return mods
+  return mods.includes('NF') ? mods : `NF${mods}`
+}
+
+const previewEntries = computed(() =>
+  selectedRound.value.entries.map(e => ({ ...e, mods: withNf(e.mods) })),
+)
+
+// Tournament mappool names are usually "<sheet name> - <stage>". Strip the
+// generic "… main sheet / mappool / pool" wording from the workbook title and
+// combine it with the round name to suggest a default.
+const cleanSheetTitle = (title: string) => {
+  const noise = /\s*[-–—|:(]*\s*(main\s+sheet|mappool\s+sheet|pool\s+sheet|spread\s*sheet|mappools?|sheets?|pools?)\s*[)\]]*\s*$/i
+  let t = title.trim()
+  let prev = ''
+  while (t && t !== prev) {
+    prev = t
+    t = t.replace(noise, '').trim()
+  }
+  return t
+}
+
+const defaultName = (roundName: string) => {
+  const base = sheetTitle.value ? cleanSheetTitle(sheetTitle.value) : ''
+  return base ? `${base} - ${roundName}` : roundName
+}
+
 watch(open, (isOpen) => {
-  if (isOpen) reset()
+  if (isOpen) {
+    reset()
+    forceNf.value = true
+  }
 })
 
 watch(selectedIndex, () => {
-  name.value = selectedRound.value.name
+  name.value = defaultName(selectedRound.value.name)
 })
 
 function reset() {
   url.value = ''
   error.value = ''
   rounds.value = []
+  sheetTitle.value = null
   selectedIndex.value = 0
   name.value = ''
 }
@@ -232,13 +274,14 @@ const fetchSheet = async () => {
   error.value = ''
   try {
     const result = await extractMappoolFromSheet(url.value.trim())
-    if (!result.length) {
+    if (!result.rounds.length) {
       error.value = 'No mappool could be detected in that sheet.'
       return
     }
-    rounds.value = result
+    rounds.value = result.rounds
+    sheetTitle.value = result.sheetTitle
     selectedIndex.value = 0
-    name.value = result[0].name
+    name.value = defaultName(result.rounds[0].name)
   }
   catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to read the sheet'
@@ -249,14 +292,14 @@ const fetchSheet = async () => {
 }
 
 const doImport = async () => {
-  if (!name.value.trim() || !selectedRound.value.entries.length) return
+  if (!name.value.trim() || !previewEntries.value.length) return
 
   importing.value = true
   error.value = ''
   try {
     const id = await dbService.importMappool(
       name.value.trim(),
-      selectedRound.value.entries.map(e => ({
+      previewEntries.value.map(e => ({
         beatmapId: e.beatmapId,
         artist: e.artist,
         title: e.title,
