@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { useModalLayer } from '@/composables/useModalLayer'
 
 defineOptions({ inheritAttrs: false })
@@ -109,6 +109,13 @@ watch(open, (isOpen) => {
     }, 350)
   }
 }, { immediate: true })
+
+watch(shown, (isShown) => {
+  if (!isShown) return
+  nextTick(() => {
+    panelEl.value?.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+  })
+})
 
 onBeforeUnmount(() => {
   if (closeTimer) clearTimeout(closeTimer)

@@ -117,6 +117,13 @@ watch(open, (isOpen) => {
   }
 }, { immediate: true })
 
+watch(shown, (isShown) => {
+  if (!isShown) return
+  nextTick(() => {
+    sheetEl.value?.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+  })
+})
+
 onBeforeUnmount(() => {
   if (closeTimer) clearTimeout(closeTimer)
 })

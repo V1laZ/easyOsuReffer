@@ -41,6 +41,7 @@
           <Input
             ref="beatmapInputRef"
             v-model="beatmapInput"
+            data-autofocus
             placeholder="Beatmap ID or osu.ppy.sh link"
             @keyup.enter="fetchBeatmapData"
           />
@@ -132,6 +133,7 @@
           <Input
             ref="categoryRef"
             v-model="category"
+            data-autofocus
             placeholder="e.g. NM2, HD1"
             @keyup.enter="submit"
           />
@@ -201,7 +203,6 @@ import { BeatmapData, BeatmapEntry } from '@/types'
 const props = defineProps<{
   mappoolId: number
   beatmap?: BeatmapEntry | null
-  visible?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -292,16 +293,6 @@ const focusActiveField = () => {
     target.value?.focus()
   })
 }
-
-watch(
-  () => props.visible,
-  (isVisible) => {
-    if (isVisible) focusActiveField()
-  },
-  { immediate: true },
-)
-
-defineExpose({ focus: focusActiveField })
 
 const fetchBeatmapData = async () => {
   if (!globalState.user) return
