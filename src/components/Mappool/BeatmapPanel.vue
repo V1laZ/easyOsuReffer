@@ -10,6 +10,7 @@
         </p>
       </div>
       <IconBtn
+        v-if="showClose !== false"
         icon="close"
         size="sm"
         title="Close"
@@ -203,6 +204,7 @@ import { BeatmapData, BeatmapEntry } from '@/types'
 const props = defineProps<{
   mappoolId: number
   beatmap?: BeatmapEntry | null
+  showClose?: boolean
 }>()
 
 const emit = defineEmits<{

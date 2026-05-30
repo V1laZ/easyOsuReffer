@@ -66,9 +66,10 @@ defineOptions({ inheritAttrs: false })
 
 const open = defineModel<boolean>({ default: false })
 
-const { title = '', dismissible = true } = defineProps<{
+const { title = '', dismissible = true, autofocus = true } = defineProps<{
   title?: string
   dismissible?: boolean
+  autofocus?: boolean
 }>()
 
 const sheetEl = useTemplateRef('sheetEl')
@@ -118,7 +119,7 @@ watch(open, (isOpen) => {
 }, { immediate: true })
 
 watch(shown, (isShown) => {
-  if (!isShown) return
+  if (!isShown || !autofocus) return
   nextTick(() => {
     sheetEl.value?.querySelector<HTMLElement>('[data-autofocus]')?.focus()
   })

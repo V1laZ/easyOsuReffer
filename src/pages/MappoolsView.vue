@@ -167,11 +167,13 @@
       <BottomSheet
         v-model="panelOpen"
         class="lg:hidden"
+        :autofocus="false"
       >
         <BeatmapPanel
           v-if="selectedMappool"
           :mappool-id="selectedMappool.id"
           :beatmap="panelBeatmap"
+          :show-close="false"
           @added="refreshBeatmaps"
           @saved="onSaved"
           @close="closePanel"
